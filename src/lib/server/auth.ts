@@ -9,10 +9,11 @@ import { cache } from "react";
 
 /** Supabase Auth client bound to the request's cookies (publishable key, acts as the signed-in user). */
 export async function supabaseAuth() {
+  // Reading cookies first marks admin routes as request-time, so builds never prerender them
+  const store = await cookies();
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error("SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY missing");
-  const store = await cookies();
   return createServerClient(url, key, {
     cookies: {
       getAll: () => store.getAll(),
@@ -43,6 +44,9 @@ export type Admin = { email: string; role: Role };
 
 /** The signed-in staff member, or null. Verified against Supabase Auth on every request. */
 export const getAdmin = cache(async (): Promise<Admin | null> => {
+  await cookies();
+  // A deployment without Supabase Auth configured has no staff: everyone lands on the login page
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_PUBLISHABLE_KEY) return null;
   const supabase = await supabaseAuth();
   const { data } = await supabase.auth.getUser();
   const email = data.user?.email;
