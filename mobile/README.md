@@ -48,6 +48,29 @@ TestFlight. Web-only pushes skip it: the app already loads the live site. One-ti
    **Elite Travel ASC** (must match `codemagic.yaml`).
 4. Codemagic → Add application → this GitHub repo → it picks up `codemagic.yaml` → Start build.
 
+## Push notifications (iOS)
+
+Firebase Cloud Messaging via `@capacitor-firebase/messaging`. The site asks for permission
+from a tap (traveller: «Мэдэгдэл асаах» card on the booking page; staff: the bell in /admin)
+and registers the device at `/api/push`. The server sends with the service account in the
+site's `FIREBASE_*` env vars.
+
+Already in the project: the plugin, `ios/App/App/GoogleService-Info.plist`, `App.entitlements`
+(`aps-environment`), the `remote-notification` background mode and the AppDelegate hooks.
+One-time setup outside the code:
+
+1. Apple Developer → Identifiers → `mn.elitetravel.app` → enable **Push Notifications** → Save.
+   Existing provisioning profiles become invalid; delete the old App Store profile so Codemagic
+   creates a new one that includes push.
+2. Apple Developer → Keys → **+** → enable **Apple Push Notifications service (APNs)** → download
+   the `.p8` (only once), note the Key ID and your Team ID.
+3. Firebase Console → Project settings → Cloud Messaging → Apple app configuration →
+   **APNs Authentication Key** → upload the `.p8` with Key ID and Team ID.
+4. Push to `master` (touching `mobile/`) so Codemagic builds a new TestFlight version, then submit
+   it for review. The version without the plugin keeps working; it just shows no push prompt.
+
+`ios/App/CapApp-SPM/symlinks/` is machine-specific and recreated by `npx cap sync ios`.
+
 ## Android
 
 Needs JDK 21 (Gradle here does not run on JDK 25) and the Android SDK.

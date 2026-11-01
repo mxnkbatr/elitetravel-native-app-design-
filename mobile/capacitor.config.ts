@@ -29,7 +29,18 @@ const config: CapacitorConfig = {
     contentInset: "never",
     limitsNavigationsToAppBoundDomains: false,
   },
+  experimental: {
+    ios: {
+      spm: {
+        // Avoids a SwiftPM package identity collision with the Firebase SDK
+        packageOptions: { "@capacitor-firebase/messaging": { symlink: true } },
+      },
+    },
+  },
   plugins: {
+    FirebaseMessaging: {
+      presentationOptions: ["alert", "badge", "sound"],
+    },
     SplashScreen: {
       launchShowDuration: 1400,
       launchAutoHide: true,

@@ -33,4 +33,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Passport photo for filling passenger details (file input with camera in the WebView) -->
+    <uses-permission android:name="android.permission.CAMERA" />
 </manifest>

@@ -1,6 +1,8 @@
 .DS_Store
 /.build
 /Packages
+# Machine-specific links into node_modules, recreated by `npx cap sync ios`
+/symlinks
 /*.xcodeproj
 xcuserdata/
 DerivedData/

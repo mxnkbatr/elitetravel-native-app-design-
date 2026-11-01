@@ -24,6 +24,14 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Паспортын зургаас зорчигчийн мэдээллийг автоматаар бөглөхөд камер ашиглана. Зураг таны утаснаас гарахгүй.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Паспортын зургийг цомгоосоо сонгож зорчигчийн мэдээллийг бөглөхөд ашиглана.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>

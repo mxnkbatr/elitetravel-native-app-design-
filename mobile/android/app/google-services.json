@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "86946319917",
+    "project_id": "elitetravel-mn",
+    "storage_bucket": "elitetravel-mn.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:86946319917:android:d474a048a36889ea7ab2a4",
+        "android_client_info": {
+          "package_name": "mn.elitetravel.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnaFFrnOoxT8Hh_IMbJ8y6UrLrQAMlVPU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
