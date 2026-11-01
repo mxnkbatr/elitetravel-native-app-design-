@@ -4,7 +4,7 @@ import { approveProposal, cancelProposal, removeConversation } from "@/app/admin
 import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import { Sheet } from "@/app/admin/(panel)/Sheet";
 import { formatPrice } from "@/data/tours";
-import { FIELD_LABEL, isProposalTool, TOOL_LABEL, type DiffRow, type ProposalStatus, type ProposalView } from "@/lib/agent";
+import { FIELD_LABEL, isProposalTool, KIND_LABEL, PROPOSAL_PERMISSION, TOOL_LABEL, type DiffRow, type ProposalStatus, type ProposalView } from "@/lib/agent";
 import { can, type Role } from "@/lib/permissions";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getToolName, isToolUIPart, type UIMessage } from "ai";
@@ -17,13 +17,12 @@ type Props = {
   conversations: Conversation[];
   initial: { id: string; messages: UIMessage[] } | null;
   statuses: Record<string, ProposalStatus>;
-  canApprove: boolean;
   role: Role;
   configured: boolean;
 };
 
 /** Admin AI agent: saved chats on the side, the conversation with live tool steps and approval cards. */
-export function AgentChat({ conversations: initialList, initial, statuses, canApprove, role, configured }: Props) {
+export function AgentChat({ conversations: initialList, initial, statuses, role, configured }: Props) {
   const [chat, setChat] = useState(() => ({ id: initial?.id ?? crypto.randomUUID(), messages: initial?.messages ?? [] }));
   const [list, setList] = useState(initialList);
   const [history, setHistory] = useState(false);
@@ -75,7 +74,7 @@ export function AgentChat({ conversations: initialList, initial, statuses, canAp
           }
         />
         {configured ? (
-          <ChatPane key={chat.id} id={chat.id} initialMessages={chat.messages} statuses={statuses} canApprove={canApprove} role={role} onSaved={remember} />
+          <ChatPane key={chat.id} id={chat.id} initialMessages={chat.messages} statuses={statuses} role={role} onSaved={remember} />
         ) : (
           <p className="mt-6 rounded-2xl bg-[#fff4e8] p-4 text-sm text-[#b45309]">AI тохируулаагүй байна. Сервер дээр XAI_API_KEY нэмнэ үү.</p>
         )}
@@ -125,7 +124,8 @@ function History({ list, active, onNew, onDelete }: { list: Conversation[]; acti
 function suggestionsFor(role: Role) {
   const s: string[] = [];
   if (can(role, "bookings.view")) s.push("Хариулаагүй мессежтэй захиалгууд байна уу?", "Энэ долоо хоногт ирсэн захиалгуудыг харуул");
-  if (can(role, "reports.view")) s.push("Энэ сарын борлуулалтыг аяллаар нь задлаад өмнөх сартай харьцуул");
+  if (can(role, "reports.view")) s.push("Сүүлийн 30 хоногт сайтад хэдэн хүн орж, хаанаас ирсэн бэ?", "Энэ сарын борлуулалтыг аяллаар нь задлаад өмнөх сартай харьцуул");
+  if (can(role, "departures.manage")) s.push("Аль огноонуудад суудал дуусах гэж байна?");
   if (can(role, "content.manage")) s.push("Бали аяллын товч тайлбарыг илүү сонирхолтой болгох санал бэлд", "Ямар аяллууд дууссан, ямар нь захиалга авч байна?");
   return s.slice(0, 4);
 }
@@ -147,14 +147,12 @@ function ChatPane({
   id,
   initialMessages,
   statuses,
-  canApprove,
   role,
   onSaved,
 }: {
   id: string;
   initialMessages: UIMessage[];
   statuses: Record<string, ProposalStatus>;
-  canApprove: boolean;
   role: Role;
   onSaved: (id: string, title: string) => void;
 }) {
@@ -235,7 +233,7 @@ function ChatPane({
                   const output = p.state === "output-available" ? (p.output as Record<string, unknown>) : null;
                   if (output && isProposalTool(name) && typeof output.proposalId === "string") {
                     const view = output as unknown as ProposalView;
-                    return <ProposalCard key={i} view={view} initialStatus={statuses[view.proposalId] ?? view.status} canApprove={canApprove} />;
+                    return <ProposalCard key={i} view={view} initialStatus={statuses[view.proposalId] ?? view.status} canApprove={can(role, PROPOSAL_PERMISSION[view.kind])} />;
                   }
                   return <ToolStep key={i} name={name} state={p.state} input={p.input} output={output} errorText={p.state === "output-error" ? p.errorText : undefined} />;
                 }
@@ -352,7 +350,7 @@ function ProposalCard({ view, initialStatus, canApprove }: { view: ProposalView;
   return (
     <div className="max-w-[min(100%,46rem)] overflow-hidden rounded-[1.3rem] border-2 border-accent/30 bg-white shadow-[0_10px_30px_rgba(14,143,132,0.08)]">
       <div className="flex flex-wrap items-center gap-2 border-b border-[var(--line)] bg-accent/[0.05] px-4 py-3">
-        <span className="rounded-full bg-accent px-2.5 py-0.5 text-[0.68rem] font-bold text-white">{view.kind === "tour.create" ? "Шинэ аялал" : "Аялал засах"}</span>
+        <span className="rounded-full bg-accent px-2.5 py-0.5 text-[0.68rem] font-bold text-white">{KIND_LABEL[view.kind]}</span>
         <span className="font-mono text-xs text-muted">{view.targetId}</span>
         <span className={`ml-auto rounded-full px-2.5 py-0.5 text-[0.7rem] font-semibold ${tone.tone}`}>{tone.label}</span>
       </div>
@@ -366,12 +364,11 @@ function ProposalCard({ view, initialStatus, canApprove }: { view: ProposalView;
         {message ? <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{message}</p> : null}
         {status === "applied" ? (
           <div className="mt-3 flex gap-3 text-sm">
-            <Link href={`/tours/${view.targetId}`} target="_blank" className="font-semibold text-accent underline">
-              Сайт дээр харах
-            </Link>
-            <Link href={`/admin/tours/${view.targetId}`} className="font-semibold text-accent underline">
-              Засварлагчид нээх
-            </Link>
+            {appliedLinks(view).map((l) => (
+              <Link key={l.href} href={l.href} target={l.external ? "_blank" : undefined} className="font-semibold text-accent underline">
+                {l.label}
+              </Link>
+            ))}
           </div>
         ) : null}
         {status === "pending" ? (
@@ -385,12 +382,35 @@ function ProposalCard({ view, initialStatus, canApprove }: { view: ProposalView;
               </button>
             </div>
           ) : (
-            <p className="mt-3 text-xs text-muted">Аялал засах эрхтэй ажилтан (Контент эсвэл Эзэн) зөвшөөрнө.</p>
+            <p className="mt-3 text-xs text-muted">Энэ төрлийн өөрчлөлтийг хийх эрхтэй ажилтан зөвшөөрнө.</p>
           )
         ) : null}
       </div>
     </div>
   );
+}
+
+/** Where to look after a proposal was applied. */
+function appliedLinks(view: ProposalView): { href: string; label: string; external?: boolean }[] {
+  switch (view.kind) {
+    case "tour.create":
+    case "tour.update":
+      return [
+        { href: `/tours/${view.targetId}`, label: "Сайт дээр харах", external: true },
+        { href: `/admin/tours/${view.targetId}`, label: "Засварлагчид нээх" },
+      ];
+    case "departure.update": {
+      const [tour, date] = view.targetId.split("|");
+      return [{ href: `/admin/departures/${tour}${date ? `?date=${encodeURIComponent(date)}` : ""}`, label: "Огноо, суудал руу" }];
+    }
+    case "message.send":
+      return [{ href: `/admin?q=${view.targetId}`, label: "Захиалгын чат руу" }];
+    case "news.create":
+      return [
+        { href: "/news", label: "Сайт дээр харах", external: true },
+        { href: `/admin/news/${view.targetId}`, label: "Засварлагчид нээх" },
+      ];
+  }
 }
 
 function DiffLine({ d, create }: { d: DiffRow; create: boolean }) {
@@ -412,7 +432,8 @@ function DiffLine({ d, create }: { d: DiffRow; create: boolean }) {
 }
 
 function Value({ field, v }: { field: string; v: unknown }) {
-  if (v == null || v === "") return <span className="text-muted">—</span>;
+  if (v == null || v === "") return <span className="text-muted">{field === "capacity" ? "Хязгааргүй" : "—"}</span>;
+  if (typeof v === "boolean") return <span>{field === "closed" ? (v ? "Хаасан" : "Нээлттэй") : v ? "Тийм" : "Үгүй"}</span>;
   if (typeof v === "number") return <span>{field === "price" || field === "oldPrice" ? formatPrice(v) : v}</span>;
   if (typeof v === "string") return <Clamp text={v} />;
   if (Array.isArray(v)) {

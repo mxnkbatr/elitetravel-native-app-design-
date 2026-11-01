@@ -1,6 +1,5 @@
 import { AgentChat } from "@/app/admin/(panel)/agent/AgentChat";
 import type { ProposalStatus } from "@/lib/agent";
-import { can } from "@/lib/permissions";
 import { getConversation, listConversations } from "@/lib/server/agent/conversations";
 import { chatModel } from "@/lib/server/ai";
 import { requireAdmin } from "@/lib/server/auth";
@@ -31,7 +30,6 @@ export default async function AdminAgentPage({ searchParams }: PageProps<"/admin
       conversations={conversations}
       initial={open ? { id: open.id, messages: open.messages } : null}
       statuses={statuses}
-      canApprove={can(admin.role, "content.manage")}
       role={admin.role}
       configured={chatModel() != null}
     />

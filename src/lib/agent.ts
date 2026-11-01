@@ -1,4 +1,5 @@
 import type { Tour } from "@/data/tours";
+import type { Permission } from "@/lib/permissions";
 import type { TripStatus } from "@/lib/trips";
 
 /** Shared by the admin AI agent's server tools and its dashboard. No server-only imports. */
@@ -120,19 +121,43 @@ export const TOOL_LABEL: Record<string, string> = {
   searchBookings: "Захиалга хайх",
   getBooking: "Захиалгын дэлгэрэнгүй",
   analyzeSales: "Борлуулалтын шинжилгээ",
+  analyzeTraffic: "Сайтын хандалт",
+  listDepartures: "Огноо, суудал",
   tourWritingContext: "Бичих мэдээлэл",
   proposeTourUpdate: "Аялал засах санал",
   proposeTourCreate: "Шинэ аяллын санал",
+  proposeDepartureUpdate: "Суудал өөрчлөх санал",
+  proposeMessage: "Мессежийн санал",
+  proposeNews: "Мэдээний санал",
 };
 
-export const isProposalTool = (name: string) => name === "proposeTourUpdate" || name === "proposeTourCreate";
+export type ProposalKind = "tour.create" | "tour.update" | "departure.update" | "message.send" | "news.create";
+
+/** Who may approve each kind of proposal (the same permission the matching admin screen needs). */
+export const PROPOSAL_PERMISSION: Record<ProposalKind, Permission> = {
+  "tour.create": "content.manage",
+  "tour.update": "content.manage",
+  "departure.update": "departures.manage",
+  "message.send": "bookings.manage",
+  "news.create": "content.manage",
+};
+
+export const KIND_LABEL: Record<ProposalKind, string> = {
+  "tour.create": "Шинэ аялал",
+  "tour.update": "Аялал засах",
+  "departure.update": "Суудал, огноо",
+  "message.send": "Аялагчид мессеж",
+  "news.create": "Шинэ мэдээ",
+};
+
+export const isProposalTool = (name: string) => name.startsWith("propose");
 
 export type ProposalStatus = "pending" | "applied" | "cancelled" | "stale" | "failed";
 
 /** What a proposal tool returns and the dashboard renders as an approval card. */
 export type ProposalView = {
   proposalId: string;
-  kind: "tour.create" | "tour.update";
+  kind: ProposalKind;
   targetId: string;
   summary: string;
   diff: DiffRow[];
@@ -165,4 +190,13 @@ export const FIELD_LABEL: Record<string, string> = {
   pricing: "Үнийн нөхцөл",
   notes: "Тэмдэглэл",
   documents: "Шаардлагатай баримт",
+  capacity: "Нийт суудал",
+  closed: "Захиалга хаах",
+  message: "Мессеж",
+  booking: "Захиалга",
+  category: "Ангилал",
+  excerpt: "Товч",
+  body: "Агуулга",
+  tourId: "Холбоотой аялал",
+  readMin: "Унших минут",
 };

@@ -1,7 +1,11 @@
 import "server-only";
 
 import { formatPrice, tourDates, type Tour } from "@/data/tours";
-import { EDITABLE_TOUR_FIELDS, firstName, maskPhone, salesSummary, tourDiff, type ProposalView, type SalesBooking } from "@/lib/agent";
+import { EDITABLE_TOUR_FIELDS, firstName, maskPhone, salesSummary, tourDiff, type DiffRow, type ProposalKind, type ProposalView, type SalesBooking } from "@/lib/agent";
+import { siteStats } from "@/lib/server/analytics";
+import { heldSeats } from "@/lib/server/seats";
+import { parseNews } from "@/lib/server/content-validate";
+import type { NewsItem } from "@/data/news";
 import { tripChecklist } from "@/lib/checklist";
 import { DOC_TYPES } from "@/lib/documents";
 import { can, type Permission } from "@/lib/permissions";
@@ -122,7 +126,7 @@ function applyChanges(current: Tour, changes: Record<string, unknown>) {
   return next;
 }
 
-async function saveProposal(ctx: Ctx, p: { kind: "tour.create" | "tour.update"; targetId: string; baseUpdatedAt: string | null; payload: Tour; summary: string; diff: ReturnType<typeof tourDiff> }) {
+async function saveProposal(ctx: Ctx, p: { kind: ProposalKind; targetId: string; baseUpdatedAt: string | null; payload: unknown; summary: string; diff: DiffRow[] }) {
   const { data, error } = await db()
     .from("ai_proposals")
     .insert({
@@ -138,7 +142,7 @@ async function saveProposal(ctx: Ctx, p: { kind: "tour.create" | "tour.update"; 
     .select("id")
     .single();
   if (error || !data) throw new Error("Саналыг хадгалж чадсангүй.");
-  await audit(ctx.admin.email, `agent.${p.kind}.propose`, { type: "tours", id: p.targetId }, { proposal: data.id, fields: p.diff.map((d) => d.field) });
+  await audit(ctx.admin.email, `agent.${p.kind}.propose`, { type: p.kind.split(".")[0], id: p.targetId }, { proposal: data.id, fields: p.diff.map((d) => d.field) });
   const view: ProposalView = { proposalId: data.id as string, kind: p.kind, targetId: p.targetId, summary: p.summary, diff: p.diff, status: "pending" };
   return view;
 }
@@ -259,6 +263,164 @@ function definitions(ctx: Ctx): Record<string, Def> {
           const bookings = ((rows ?? []) as SalesBooking[]).map((r) => ({ ...r, total: Number(r.total), paid_amount: Number(r.paid_amount) }));
           const payments = (pays ?? []).map((p) => ({ amount: Number(p.amount), paid_at: p.paid_at as string | null, method: p.method as string }));
           return salesSummary(bookings, payments, { from, to, groupBy });
+        },
+      }),
+    },
+    analyzeTraffic: {
+      permission: "reports.view",
+      tool: tool({
+        description:
+          "Сайтын хандалт сүүлийн N хоногт: зочин, айлчлал, хуудас үзэлт, захиалгын зам (аялал үзсэн → маягт нээсэн → илгээсэн → төлбөр эхлүүлсэн), хаанаас ирсэн (Instagram, Facebook, Google…), аялал тус бүрийн сонирхол, төхөөрөмж. Нэргүй статистик.",
+        inputSchema: z.object({ days: z.number().int().min(1).max(365).default(30) }),
+        execute: async ({ days }) => {
+          const to = new Date();
+          const from = new Date(to.getTime() - days * 86400_000);
+          const [stats, { count: requests }, rows] = await Promise.all([
+            siteStats(from, to),
+            db().from("booking_requests").select("id", { count: "exact", head: true }).gte("created_at", from.toISOString()),
+            loadTours(),
+          ]);
+          const titles = Object.fromEntries(rows.map((r) => [r.tour.id, r.tour.title]));
+          return {
+            period_days: days,
+            ...stats,
+            daily: stats.daily.slice(-31),
+            tours: stats.tours.map((t) => ({ ...t, title: titles[t.tour_id] ?? t.tour_id })),
+            booking_requests_created: requests ?? 0,
+            note: "Зочин = төхөөрөмж (нэг хүн хоёр утаснаас орвол 2). Тоолол аялагчийн хувийн мэдээлэл агуулахгүй.",
+          };
+        },
+      }),
+    },
+    listDepartures: {
+      permission: ["departures.manage", "bookings.view"],
+      tool: tool({
+        description: "Аяллын огноо бүрийн суудал: нийт суудал (capacity), эзэлсэн, үлдсэн, хаалттай эсэх, хүлээлэгт хэдэн хүн. tourId өгвөл зөвхөн тэр аялал.",
+        inputSchema: z.object({ tourId: z.string().regex(/^[a-z0-9-]{2,60}$/).optional() }),
+        execute: async ({ tourId }) => {
+          const tours = (await loadTours()).map((r) => r.tour).filter((t) => t.status !== "ended" && (!tourId || t.id === tourId));
+          if (!tours.length) return { error: tourId ? "Ийм идэвхтэй аялал алга." : "Идэвхтэй аялал алга." };
+          const ids = tours.map((t) => t.id);
+          const [held, { data: deps }, { data: waiting }] = await Promise.all([
+            heldSeats(ids),
+            db().from("departures").select("tour_id, date_label, capacity, closed").in("tour_id", ids),
+            db().from("booking_requests").select("tour_id, travel_date, adults, kids_own_bed, kids_shared_bed").eq("status", "waitlist").in("tour_id", ids),
+          ]);
+          return {
+            departures: tours.flatMap((t) =>
+              (tourDates(t).length ? tourDates(t) : [""]).map((label) => {
+                const dep = (deps ?? []).find((d) => d.tour_id === t.id && d.date_label === label);
+                const taken = held.get(`${t.id}|${label}`) ?? 0;
+                const capacity = (dep?.capacity as number | null | undefined) ?? null;
+                return {
+                  tour_id: t.id,
+                  tour: t.title,
+                  date: label || "(огноогүй)",
+                  capacity,
+                  booked_people: taken,
+                  seats_left: capacity == null ? "хязгааргүй" : Math.max(0, capacity - taken),
+                  closed: dep?.closed ?? false,
+                  waitlist_people: (waiting ?? [])
+                    .filter((w) => w.tour_id === t.id && (w.travel_date ?? "") === label)
+                    .reduce((n, w) => n + w.adults + w.kids_own_bed + w.kids_shared_bed, 0),
+                };
+              }),
+            ),
+          };
+        },
+      }),
+    },
+    proposeDepartureUpdate: {
+      permission: "departures.manage",
+      tool: tool({
+        description:
+          "Нэг огнооны суудлын тоо эсвэл захиалга хаах/нээхийг өөрчлөх САНАЛ (ажилтан зөвшөөрнө). capacity null = хязгааргүй. Суудал нэмэхэд хүлээлгийн жагсаалтаас автоматаар шилжинэ. Эхлээд listDepartures-оор одоогийн утгыг шалга.",
+        inputSchema: z.object({
+          tourId: z.string().regex(/^[a-z0-9-]{2,60}$/),
+          date: z.string().max(100).describe("listDepartures-ийн date утга яг адилаар; огноогүй аялалд хоосон"),
+          capacity: z.number().int().min(0).max(999).nullable(),
+          closed: z.boolean(),
+          summary: z.string().min(5).max(300),
+        }),
+        execute: async ({ tourId, date, capacity, closed, summary }) => {
+          const tour = (await loadTours()).find((r) => r.tour.id === tourId)?.tour;
+          if (!tour) return { error: "Ийм аялал алга." };
+          const label = date === "(огноогүй)" ? "" : date.trim();
+          const labels = tourDates(tour);
+          if (labels.length ? !labels.includes(label) : label !== "") return { error: `Энэ аялалд «${date}» огноо алга. Боломжтой: ${labels.join(", ") || "(огноогүй)"}` };
+          const { data: dep } = await db().from("departures").select("capacity, closed").eq("tour_id", tourId).eq("date_label", label).maybeSingle();
+          const base = { capacity: (dep?.capacity as number | null | undefined) ?? null, closed: (dep?.closed as boolean | undefined) ?? false };
+          const diff: DiffRow[] = [
+            ...(base.capacity !== capacity ? [{ field: "capacity", before: base.capacity, after: capacity }] : []),
+            ...(base.closed !== closed ? [{ field: "closed", before: base.closed, after: closed }] : []),
+          ];
+          if (!diff.length) return { error: "Өөрчлөлт алга — одоогийн утгатай ижил байна." };
+          return saveProposal(ctx, {
+            kind: "departure.update",
+            targetId: `${tourId}|${label}`,
+            baseUpdatedAt: null,
+            payload: { tourId, label, capacity, closed, base },
+            summary: `${tour.title}${label ? ` (${label})` : ""}: ${summary}`,
+            diff,
+          });
+        },
+      }),
+    },
+    proposeMessage: {
+      permission: "bookings.manage",
+      tool: tool({
+        description:
+          "Нэг аялагчийн захиалгын чат руу Elite Travel-ийн нэрээр мессеж илгээх САНАЛ (ажилтан уншаад зөвшөөрнө, дараа нь аппад push мэдэгдэл очно). Эелдэг, монгол кирилл, баримтыг getBooking-оор шалгасны дараа.",
+        inputSchema: z.object({
+          bookingId: z.string().regex(/^ET-[A-Z0-9]{4,20}$/),
+          text: z.string().min(2).max(1000),
+          summary: z.string().min(5).max(300),
+        }),
+        execute: async ({ bookingId, text, summary }) => {
+          const { data: b } = await db().from("booking_requests").select("id, name, status").eq("id", bookingId).maybeSingle();
+          if (!b) return { error: "Ийм кодтой захиалга алга." };
+          if (b.status === "cancelled") return { error: "Цуцлагдсан захиалга руу мессеж илгээхгүй." };
+          return saveProposal(ctx, {
+            kind: "message.send",
+            targetId: bookingId,
+            baseUpdatedAt: null,
+            payload: { bookingId, text: text.trim() },
+            summary: `${bookingId} (${firstName(b.name as string)}): ${summary}`,
+            diff: [{ field: "message", before: null, after: text.trim() }],
+          });
+        },
+      }),
+    },
+    proposeNews: {
+      permission: "content.manage",
+      tool: tool({
+        description:
+          "Сайтын «Мэдээ» хэсэгт шинэ нийтлэл нэмэх САНАЛ (ажилтан зөвшөөрнө). body нь догол мөрүүдийн жагсаалт. Зураг өгөөгүй бол tourId-ийн аяллын нүүр зургийг ашиглана. Үнэ, огноог зөвхөн хэрэгслээс авсан баримтаар бич.",
+        inputSchema: z.object({
+          id: z.string().regex(/^[a-z0-9-]{2,60}$/).describe("латин жижиг үсэг, зураас"),
+          category: z.enum(["Мэдээ", "Урамшуулал", "Зөвлөгөө"]),
+          title: z.string().min(3).max(200),
+          excerpt: z.string().min(10).max(400),
+          body: z.array(z.string().min(1).max(2000)).min(1).max(12),
+          image: z.string().url().max(1000).optional(),
+          tourId: z.string().regex(/^[a-z0-9-]{2,60}$/).optional(),
+          summary: z.string().min(5).max(300),
+        }),
+        execute: async ({ summary, ...input }) => {
+          const { data: taken } = await db().from("news").select("id").eq("id", input.id).maybeSingle();
+          if (taken) return { error: `«${input.id}» id-тай мэдээ аль хэдийн байна. Өөр id сонго.` };
+          const tour = input.tourId ? (await loadTours()).find((r) => r.tour.id === input.tourId)?.tour : undefined;
+          if (input.tourId && !tour) return { error: "tourId-д заасан аялал алга." };
+          let item: NewsItem;
+          try {
+            item = parseNews({ ...input, image: input.image ?? tour?.image, readMin: undefined });
+          } catch (e) {
+            return { error: invalidMessage(e) ?? "Мэдээний мэдээлэл буруу байна." };
+          }
+          const diff = (["id", "category", "title", "excerpt", "body", "image", "tourId", "readMin"] as const)
+            .filter((k) => item[k] != null)
+            .map((k) => ({ field: k, before: null, after: item[k] }));
+          return saveProposal(ctx, { kind: "news.create", targetId: item.id, baseUpdatedAt: null, payload: item, summary, diff });
         },
       }),
     },
