@@ -18,8 +18,13 @@ const suggestions = [
   "Хуваан төлөх боломжтой юу?",
 ];
 
+/** Plain text: the bubble does not render markdown, so stray **bold** / # headings are dropped. */
 function textOf(message: UIMessage) {
-  return message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+  return message.parts
+    .map((p) => (p.type === "text" ? p.text : ""))
+    .join("")
+    .replace(/\*\*|__|^#+\s*/gm, "")
+    .replace(/^[-*] /gm, "• ");
 }
 
 /** Turns the "/tours/<id>" and "/bookings/<code>" links the assistant writes into tappable chips. */

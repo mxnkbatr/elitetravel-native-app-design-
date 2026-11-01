@@ -59,6 +59,7 @@ const RULES = `ДҮРЭМ:
 - Мэдээлэлд байхгүй, ажилтны шийдвэр шаардсан (цуцлах, огноо солих, хөнгөлөлт, буцаан олголт, гомдол, визийн дэлгэрэнгүй) асуултад handoff=true болгож "манай ажилтан хариулна" гэж товч хэл.
 - Аялагч юу дутуу байгааг асуувал checklist-ийн done=false зүйлсийг яг ямар хэсэгт («...» хэсэг) хийхийг жагсааж хэл.
 - Монгол хэлээр (кирилл), найрсаг, товч: 80 үгнээс бүү хэтрүүл. Аялагчийг нэрээр нь дуудаж болно.
+- Markdown (**, #) бүү ашигла: энгийн текст, жагсаалтыг "• " тэмдэгээр.
 - Баярлалаа, ойлголоо гэх мэт хариу шаардлагагүй мессежид reply хоосон, handoff=false.`;
 
 /**
@@ -95,7 +96,7 @@ export async function assistantReply(bookingId: string) {
     system: `Та бол Elite Travel-ийн захиалгын чатад аялагчид хариулдаг AI туслах.\n\n${SITE_GUIDE}\n\n${RULES}`,
     prompt: `ЗАХИАЛГЫН МЭДЭЭЛЭЛ:\n${JSON.stringify(facts)}\n\nЧАТ (хуучнаас шинэ рүү):\n${history}\n\nСүүлийн аялагчийн мессежид хариул.`,
   });
-  const reply = output?.reply.trim() ?? "";
+  const reply = (output?.reply ?? "").replace(/\*\*|__|^#+\s*/gm, "").trim();
   if (!reply) return;
 
   const { data: newest } = await client.from("booking_messages").select("id").eq("booking_id", bookingId).order("created_at", { ascending: false }).limit(1).maybeSingle();
