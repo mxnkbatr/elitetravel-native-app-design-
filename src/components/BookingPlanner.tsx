@@ -1,6 +1,9 @@
 "use client";
 
-import { formatPrice, type Tour } from "@/data/tours";
+import { PartnerLogo } from "@/components/PartnerLogo";
+import { formatPrice, tourDates, type Tour } from "@/data/tours";
+import { INSTALLMENT_PROVIDERS } from "@/lib/trips";
+import { useSeats } from "@/lib/content";
 import { addBooking, type BookingRequest } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
@@ -89,12 +92,17 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
   const stepped = variant === "sheet";
   const [step, setStep] = useState(0);
   const p = tour.pricing ?? {};
-  const dateOptions = (tour.dates ?? "").split("·").map((d) => d.trim()).filter(Boolean);
+  const dateOptions = tourDates(tour);
+  const seats = useSeats(tour.id);
   const [adults, setAdults] = useState(2);
   const [kidsOwnBed, setKidsOwnBed] = useState(0);
   const [kidsSharedBed, setKidsSharedBed] = useState(0);
   const [singleRooms, setSingleRooms] = useState(0);
-  const [date, setDate] = useState(dateOptions[0] ?? "");
+  const [date, setDate] = useState(dateOptions.find((d) => !seats[d]?.closed) ?? dateOptions[0] ?? "");
+  const [waitlisted, setWaitlisted] = useState(false);
+  const people = adults + kidsOwnBed + kidsSharedBed;
+  const seatInfo = seats[date];
+  const willWaitlist = seatInfo != null && !seatInfo.closed && seatInfo.left < people;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
@@ -124,13 +132,14 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...request, website }),
       });
-      const data = (await res.json().catch(() => ({}))) as { id?: string; total?: number; deposit?: number; error?: string };
+      const data = (await res.json().catch(() => ({}))) as { id?: string; total?: number; deposit?: number; token?: string; status?: string; error?: string };
       if (res.status === 400) {
         setError(data.error ?? "Мэдээллээ шалгана уу.");
         return;
       }
       if (res.ok && data.id) {
-        setDone(addBooking({ ...request, id: data.id, total: data.total ?? total, deposit: data.deposit ?? deposit, synced: true }));
+        setWaitlisted(data.status === "waitlist");
+        setDone(addBooking({ ...request, id: data.id, total: data.total ?? total, deposit: data.deposit ?? deposit, synced: true, token: data.token }));
         return;
       }
       throw new Error(data.error ?? `HTTP ${res.status}`);
@@ -167,20 +176,36 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
             >
               ✓
             </motion.div>
-            <h3 className="mt-4 font-display text-2xl font-semibold">{done.synced ? "Хүсэлт хүлээн авлаа" : "Хүсэлт бэлэн боллоо"}</h3>
+            <h3 className="mt-4 font-display text-2xl font-semibold">
+              {!done.synced ? "Хүсэлт бэлэн боллоо" : waitlisted ? "Хүлээлгийн жагсаалтад орлоо" : "Хүсэлт хүлээн авлаа"}
+            </h3>
             <p className="mt-1 text-xs text-muted">Дугаар: {done.id}</p>
             <p className="mt-3 text-sm leading-relaxed text-muted">
-              {done.synced
-                ? "Таны хүсэлт манай багт очлоо. Удахгүй тантай холбогдож захиалгыг баталгаажуулна. Яаралтай бол Instagram эсвэл утсаар холбогдоорой."
-                : "Сүлжээний алдаанаас болж хүсэлт манай системд очсонгүй. Мессежийг хуулаад Instagram-аар илгээх эсвэл шууд залгаарай."}
+              {!done.synced
+                ? "Сүлжээний алдаанаас болж хүсэлт манай системд очсонгүй. Мессежийг хуулаад Instagram-аар илгээх эсвэл шууд залгаарай."
+                : waitlisted
+                  ? "Сонгосон огноо дүүрсэн байна. Суудал гармагц «Миний захиалга» хэсэгт мэдэгдэнэ."
+                  : "Таны хүсэлт манай багт очлоо. Захиалгынхаа төлөв, төлбөр, багтай чатлахыг «Миний захиалга» хэсгээс харна."}
             </p>
             <div className="mt-5 grid gap-2">
+              {done.token ? (
+                <Link
+                  href={`/bookings/${done.id}`}
+                  className="btn-shine flex h-12 items-center justify-center rounded-full bg-accent text-sm font-semibold text-white"
+                >
+                  Захиалгаа нээх · чат, төлбөр →
+                </Link>
+              ) : null}
               <a
                 href={INSTAGRAM_DM}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => copyMessage(done)}
-                className="btn-shine flex h-12 items-center justify-center rounded-full bg-accent text-sm font-semibold text-white"
+                className={
+                  done.token
+                    ? "flex h-11 items-center justify-center rounded-full border border-[var(--line)] text-sm font-medium"
+                    : "btn-shine flex h-12 items-center justify-center rounded-full bg-accent text-sm font-semibold text-white"
+                }
               >
                 Мессеж хуулаад Instagram нээх
               </a>
@@ -188,9 +213,11 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
                 Залгах · +976 9003 1771
               </a>
               {copied ? <p className="text-xs text-accent">Мессеж хуулагдлаа — Instagram дээр paste хийгээрэй.</p> : null}
-              <Link href="/bookings" className="mt-1 text-sm font-semibold text-accent">
-                Миний захиалгууд →
-              </Link>
+              {!done.token ? (
+                <Link href="/bookings" className="mt-1 text-sm font-semibold text-accent">
+                  Миний захиалгууд →
+                </Link>
+              ) : null}
             </div>
           </motion.div>
         ) : (
@@ -228,23 +255,36 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
               <div className="mt-5">
                 <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">Огноо сонгох</p>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {dateOptions.map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setDate(d)}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                        date === d ? "border-accent bg-accent text-white" : "border-[var(--line)] hover:border-accent"
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
+                  {dateOptions.map((d) => {
+                    const s = seats[d];
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        disabled={s?.closed}
+                        onClick={() => setDate(d)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:line-through disabled:opacity-40 ${
+                          date === d ? "border-accent bg-accent text-white" : "border-[var(--line)] hover:border-accent"
+                        }`}
+                      >
+                        {d}
+                        {s && !s.closed && s.left <= 10 ? (
+                          <span className={`ml-1.5 text-[0.62rem] ${date === d ? "text-white/80" : "text-[#c9964a]"}`}>{s.left ? `${s.left} суудал` : "дүүрсэн"}</span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : dateOptions[0] ? (
               <p className="mt-4 rounded-xl bg-accent-mist/60 px-3 py-2.5 text-sm">
                 <span className="text-muted">Огноо:</span> <span className="font-medium">{dateOptions[0]}</span>
+                {seatInfo && !seatInfo.closed && seatInfo.left <= 10 ? <span className="ml-2 text-xs text-[#c9964a]">{seatInfo.left ? `${seatInfo.left} суудал үлдсэн` : "дүүрсэн"}</span> : null}
+              </p>
+            ) : null}
+            {willWaitlist ? (
+              <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                Энэ огноонд {seatInfo.left} суудал үлдсэн тул хүсэлт тань хүлээлгийн жагсаалтад орно.
               </p>
             ) : null}
 
@@ -375,6 +415,11 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
             <p className="mt-3 text-center text-[0.7rem] leading-relaxed text-muted">
               Урьдчилсан тооцоо. Эцсийн дүнг манай баг баталгаажуулна. Pocket, Toki, Simple, Dari-аар хуваан төлөх боломжтой.
             </p>
+            <div className="mt-2 flex justify-center gap-1.5" aria-hidden>
+              {INSTALLMENT_PROVIDERS.map((p) => (
+                <PartnerLogo key={p.id} id={p.id} size={24} />
+              ))}
+            </div>
           </motion.form>
         )}
       </AnimatePresence>

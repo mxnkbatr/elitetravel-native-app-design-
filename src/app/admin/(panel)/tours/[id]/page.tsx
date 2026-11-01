@@ -23,7 +23,7 @@ const blank: Tour = {
 };
 
 export default async function AdminTourPage({ params }: PageProps<"/admin/tours/[id]">) {
-  await requireAdmin();
+  await requireAdmin("content.manage");
   const { id } = await params;
   if (id === "new") return <TourEditor initial={blank} originalId={null} />;
   const { data } = await supabaseAdmin()!.from("tours").select("data").eq("id", id).maybeSingle();

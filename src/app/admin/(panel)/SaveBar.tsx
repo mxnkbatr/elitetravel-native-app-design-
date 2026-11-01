@@ -37,7 +37,7 @@ export function SaveBar({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--line)] bg-white/95 px-4 py-3 backdrop-blur lg:left-[240px]">
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--line)] bg-[var(--bg-soft)]/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl lg:left-[256px]">
       <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-3">
         <Link href={`/admin/${kind}`} className="text-sm font-semibold text-muted hover:text-ink">
           ← Буцах
@@ -49,7 +49,7 @@ export function SaveBar({
               Сайт дээр харах ↗
             </a>
           ) : null}
-          <button type="button" onClick={save} disabled={pending} className="rounded-xl bg-ink px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent disabled:opacity-60">
+          <button type="button" onClick={save} disabled={pending} className="h-11 rounded-full bg-accent px-6 text-sm font-semibold text-white hover:bg-accent-soft disabled:opacity-60">
             {pending ? "Хадгалж байна…" : "Хадгалах"}
           </button>
         </div>

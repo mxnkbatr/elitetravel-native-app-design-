@@ -19,7 +19,7 @@ export function Field({ label, hint, children, wide }: { label: string; hint?: s
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-[var(--line)] bg-white p-5 sm:p-6">
+    <section className="rounded-[1.4rem] border border-[var(--line)] bg-white p-4 sm:p-6">
       <h2 className="mb-4 font-display text-xl font-semibold">{title}</h2>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </section>

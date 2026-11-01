@@ -1,5 +1,6 @@
 import "server-only";
 
+import { can, homeFor, type Permission, type Role } from "@/lib/permissions";
 import { supabaseAdmin } from "@/lib/server/supabase-admin";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
@@ -26,26 +27,37 @@ export async function supabaseAuth() {
   });
 }
 
-/** True when the email is on the admin_users allowlist. */
-export async function isAdminEmail(email: string) {
+/** The staff member's role when the email is on the admin_users allowlist, else null. */
+export async function adminRole(email: string): Promise<Role | null> {
   const db = supabaseAdmin();
-  if (!db) return false;
-  const { data } = await db.from("admin_users").select("email").eq("email", email.toLowerCase()).maybeSingle();
-  return data != null;
+  if (!db) return null;
+  const { data } = await db.from("admin_users").select("role").eq("email", email.toLowerCase()).maybeSingle();
+  return (data?.role as Role | undefined) ?? null;
 }
 
+export async function isAdminEmail(email: string) {
+  return (await adminRole(email)) != null;
+}
+
+export type Admin = { email: string; role: Role };
+
 /** The signed-in staff member, or null. Verified against Supabase Auth on every request. */
-export const getAdmin = cache(async () => {
+export const getAdmin = cache(async (): Promise<Admin | null> => {
   const supabase = await supabaseAuth();
   const { data } = await supabase.auth.getUser();
   const email = data.user?.email;
-  if (!email || !(await isAdminEmail(email))) return null;
-  return { email };
+  if (!email) return null;
+  const role = await adminRole(email);
+  return role ? { email, role } : null;
 });
 
-/** Guards admin pages and every admin Server Action — never trust the proxy alone. */
-export async function requireAdmin() {
+/**
+ * Guards admin pages and every admin Server Action — never trust the proxy or the nav alone.
+ * Staff without `permission` are sent to the first screen their role may use.
+ */
+export async function requireAdmin(permission?: Permission) {
   const admin = await getAdmin();
   if (!admin) redirect("/admin/login");
+  if (permission && !can(admin.role, permission)) redirect(homeFor(admin.role));
   return admin;
 }

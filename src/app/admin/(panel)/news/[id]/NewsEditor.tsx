@@ -1,6 +1,8 @@
 "use client";
 
 import { saveNews } from "@/app/admin/(panel)/actions";
+import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
+import Link from "next/link";
 import { Field, ImageField, inputClass, Section } from "@/app/admin/(panel)/fields";
 import { SaveBar } from "@/app/admin/(panel)/SaveBar";
 import type { NewsCategory, NewsItem } from "@/data/news";
@@ -17,7 +19,10 @@ export function NewsEditor({ initial, originalId, tours }: { initial: NewsItem; 
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 pb-28">
-      <h1 className="font-display text-3xl font-semibold">{originalId ? item.title || "Мэдээ" : "Шинэ мэдээ"}</h1>
+      <Link href="/admin/news" className="inline-flex text-sm font-semibold text-accent">
+        ‹ Мэдээ
+      </Link>
+      <AdminTitle title={originalId ? item.title || "Мэдээ" : "Шинэ мэдээ"} />
 
       <Section title="Мэдээ">
         <Field label="Гарчиг" wide>

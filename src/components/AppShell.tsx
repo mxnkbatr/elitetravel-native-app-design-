@@ -7,18 +7,27 @@ import { IntroCurtain } from "@/components/IntroCurtain";
 import { MobileDock } from "@/components/MobileDock";
 import { Navbar } from "@/components/Navbar";
 import { PageTransition } from "@/components/PageTransition";
+import { PushBridge } from "@/components/PushBridge";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { SearchOverlay } from "@/components/SearchOverlay";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-export function AppShell({ children }: { children: ReactNode }) {
+/** `assistant` is false when no AI model is configured on the server: the chat button stays hidden. */
+export function AppShell({ children, assistant }: { children: ReactNode; assistant: boolean }) {
   // The staff panel has its own chrome and skips the intro, nav and chat
-  if (usePathname().startsWith("/admin")) return <>{children}</>;
+  if (usePathname().startsWith("/admin"))
+    return (
+      <>
+        <PushBridge />
+        {children}
+      </>
+    );
 
   return (
     <div className="relative flex min-h-dvh flex-col">
+      <PushBridge />
       <IntroCurtain />
       <SmoothScroll />
       <ImageLoadMarker />
@@ -30,7 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Footer />
       <MobileDock />
       <SearchOverlay />
-      <AiHelper />
+      {assistant ? <AiHelper /> : null}
     </div>
   );
 }

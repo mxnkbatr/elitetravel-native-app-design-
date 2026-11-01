@@ -1,7 +1,13 @@
 import { LoginForm } from "@/app/admin/login/LoginForm";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Admin нэвтрэх", robots: { index: false } };
+export const metadata: Metadata = {
+  title: "Admin нэвтрэх",
+  robots: { index: false },
+  manifest: "/admin.webmanifest",
+  appleWebApp: { capable: true, title: "Elite Admin", statusBarStyle: "default" },
+  icons: { apple: "/admin-icon-180.png" },
+};
 
 export default function AdminLoginPage() {
   return (

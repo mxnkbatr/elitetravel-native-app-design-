@@ -1,7 +1,9 @@
 import { AppShell } from "@/components/AppShell";
 import { ContentProvider } from "@/lib/content";
 import { introBootScript } from "@/lib/intro";
+import { chatModel } from "@/lib/server/ai";
 import { getNews, getTours } from "@/lib/server/content";
+import { getSeats } from "@/lib/server/seats";
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
@@ -51,15 +53,15 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const [tours, news] = await Promise.all([getTours(), getNews()]);
+  const [tours, news, seats] = await Promise.all([getTours(), getNews(), getSeats()]);
   return (
-    <html lang="mn" className={`${display.variable} ${body.variable} h-full`} suppressHydrationWarning>
+    <html lang="mn" className={`${display.variable} ${body.variable} h-full`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: introBootScript }} />
       </head>
       <body className="min-h-full bg-bg font-sans text-foam antialiased">
-        <ContentProvider tours={tours} news={news}>
-          <AppShell>{children}</AppShell>
+        <ContentProvider tours={tours} news={news} seats={seats}>
+          <AppShell assistant={chatModel() != null}>{children}</AppShell>
         </ContentProvider>
       </body>
     </html>

@@ -1,7 +1,8 @@
 "use client";
 
 import { SaveButton } from "@/components/SaveButton";
-import { formatPrice, seatsLeft, type Tour } from "@/data/tours";
+import { formatPrice, type Tour } from "@/data/tours";
+import { useSeats } from "@/lib/content";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -12,7 +13,8 @@ export function TourCard({
   tour: Tour;
   className?: string;
 }) {
-  const seats = seatsLeft(tour.id);
+  const open = Object.values(useSeats(tour.id)).filter((s) => !s.closed);
+  const seats = open.length ? Math.max(...open.map((s) => s.left)) : null;
   const bookHref = `/tours/${tour.id}#book`;
 
   return (
@@ -68,9 +70,9 @@ export function TourCard({
             {tour.oldPrice ? (
               <p className="mt-1 text-[0.7rem] text-muted line-through">{formatPrice(tour.oldPrice)}</p>
             ) : null}
-            {tour.tag !== "soon" ? (
+            {tour.tag !== "soon" && seats != null && seats <= 15 ? (
               <p className="mt-1.5 text-[0.68rem] font-medium text-[#c9964a]">
-                {seats} суудал үлдсэн
+                {seats ? `${seats} суудал үлдсэн` : "Дүүрсэн · хүлээлэг"}
               </p>
             ) : null}
           </div>

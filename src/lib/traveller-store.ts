@@ -3,9 +3,8 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * On-device traveller data: saved tours and booking requests.
- * Nothing here is sent to a server — a request becomes a booking only once
- * the Elite Travel team confirms it by phone / Instagram.
+ * On-device traveller data: saved tours and booking requests. Requests saved online
+ * carry an access token, the only key to their status, chat and payments on the server.
  */
 
 export type BookingRequest = {
@@ -24,6 +23,7 @@ export type BookingRequest = {
   note?: string;
   /** True once the Elite Travel team has it in the bookings database */
   synced?: boolean;
+  token?: string;
 };
 
 type State = { saved: string[]; bookings: BookingRequest[] };
@@ -73,6 +73,15 @@ export function useTraveller() {
   return useSyncExternalStore(subscribe, read, () => EMPTY);
 }
 
+/** Access tokens of every booking saved online from this device. */
+export function bookingTokens() {
+  return read()
+    .bookings.map((b) => b.token)
+    .filter((t): t is string => !!t);
+}
+
+export const onTravellerChange = subscribe;
+
 export function toggleSaved(tourId: string) {
   const s = read();
   const saved = s.saved.includes(tourId) ? s.saved.filter((id) => id !== tourId) : [tourId, ...s.saved];
@@ -80,7 +89,7 @@ export function toggleSaved(tourId: string) {
 }
 
 /** Keeps a copy on the device; `id` is the server's reference when the request was saved online. */
-export function addBooking(b: Omit<BookingRequest, "id" | "createdAt"> & { id?: string; synced?: boolean }) {
+export function addBooking(b: Omit<BookingRequest, "id" | "createdAt"> & { id?: string }) {
   const s = read();
   const booking: BookingRequest = {
     ...b,

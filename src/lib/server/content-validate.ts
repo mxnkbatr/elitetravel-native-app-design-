@@ -2,6 +2,7 @@ import "server-only";
 
 import type { NewsCategory, NewsItem } from "@/data/news";
 import type { ItineraryDay, Tour } from "@/data/tours";
+import { isDocType } from "@/lib/documents";
 
 /**
  * Rebuilds a Tour / NewsItem from untrusted admin input, keeping only known fields.
@@ -95,6 +96,7 @@ export function parseTour(input: unknown): Tour {
       depositPercent: num(pricing.depositPercent, "Урьдчилгаа %") ?? undefined,
     },
     notes: list(t.notes ?? [], "Санамж"),
+    documents: Array.isArray(t.documents) ? [...new Set(t.documents.filter(isDocType))] : undefined,
   };
   if (tour.pricing?.depositPercent != null && tour.pricing.depositPercent > 100) throw new Invalid("Урьдчилгаа 100%-аас их байж болохгүй.");
   return JSON.parse(JSON.stringify(tour)) as Tour; // drops undefined keys

@@ -3,23 +3,42 @@
 import { useChat } from "@ai-sdk/react";
 import { INTRO_HOLD_MS } from "@/components/IntroCurtain";
 import { useTours } from "@/lib/content";
+import { bookingTokens, useTraveller } from "@/lib/traveller-store";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 
-const suggestions = ["Хамгийн ойрын аялал?", "Хүүхэдтэй явахад аль нь тохирох вэ?", "Бали аяллын үнэ?", "Хайнань хэдэн өдөр вэ?"];
+const suggestions = [
+  "Хамгийн ойрын аялал?",
+  "Бали аяллын үнэ?",
+  "2 хүн Хайнань явахад урьдчилгаа хэд вэ?",
+  "Хайнань аялалд юу багтсан бэ?",
+  "Хуваан төлөх боломжтой юу?",
+];
 
 function textOf(message: UIMessage) {
   return message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
 }
 
-/** Turns the "/tours/<id>" links the assistant writes into tappable tour chips. */
+/** Turns the "/tours/<id>" and "/bookings/<code>" links the assistant writes into tappable chips. */
 function useLinkify() {
   const tours = useTours();
   return (text: string): ReactNode[] =>
-    text.split(/(\/tours\/[a-z0-9-]+)/g).map((part, i) => {
+    text.split(/(\/tours\/[a-z0-9-]+|\/bookings\/ET-[A-Z0-9]+)/g).map((part, i) => {
+      const booking = part.match(/^\/bookings\/(ET-[A-Z0-9]+)$/)?.[1];
+      if (booking) {
+        return (
+          <Link
+            key={i}
+            href={`/bookings/${booking}`}
+            className="mx-0.5 inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 font-semibold text-accent hover:bg-accent hover:text-white"
+          >
+            {booking} захиалга →
+          </Link>
+        );
+      }
       const id = part.match(/^\/tours\/([a-z0-9-]+)$/)?.[1];
       const tour = id ? tours.find((t) => t.id === id) : undefined;
       if (!tour) return part;
@@ -41,9 +60,12 @@ export function AiHelper() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const bottom = useRef<HTMLDivElement>(null);
-  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
+  // The device's booking tokens let the assistant read only this traveller's own bookings
+  const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat", body: () => ({ tripTokens: bookingTokens() }) }), []);
   const { messages, sendMessage, status, error, clearError } = useChat({ transport });
   const linkify = useLinkify();
+  const booked = useTraveller().bookings.some((b) => b.token);
+  const chips = booked ? ["Миний захиалгад юу дутуу байна?", ...suggestions.slice(0, 3)] : suggestions;
 
   const busy = status === "submitted" || status === "streaming";
 
@@ -135,7 +157,7 @@ export function AiHelper() {
 
               {messages.length === 0 ? (
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {suggestions.map((s) => (
+                  {chips.map((s) => (
                     <button
                       key={s}
                       type="button"
@@ -191,7 +213,7 @@ export function AiHelper() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Асуултаа бичнэ үү…"
-                  maxLength={500}
+                  maxLength={1000}
                   enterKeyHint="send"
                   className="h-12 flex-1 bg-transparent text-base outline-none sm:text-sm"
                 />
@@ -206,6 +228,15 @@ export function AiHelper() {
                   </svg>
                 </button>
               </div>
+              <p className="mt-2 text-center text-[0.7rem] text-muted">
+                <a href="tel:+97690031771" className="font-semibold text-accent">
+                  +976 9003 1771
+                </a>
+                {" · "}
+                <a href="https://ig.me/m/elitetravelmn" target="_blank" rel="noreferrer" className="font-semibold text-accent">
+                  Instagram
+                </a>
+              </p>
             </form>
           </motion.section>
         ) : null}

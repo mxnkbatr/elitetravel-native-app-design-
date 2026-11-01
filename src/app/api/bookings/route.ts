@@ -1,7 +1,10 @@
-import { getTour, isBookable } from "@/data/tours";
+import { formatPrice, getTour, isBookable, tourDates } from "@/data/tours";
 import { getTours } from "@/lib/server/content";
 import { quote } from "@/lib/pricing";
+import { pushToStaff, sendLater } from "@/lib/server/push";
+import { departureState } from "@/lib/server/seats";
 import { supabaseAdmin } from "@/lib/server/supabase-admin";
+import { newAccessToken, postMessage, refreshSeats, statusNotice } from "@/lib/server/trips";
 import { randomBytes } from "node:crypto";
 
 export const runtime = "nodejs";
@@ -62,7 +65,7 @@ export async function POST(request: Request) {
   if (name.length < 2) return fail(400, "Нэрээ оруулна уу.");
   if (!/^[0-9+ ]{8,20}$/.test(phone)) return fail(400, "Утасны дугаараа шалгана уу.");
   if (adults == null || kidsOwnBed == null || kidsSharedBed == null || singleRooms == null) return fail(400, "Хүний тоо буруу байна.");
-  const dateOptions = (tour.dates ?? "").split("·").map((d) => d.trim()).filter(Boolean);
+  const dateOptions = tourDates(tour);
   if (date && dateOptions.length > 1 && !dateOptions.includes(date)) return fail(400, "Огноо буруу байна.");
 
   const { total, deposit } = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms });
@@ -70,8 +73,16 @@ export async function POST(request: Request) {
   const db = supabaseAdmin();
   if (!db) return fail(503, "Захиалгын сан түр холбогдохгүй байна.");
 
+  const departure = await departureState(tour.id, date ?? "");
+  if (departure.closed) return fail(400, "Энэ огноо захиалгад хаагдсан байна. Өөр огноо сонгоно уу.");
+  const people = adults + kidsOwnBed + kidsSharedBed;
+  const status = departure.capacity != null && departure.capacity - departure.held < people ? "waitlist" : "new";
+
   const id = bookingId();
+  const token = newAccessToken();
   const { error } = await db.from("booking_requests").insert({
+    access_token: token,
+    status,
     id,
     tour_id: tour.id,
     tour_title: tour.title,
@@ -92,5 +103,23 @@ export async function POST(request: Request) {
     return fail(502, "Хүсэлт хадгалахад алдаа гарлаа.");
   }
 
-  return Response.json({ id, total, deposit }, { status: 201 });
+  await postMessage(
+    id,
+    "system",
+    status === "waitlist"
+      ? statusNotice("waitlist", { total, deposit, paid_amount: 0 })!
+      : `Сайн байна уу, ${name}! «${tour.title}» аяллын хүсэлтийг хүлээн авлаа (${id}). ${deposit ? `Урьдчилгаа ${formatPrice(deposit)}` : "Төлбөрөө"} «Төлбөр» хэсгээс QPay эсвэл хуваан төлөх аргаар төлмөгц захиалга автоматаар баталгаажна. Асуух зүйлээ энд бичээрэй.`,
+  );
+  await db.from("booking_requests").update({ traveller_seen_at: new Date().toISOString() }).eq("id", id);
+  refreshSeats();
+  sendLater(() =>
+    pushToStaff("bookings.view", {
+      title: status === "waitlist" ? `⏳ Хүлээлэгт · ${id}` : `🆕 Шинэ захиалга · ${id}`,
+      body: `${name} · ${tour.title}${date ? ` (${date})` : ""} · ${people} хүн · ${formatPrice(total)}`,
+      url: `/admin?q=${id}`,
+      tag: id,
+    }),
+  );
+
+  return Response.json({ id, total, deposit, token, status }, { status: 201 });
 }

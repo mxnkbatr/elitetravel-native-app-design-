@@ -5,7 +5,9 @@ import { TourCard } from "@/components/TourCard";
 import { formatPrice, getTour, isBookable } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { departureOf } from "@/lib/dates";
+import { useTripSummaries } from "@/lib/trip-sync";
 import { removeBooking, useTraveller, type BookingRequest } from "@/lib/traveller-store";
+import { STATUS_LABEL, progressOf, type TripSummary } from "@/lib/trips";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,12 +37,13 @@ function Countdown({ date }: { date?: string }) {
   );
 }
 
-const steps = ["Хүсэлт үүссэн", "Багт илгээх", "Баг баталгаажуулна", "Урьдчилгаа төлөх"];
+const steps = ["Хүсэлт үүссэн", "Баг холбогдсон", "Баталгаажсан", "Төлбөр төлсөн"];
 
-function BookingCard({ b }: { b: BookingRequest }) {
+function BookingCard({ b, summary }: { b: BookingRequest; summary?: TripSummary }) {
   const tour = getTour(useTours(), b.tourId);
   const [copied, setCopied] = useState(false);
   if (!tour) return null;
+  const filled = progressOf(summary?.status, summary?.paidAmount, summary?.total);
 
   const party = [`${b.adults} том хүн`, b.kidsOwnBed + b.kidsSharedBed ? `${b.kidsOwnBed + b.kidsSharedBed} хүүхэд` : ""]
     .filter(Boolean)
@@ -67,6 +70,7 @@ function BookingCard({ b }: { b: BookingRequest }) {
         <Image src={tour.image} alt={tour.title} fill className="object-cover" sizes="(max-width:768px) 100vw, 280px" />
         <span className="absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-[0.65rem] font-semibold text-white backdrop-blur-sm">
           {b.id}
+          {summary ? ` · ${STATUS_LABEL[summary.status]}` : ""}
         </span>
       </Link>
 
@@ -85,8 +89,8 @@ function BookingCard({ b }: { b: BookingRequest }) {
         <ol className="mt-5 grid grid-cols-4 gap-1.5">
           {steps.map((s, i) => (
             <li key={s}>
-              <div className={`h-1 rounded-full ${i === 0 ? "bg-accent" : "bg-[var(--line)]"}`} />
-              <p className={`mt-1.5 text-[0.62rem] leading-tight ${i === 0 ? "font-semibold text-accent" : "text-muted"}`}>{s}</p>
+              <div className={`h-1 rounded-full ${i < filled ? "bg-accent" : "bg-[var(--line)]"}`} />
+              <p className={`mt-1.5 text-[0.62rem] leading-tight ${i < filled ? "font-semibold text-accent" : "text-muted"}`}>{s}</p>
             </li>
           ))}
         </ol>
@@ -98,15 +102,24 @@ function BookingCard({ b }: { b: BookingRequest }) {
             {b.deposit ? <p className="text-xs text-muted">Урьдчилгаа {formatPrice(b.deposit)}</p> : null}
           </div>
           <div className="flex flex-wrap gap-2">
-            <a
-              href="https://ig.me/m/elitetravelmn"
-              target="_blank"
-              rel="noreferrer"
-              onClick={copy}
-              className="inline-flex h-10 items-center rounded-full bg-accent px-4 text-sm font-semibold text-white"
-            >
-              {copied ? "Хуулсан ✓ Instagram" : "Instagram-аар илгээх"}
-            </a>
+            {b.token ? (
+              <Link href={`/bookings/${b.id}`} className="relative inline-flex h-10 items-center rounded-full bg-accent px-4 text-sm font-semibold text-white">
+                Нээх · чат, төлбөр
+                {summary?.unread ? (
+                  <span className="absolute -right-1.5 -top-1.5 grid min-w-5 place-items-center rounded-full bg-[#e8b86d] px-1 text-[0.65rem] font-bold leading-5 text-ink">{summary.unread}</span>
+                ) : null}
+              </Link>
+            ) : (
+              <a
+                href="https://ig.me/m/elitetravelmn"
+                target="_blank"
+                rel="noreferrer"
+                onClick={copy}
+                className="inline-flex h-10 items-center rounded-full bg-accent px-4 text-sm font-semibold text-white"
+              >
+                {copied ? "Хуулсан ✓ Instagram" : "Instagram-аар илгээх"}
+              </a>
+            )}
             <a href="tel:+97690031771" className="inline-flex h-10 items-center rounded-full border border-[var(--line)] px-4 text-sm font-medium">
               Залгах
             </a>
@@ -126,6 +139,7 @@ function BookingCard({ b }: { b: BookingRequest }) {
 
 export function BookingsPage() {
   const { saved, bookings } = useTraveller();
+  const summaries = useTripSummaries();
   const [tab, setTab] = useState<"bookings" | "saved">("bookings");
   const tours = useTours();
   const savedTours = saved.map((id) => getTour(tours, id)).filter((t) => t != null);
@@ -163,11 +177,11 @@ export function BookingsPage() {
               <>
                 <AnimatePresence>
                   {bookings.map((b) => (
-                    <BookingCard key={b.id} b={b} />
+                    <BookingCard key={b.id} b={b} summary={summaries[b.id]} />
                   ))}
                 </AnimatePresence>
                 <p className="text-xs leading-relaxed text-muted">
-                  Хүсэлтүүд зөвхөн энэ төхөөрөмж дээр хадгалагдана. Захиалга баталгаажихын тулд Instagram эсвэл утсаар манай багт илгээнэ үү.
+                  Хүсэлтүүд энэ төхөөрөмж дээр хадгалагдана. Төлөв, төлбөр, багтай чатлахыг “Нээх” дарж харна уу.
                 </p>
               </>
             ) : (

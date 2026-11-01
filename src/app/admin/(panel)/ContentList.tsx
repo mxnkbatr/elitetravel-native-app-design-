@@ -47,28 +47,33 @@ export function ContentList({ table, items: initial }: { table: "tours" | "news"
     <div className="mt-6 space-y-2">
       {error ? <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
       {items.map((item, i) => (
-        <div key={item.id} className={`flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-white p-2.5 pr-3 ${item.muted ? "opacity-60" : ""}`}>
+        <div key={item.id} className={`flex items-center gap-3 rounded-[1.25rem] border border-[var(--line)] bg-white p-2 pr-2.5 sm:p-2.5 sm:pr-3 ${item.muted ? "opacity-60" : ""}`}>
           <div className="flex flex-col">
-            <button type="button" aria-label="Дээш" disabled={pending || i === 0} onClick={() => move(i, i - 1)} className="grid size-7 place-items-center rounded-lg text-muted hover:bg-[#f3f6f5] disabled:opacity-25">
+            <button type="button" aria-label="Дээш" disabled={pending || i === 0} onClick={() => move(i, i - 1)} className="grid size-8 place-items-center rounded-lg text-muted hover:bg-bg disabled:opacity-25">
               ▲
             </button>
-            <button type="button" aria-label="Доош" disabled={pending || i === items.length - 1} onClick={() => move(i, i + 1)} className="grid size-7 place-items-center rounded-lg text-muted hover:bg-[#f3f6f5] disabled:opacity-25">
+            <button type="button" aria-label="Доош" disabled={pending || i === items.length - 1} onClick={() => move(i, i + 1)} className="grid size-8 place-items-center rounded-lg text-muted hover:bg-bg disabled:opacity-25">
               ▼
             </button>
           </div>
-          <div className="relative aspect-[4/3] w-20 shrink-0 overflow-hidden rounded-xl bg-[#e7eeec]">
-            {item.image ? <Image src={item.image} alt="" fill sizes="80px" className="object-cover" /> : null}
-          </div>
-          <Link href={`/admin/${table}/${item.id}`} className="min-w-0 flex-1">
-            <p className="truncate font-semibold hover:text-accent">{item.title}</p>
-            <p className="truncate text-xs text-muted">{item.sub}</p>
+          <Link href={`/admin/${table}/${item.id}`} className="flex min-w-0 flex-1 items-center gap-3 active:opacity-70">
+            <div className="relative aspect-square w-14 shrink-0 overflow-hidden rounded-xl bg-bg sm:aspect-[4/3] sm:w-20">
+              {item.image ? <Image src={item.image} alt="" fill sizes="80px" className="object-cover" /> : null}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate font-semibold">{item.title}</p>
+              <p className="truncate text-xs text-muted">{item.sub}</p>
+              {item.badge ? <span className="mt-1 inline-block rounded-full bg-bg px-2 py-0.5 text-[0.65rem] font-semibold text-muted sm:hidden">{item.badge}</span> : null}
+            </div>
           </Link>
-          {item.badge ? <span className="hidden rounded-full bg-[#f3f6f5] px-2.5 py-1 text-[0.7rem] font-semibold text-muted sm:inline">{item.badge}</span> : null}
-          <Link href={`/admin/${table}/${item.id}`} className="rounded-lg px-3 py-2 text-xs font-semibold text-accent hover:bg-accent/10">
+          {item.badge ? <span className="hidden rounded-full bg-bg px-2.5 py-1 text-[0.7rem] font-semibold text-muted sm:inline">{item.badge}</span> : null}
+          <Link href={`/admin/${table}/${item.id}`} className="hidden rounded-full px-3 py-2 text-xs font-semibold text-accent hover:bg-accent/10 sm:inline">
             Засах
           </Link>
-          <button type="button" onClick={() => remove(item)} disabled={pending} className="rounded-lg px-2 py-2 text-xs font-semibold text-red-600 hover:bg-red-50">
-            Устгах
+          <button type="button" aria-label="Устгах" onClick={() => remove(item)} disabled={pending} className="grid size-9 place-items-center rounded-full text-red-600 hover:bg-red-50">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M5 7h14M10 11v6M14 11v6M6 7l1 12a1.5 1.5 0 0 0 1.5 1.4h7a1.5 1.5 0 0 0 1.5-1.4L18 7M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+            </svg>
           </button>
         </div>
       ))}

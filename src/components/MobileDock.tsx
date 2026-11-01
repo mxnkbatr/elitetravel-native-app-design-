@@ -1,5 +1,6 @@
 "use client";
 
+import { useTripSummaries } from "@/lib/trip-sync";
 import { useTraveller } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
@@ -15,7 +16,8 @@ const items = [
 export function MobileDock() {
   const pathname = usePathname();
   const { bookings, saved } = useTraveller();
-  const badge = bookings.length + saved.length;
+  const unread = Object.values(useTripSummaries()).reduce((n, s) => n + s.unread, 0);
+  const badge = unread || bookings.length + saved.length;
   // Tour detail pages show their own booking bar instead
   if (/^\/tours\/[^/]+/.test(pathname)) return null;
 
@@ -58,7 +60,7 @@ export function MobileDock() {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
-                      className="absolute -right-2.5 -top-1.5 grid min-w-4 place-items-center rounded-full bg-[#e8b86d] px-1 text-[0.58rem] font-bold leading-4 text-ink"
+                      className={`absolute -right-2.5 -top-1.5 grid min-w-4 place-items-center rounded-full px-1 text-[0.58rem] font-bold leading-4 ${unread ? "bg-[#ef4444] text-white" : "bg-[#e8b86d] text-ink"}`}
                     >
                       {badge}
                     </motion.span>

@@ -8,7 +8,7 @@ import { notFound } from "next/navigation";
 const blank: NewsItem = { id: "", category: "Мэдээ", title: "", excerpt: "", body: [], image: "", readMin: 2 };
 
 export default async function AdminNewsItemPage({ params }: PageProps<"/admin/news/[id]">) {
-  await requireAdmin();
+  await requireAdmin("content.manage");
   const { id } = await params;
   const db = supabaseAdmin()!;
   const [{ data: tourRows }, { data }] = await Promise.all([

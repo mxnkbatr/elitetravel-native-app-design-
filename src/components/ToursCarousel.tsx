@@ -18,19 +18,22 @@ export function ToursCarousel() {
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+      mm.add({ motion: "(prefers-reduced-motion: no-preference)", list: "(max-width: 1023px)" }, (ctx) => {
+        const { motion, list } = ctx.conditions as { motion: boolean; list: boolean };
+        if (!motion) return;
         gsap.fromTo(
           ".tours-head > *",
           { y: 40, opacity: 0 },
           { y: 0, opacity: 1, stagger: 0.08, duration: 1, ease: "expo.out", scrollTrigger: { trigger: root.current, start: "top 80%" } },
         );
+        // The card strip only exists below lg; animating it while hidden forced a style recalc per card on every visit
+        if (!list) return;
         gsap.fromTo(
           scroller.current?.children ?? [],
-          { y: 80, opacity: 0, rotate: 2 },
+          { y: 80, opacity: 0 },
           {
             y: 0,
             opacity: 1,
-            rotate: 0,
             stagger: 0.08,
             duration: 1.1,
             ease: "expo.out",

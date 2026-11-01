@@ -6,20 +6,23 @@ import { SaveButton } from "@/components/SaveButton";
 import { formatPrice, getTour, isBookable } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { daysUntil } from "@/lib/dates";
+import { useTripSummaries } from "@/lib/trip-sync";
 import { removeBooking, useTraveller, type BookingRequest } from "@/lib/traveller-store";
+import { STATUS_LABEL, progressOf, type TripSummary } from "@/lib/trips";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const steps = ["Үүссэн", "Илгээх", "Баталгаа", "Урьдчилгаа"];
+const steps = ["Хүсэлт", "Холбогдсон", "Баталгаажсан", "Төлсөн"];
 
 /** Arrival airports per the itineraries: Haikou (Meilan), Hong Kong, Denpasar. */
 const airport: Partial<Record<string, string>> = { hainan: "HAK", hongkong: "HKG", bali: "DPS" };
 
 /** Boarding-pass style card for one booking request. */
-function Ticket({ b, index }: { b: BookingRequest; index: number }) {
+function Ticket({ b, index, summary }: { b: BookingRequest; index: number; summary?: TripSummary }) {
   const tour = getTour(useTours(), b.tourId);
+  const filled = progressOf(summary?.status, summary?.paidAmount, summary?.total);
   const [days, setDays] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -56,7 +59,10 @@ function Ticket({ b, index }: { b: BookingRequest; index: number }) {
       <Link href={`/tours/${tour.id}`} className="relative block h-36">
         <Image src={tour.image} alt="" fill className="object-cover" sizes="100vw" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#062a2a] via-[#062a2a]/30 to-transparent" />
-        <span className="absolute left-3.5 top-3.5 rounded-full bg-black/40 px-2.5 py-1 text-[0.62rem] font-semibold text-white backdrop-blur-md">{b.id}</span>
+        <span className="absolute left-3.5 top-3.5 rounded-full bg-black/40 px-2.5 py-1 text-[0.62rem] font-semibold text-white backdrop-blur-md">
+          {b.id}
+          {summary ? ` · ${STATUS_LABEL[summary.status]}` : ""}
+        </span>
         {days != null && days >= 0 ? (
           <div className="absolute right-3.5 top-3.5 rounded-2xl bg-white/95 px-3 py-1.5 text-center">
             <p className="font-num text-2xl leading-none text-ink">{days}</p>
@@ -113,21 +119,33 @@ function Ticket({ b, index }: { b: BookingRequest; index: number }) {
           </div>
           <div className="flex gap-1">
             {steps.map((s, i) => (
-              <span key={s} title={s} className={`h-1.5 w-5 rounded-full ${i === 0 ? "bg-accent" : "bg-[var(--line)]"}`} />
+              <span key={s} title={s} className={`h-1.5 w-5 rounded-full ${i < filled ? "bg-accent" : "bg-[var(--line)]"}`} />
             ))}
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-[1fr_auto_auto] gap-2">
-          <a
-            href="https://ig.me/m/elitetravelmn"
-            target="_blank"
-            rel="noreferrer"
-            onClick={send}
-            className="flex h-12 items-center justify-center rounded-2xl bg-accent text-sm font-semibold text-white active:scale-[0.97]"
-          >
-            {copied ? "Хуулсан ✓ — Instagram" : "Багт илгээх"}
-          </a>
+          {b.token ? (
+            <Link
+              href={`/bookings/${b.id}`}
+              className="relative flex h-12 items-center justify-center rounded-2xl bg-accent text-sm font-semibold text-white active:scale-[0.97]"
+            >
+              Нээх · чат, төлбөр
+              {summary?.unread ? (
+                <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-[#e8b86d] px-1 text-[0.65rem] font-bold leading-5 text-ink">{summary.unread}</span>
+              ) : null}
+            </Link>
+          ) : (
+            <a
+              href="https://ig.me/m/elitetravelmn"
+              target="_blank"
+              rel="noreferrer"
+              onClick={send}
+              className="flex h-12 items-center justify-center rounded-2xl bg-accent text-sm font-semibold text-white active:scale-[0.97]"
+            >
+              {copied ? "Хуулсан ✓ — Instagram" : "Багт илгээх"}
+            </a>
+          )}
           <a href="tel:+97690031771" aria-label="Залгах" className="grid size-12 place-items-center rounded-2xl bg-bg text-lg active:scale-95">
             ☏
           </a>
@@ -150,6 +168,7 @@ function Ticket({ b, index }: { b: BookingRequest; index: number }) {
 /** Phone "My trips": segmented control, ticket cards and a saved-tours grid. */
 export function MobileBookings() {
   const { saved, bookings } = useTraveller();
+  const summaries = useTripSummaries();
   const [tab, setTab] = useState<"bookings" | "saved">("bookings");
   const tours = useTours();
   const savedTours = saved.map((id) => getTour(tours, id)).filter((t) => t != null);
@@ -191,11 +210,11 @@ export function MobileBookings() {
               <>
                 <AnimatePresence>
                   {bookings.map((b, i) => (
-                    <Ticket key={b.id} b={b} index={i} />
+                    <Ticket key={b.id} b={b} index={i} summary={summaries[b.id]} />
                   ))}
                 </AnimatePresence>
                 <p className="px-1 text-[0.7rem] leading-relaxed text-muted">
-                  Хүсэлтүүд энэ утсанд хадгалагдана. Захиалга баталгаажихын тулд “Багт илгээх” дарж Instagram-аар явуулна уу.
+                  Хүсэлтүүд энэ утсанд хадгалагдана. Төлөв, төлбөр, багтай чатлахыг “Нээх” дарж харна уу.
                 </p>
               </>
             ) : (

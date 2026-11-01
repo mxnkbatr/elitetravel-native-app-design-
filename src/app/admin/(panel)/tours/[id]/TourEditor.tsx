@@ -1,9 +1,12 @@
 "use client";
 
 import { saveTour } from "@/app/admin/(panel)/actions";
+import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
+import Link from "next/link";
 import { Field, GalleryField, ImageField, inputClass, LinesField, Section } from "@/app/admin/(panel)/fields";
 import { SaveBar } from "@/app/admin/(panel)/SaveBar";
 import type { ItineraryDay, Tour } from "@/data/tours";
+import { DOC_TYPES } from "@/lib/documents";
 import { useState } from "react";
 
 const DESTINATIONS = [
@@ -22,7 +25,10 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 pb-28">
-      <h1 className="font-display text-3xl font-semibold">{originalId ? tour.title || "Аялал" : "Шинэ аялал"}</h1>
+      <Link href="/admin/tours" className="inline-flex text-sm font-semibold text-accent">
+        ‹ Аяллууд
+      </Link>
+      <AdminTitle title={originalId ? tour.title || "Аялал" : "Шинэ аялал"} />
 
       <Section title="Үндсэн мэдээлэл">
         <Field label="Гарчиг" wide>
@@ -119,6 +125,27 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
       </Section>
 
       <ItineraryEditor days={tour.itinerary} onChange={(v) => set("itinerary", v)} />
+
+      <Section title="Аялагчаас авах баримт">
+        <p className="-mt-2 text-xs text-muted sm:col-span-2">Сонгосон баримтуудыг аялагч аппаараа хуулна. Тоо нь хүний тооноос хамаарна (жишээ нь зураг зорчигч бүрээс, төрсний гэрчилгээ хүүхэд бүрээс).</p>
+        {DOC_TYPES.map((d) => {
+          const on = tour.documents?.includes(d.type) ?? false;
+          return (
+            <label key={d.type} className={`flex items-start gap-3 rounded-xl border p-3 text-sm transition ${on ? "border-accent bg-accent/[0.05]" : "border-[var(--line)]"}`}>
+              <input
+                type="checkbox"
+                checked={on}
+                onChange={(e) => set("documents", e.target.checked ? [...(tour.documents ?? []), d.type] : (tour.documents ?? []).filter((x) => x !== d.type))}
+                className="mt-0.5 size-4 accent-[#0d8f84]"
+              />
+              <span>
+                <span className="block font-semibold">{d.label}</span>
+                <span className="block text-xs text-muted">{d.hint}</span>
+              </span>
+            </label>
+          );
+        })}
+      </Section>
 
       <SaveBar
         kind="tours"

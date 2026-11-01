@@ -1,4 +1,5 @@
 import { cldImage } from "@/lib/cloudinary";
+import type { DocType } from "@/lib/documents";
 
 export type ItineraryDay = {
   day: string;
@@ -44,17 +45,17 @@ export type Tour = {
     depositPercent?: number;
   };
   notes?: string[];
+  /** Documents travellers upload in the app for this tour */
+  documents?: DocType[];
 };
 
 export function getTour(tours: Tour[], id: string) {
   return tours.find((t) => t.id === id);
 }
 
-/** Lightweight scarcity signal for cards (deterministic, not inventory) */
-export function seatsLeft(tourId: string) {
-  let h = 0;
-  for (let i = 0; i < tourId.length; i++) h = (h + tourId.charCodeAt(i) * (i + 3)) % 97;
-  return 4 + (h % 9);
+/** «11/03–11/10 · 11/10–11/17» → one label per departure */
+export function tourDates(t: Pick<Tour, "dates">) {
+  return (t.dates ?? "").split("·").map((d) => d.trim()).filter(Boolean);
 }
 
 export function formatPrice(price: number | null) {
