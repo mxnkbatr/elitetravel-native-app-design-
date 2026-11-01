@@ -2,6 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { ContentProvider } from "@/lib/content";
 import { introBootScript } from "@/lib/intro";
 import { chatModel } from "@/lib/server/ai";
+import { jsonLd, siteUrl } from "@/lib/site";
 import { getNews, getTours } from "@/lib/server/content";
 import { getSeats } from "@/lib/server/seats";
 import type { Metadata, Viewport } from "next";
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s · Elite Travel",
   },
   description,
-  metadataBase: new URL("https://elitetravel.mn"),
+  metadataBase: new URL(siteUrl()),
   openGraph: {
     type: "website",
     locale: "mn_MN",
@@ -43,6 +44,20 @@ export const metadata: Metadata = {
     title: "Elite Travel Mongolia — Халуун орны тансаг аялал",
     description,
   },
+};
+
+/** The company card search engines show next to results (schema.org TravelAgency). */
+const organization = {
+  "@context": "https://schema.org",
+  "@type": "TravelAgency",
+  name: "Elite Travel Mongolia",
+  alternateName: "Элит Трэвел",
+  url: siteUrl(),
+  logo: `${siteUrl()}/admin-icon-512.png`,
+  telephone: "+976 9003 1771",
+  description,
+  address: { "@type": "PostalAddress", addressLocality: "Улаанбаатар", addressCountry: "MN" },
+  sameAs: ["https://www.instagram.com/elitetravelmn"],
 };
 
 export const viewport: Viewport = {
@@ -58,6 +73,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="mn" className={`${display.variable} ${body.variable} h-full`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: introBootScript }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
       <body className="min-h-full bg-bg font-sans text-foam antialiased">
         <ContentProvider tours={tours} news={news} seats={seats}>
