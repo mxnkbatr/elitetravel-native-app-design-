@@ -8,6 +8,7 @@ import { addBooking, type BookingRequest } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { quote } from "@/lib/pricing";
+import { track, trackOnce } from "@/lib/track";
 import { useMemo, useState, type FormEvent } from "react";
 
 const PHONE = "+97690031771";
@@ -138,6 +139,7 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
         return;
       }
       if (res.ok && data.id) {
+        track("booking_submit", { tour: tour.id });
         setWaitlisted(data.status === "waitlist");
         setDone(addBooking({ ...request, id: data.id, total: data.total ?? total, deposit: data.deposit ?? deposit, synced: true, token: data.token }));
         return;
@@ -221,7 +223,15 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
             </div>
           </motion.div>
         ) : (
-          <motion.form key="form" onSubmit={submit} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.form
+            key="form"
+            onSubmit={submit}
+            // The first tap or keypress in the form counts as starting a booking
+            onPointerDownCapture={() => trackOnce(`booking-${tour.id}`, "booking_open", { tour: tour.id })}
+            onFocusCapture={() => trackOnce(`booking-${tour.id}`, "booking_open", { tour: tour.id })}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             {stepped ? (
               <div className="mb-4 flex items-center gap-2">
                 {["Хүн ба огноо", "Холбоо барих"].map((label, i) => (

@@ -2,6 +2,7 @@ import { formatPrice, tourDates, type Tour } from "@/data/tours";
 import { daysUntil } from "@/lib/dates";
 import { CONTENT_TAG } from "@/lib/server/content";
 import { documentSlots } from "@/lib/documents";
+import { purgeOldEvents } from "@/lib/server/analytics";
 import { getContractTemplate } from "@/lib/server/contract";
 import { deleteDocuments } from "@/lib/server/documents";
 import { retryReceipts } from "@/lib/server/ebarimt";
@@ -181,6 +182,7 @@ export async function GET(request: Request) {
   const receipts = await retryReceipts();
   const purgedIds = await purgeExpiredPassports();
   for (const id of purgedIds) await deleteDocuments(id);
+  const oldEvents = await purgeOldEvents();
 
-  return Response.json({ ...done, settled, receipts, purgedPersonalData: purgedIds.length });
+  return Response.json({ ...done, settled, receipts, purgedPersonalData: purgedIds.length, oldEvents });
 }

@@ -1,6 +1,9 @@
 import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import { formatPrice } from "@/data/tours";
+import { Traffic } from "@/app/admin/(panel)/reports/Traffic";
+import { siteStats } from "@/lib/server/analytics";
 import { requireAdmin } from "@/lib/server/auth";
+import { getTours } from "@/lib/server/content";
 import { db } from "@/lib/server/trips";
 import { PAYMENT_METHOD_LABEL, type TripStatus } from "@/lib/trips";
 
@@ -84,9 +87,25 @@ export default async function AdminReportsPage() {
     payments.reduce<Record<string, number>>((acc, p) => ({ ...acc, [p.method]: (acc[p.method] ?? 0) + p.amount }), {}),
   ).sort((a, b) => b[1] - a[1]);
 
+  // Site traffic for the last 30 days, Ulaanbaatar calendar days
+  const trafficTo = new Date();
+  const trafficFrom = new Date(trafficTo.getTime() - 30 * 86400_000);
+  const ubDay = (d: Date) => new Date(d.getTime() + 8 * 3600_000).toISOString().slice(0, 10);
+  const trafficDays = Array.from({ length: 30 }, (_, i) => ubDay(new Date(trafficFrom.getTime() + (i + 1) * 86400_000)));
+  const [traffic, tours] = await Promise.all([siteStats(trafficFrom, trafficTo), getTours()]);
+  const recent = rows.filter((r) => new Date(r.created_at) >= trafficFrom);
+
   return (
     <>
-      <AdminTitle title="Тайлан" sub="Хүсэлт, хөрвөлт, орлого. Цуцалсан захиалга орлогод орохгүй." />
+      <AdminTitle title="Тайлан" sub="Сайтын хандалт, хүсэлт, хөрвөлт, орлого. Цуцалсан захиалга орлогод орохгүй." />
+
+      <Traffic
+        stats={traffic}
+        days={trafficDays}
+        requests={recent.length}
+        paid={recent.filter((r) => r.paid_amount > 0).length}
+        titles={Object.fromEntries(tours.map((t) => [t.id, t.title]))}
+      />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi label="Энэ сарын хүсэлт" value={String(requestsMonth)} sub={`Өмнөх сар: ${requestsLast}`} />

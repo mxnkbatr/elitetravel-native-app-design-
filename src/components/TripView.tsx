@@ -4,6 +4,7 @@ import { formatPrice, getTour } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { PartnerLogo } from "@/components/PartnerLogo";
 import { PushPrompt } from "@/components/PushPrompt";
+import { track } from "@/lib/track";
 import { CareCard, ContractCard, DocumentsCard, type CareAction, type SignAction, type Upload } from "@/components/TripDocuments";
 import { daysUntil } from "@/lib/dates";
 import type { MrzResult } from "@/lib/mrz";
@@ -76,6 +77,7 @@ export function TripView({ id }: { id: string }) {
   const pay = useCallback<PayApi>(
     async (path, body) => {
       if (!token) return;
+      if (path === "create") track("pay_open", { tour: trip?.tourId });
       const res = await fetch(`/api/payments/qpay/${path}`, {
         method: "POST",
         headers: { "x-trip-token": token, "Content-Type": "application/json" },
@@ -87,7 +89,7 @@ export function TripView({ id }: { id: string }) {
       if (path === "status") setTrip(data);
       else await call();
     },
-    [token, call],
+    [token, call, trip?.tourId],
   );
 
   const upload = useCallback<Upload>(

@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { INTRO_HOLD_MS } from "@/components/IntroCurtain";
 import { useTours } from "@/lib/content";
+import { trackOnce } from "@/lib/track";
 import { bookingTokens, useTraveller } from "@/lib/traveller-store";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
@@ -107,7 +108,10 @@ export function AiHelper() {
         type="button"
         aria-label={open ? "Туслахыг хаах" : "Аяллын туслах"}
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (!open) trackOnce("chat", "chat_open");
+          setOpen((v) => !v);
+        }}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: INTRO_HOLD_MS / 1000 + 0.6, type: "spring", stiffness: 260, damping: 20 }}

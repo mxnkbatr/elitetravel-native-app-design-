@@ -6,6 +6,7 @@ import { ImageLoadMarker } from "@/components/ImageLoadMarker";
 import { IntroCurtain } from "@/components/IntroCurtain";
 import { MobileDock } from "@/components/MobileDock";
 import { Navbar } from "@/components/Navbar";
+import { PageTracker } from "@/components/PageTracker";
 import { PageTransition } from "@/components/PageTransition";
 import { PushBridge } from "@/components/PushBridge";
 import { ScrollProgress } from "@/components/ScrollProgress";
@@ -28,6 +29,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
   return (
     <div className="relative flex min-h-dvh flex-col">
       <PushBridge />
+      <PageTracker />
       <IntroCurtain />
       <SmoothScroll />
       <ImageLoadMarker />
