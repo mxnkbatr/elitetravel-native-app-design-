@@ -30,5 +30,10 @@ describe("permissions", () => {
     expect(routePermission("/admin/payments")).toBe("money.manage");
     expect(routePermission("/admin/tours/bali")).toBe("content.manage");
     expect(routePermission("/admin/staff")).toBe("staff.manage");
+    expect(routePermission("/admin/agent")).toBe("agent.use");
+  });
+
+  it("opens the AI assistant to every role", () => {
+    for (const role of ["owner", "sales", "finance", "content"] as const) expect(can(role, "agent.use")).toBe(true);
   });
 });

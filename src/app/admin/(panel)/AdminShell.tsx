@@ -15,6 +15,7 @@ import {
   AlertIcon,
   ListIcon,
   PlaneIcon,
+  SparkIcon,
   TicketIcon,
   UsersIcon,
   type IconProps,
@@ -50,6 +51,7 @@ const groups: { title: string; items: NavItem[] }[] = [
   {
     title: "Тойм",
     items: [
+      { href: "/admin/agent", label: "AI туслах", icon: SparkIcon },
       { href: "/admin/reports", label: "Тайлан", icon: ChartIcon },
       { href: "/admin/chat-logs", label: "Чат лог", icon: ChatIcon },
     ],
@@ -76,8 +78,8 @@ const tabHrefs = new Set(tabs.map((t) => t.href));
 const allowed = (role: Role, item: NavItem) => can(role, routePermission(item.href));
 
 const isActive = (pathname: string, href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
-/** Editors are "pushed" screens with their own bottom save bar. */
-const isEditor = (pathname: string) => /^\/admin\/(tours|news)\/[^/]+$/.test(pathname);
+/** Editors are "pushed" screens with their own bottom bar (save bar, the agent's message box). */
+const isEditor = (pathname: string) => /^\/admin\/(tours|news)\/[^/]+$/.test(pathname) || pathname === "/admin/agent";
 
 type Pulse = { newBookings: number; unread: string[]; installments: number; errors: number };
 

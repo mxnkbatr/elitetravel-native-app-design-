@@ -28,13 +28,15 @@ export type Permission =
   | "reports.view"
   | "chatlogs.view"
   | "staff.manage"
-  | "audit.view";
+  | "audit.view"
+  /** The AI assistant in /admin/agent; each of its tools still needs its own permission */
+  | "agent.use";
 
 const GRANTS: Record<Role, readonly Permission[] | "all"> = {
   owner: "all",
-  sales: ["bookings.view", "bookings.manage", "departures.manage", "passports.view", "chatlogs.view"],
-  finance: ["bookings.view", "money.manage", "reports.view"],
-  content: ["content.manage", "chatlogs.view"],
+  sales: ["bookings.view", "bookings.manage", "departures.manage", "passports.view", "chatlogs.view", "agent.use"],
+  finance: ["bookings.view", "money.manage", "reports.view", "agent.use"],
+  content: ["content.manage", "chatlogs.view", "agent.use"],
 };
 
 export function can(role: Role | null | undefined, permission: Permission) {
@@ -58,6 +60,7 @@ const ROUTES: [string, Permission][] = [
   ["/admin/news", "content.manage"],
   ["/admin/poster", "content.manage"],
   ["/admin/chat-logs", "chatlogs.view"],
+  ["/admin/agent", "agent.use"],
 ];
 
 export function routePermission(path: string): Permission {
