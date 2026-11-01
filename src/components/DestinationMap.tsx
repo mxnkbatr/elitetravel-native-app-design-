@@ -232,6 +232,8 @@ export function DestinationMap({ active, onSelect, bottomInset = 0, fullscreen =
       readyRef.current = false;
       pinEls.current = {};
     };
+    // Built once: rebuilding the map on new pins would restart the opening flight
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function highlight(key: string) {

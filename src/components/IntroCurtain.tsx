@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { INTRO_KEY } from "@/lib/intro";
+import { useClientValue } from "@/lib/ui";
 import { useEffect, useState } from "react";
 
 const ARC = "M 40 150 C 140 40, 300 20, 420 70";
@@ -33,15 +34,17 @@ function Row({ leaving, order, children, className = "" }: { leaving: boolean; o
 
 /** First-visit curtain: the brand E, a plane drawing its flight path, then the reveal. */
 export function IntroCurtain() {
-  const [show, setShow] = useState(false);
+  // Set by the boot script before paint on a first visit (see lib/intro)
+  const firstVisit = useClientValue(() => document.documentElement.dataset.intro === "1", false);
+  const [lifted, setLifted] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const show = firstVisit && !lifted;
 
   useEffect(() => {
-    if (document.documentElement.dataset.intro !== "1") return;
-    setShow(true);
+    if (!firstVisit) return;
     const leave = window.setTimeout(() => setLeaving(true), LEAVE_MS);
     const lift = window.setTimeout(() => {
-      setShow(false);
+      setLifted(true);
       // Drop the static pre-paint cover now; the animated curtain still sits on top while it lifts
       delete document.documentElement.dataset.intro;
       try {
@@ -54,7 +57,7 @@ export function IntroCurtain() {
       window.clearTimeout(leave);
       window.clearTimeout(lift);
     };
-  }, []);
+  }, [firstVisit]);
 
   return (
     <AnimatePresence>

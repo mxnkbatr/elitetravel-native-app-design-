@@ -6,10 +6,11 @@ import { formatPrice, getTour, isBookable, type Tour } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { daysUntil } from "@/lib/dates";
 import { useTraveller } from "@/lib/traveller-store";
+import { useClientValue } from "@/lib/ui";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const categories = [
   { key: "all", label: "Бүгд", icon: "✦", match: () => true },
@@ -35,11 +36,9 @@ export function MobileHome() {
   const tours = useTours();
   const open = useMemo(() => tours.filter(isBookable), [tours]);
   const { bookings } = useTraveller();
-  const [hello, setHello] = useState("Сайн байна уу");
+  const hello = useClientValue(() => greeting(new Date().getHours()), "Сайн байна уу");
   const [cat, setCat] = useState<(typeof categories)[number]["key"]>("all");
   const [q, setQ] = useState("");
-
-  useEffect(() => setHello(greeting(new Date().getHours())), []);
 
   const upcoming = useMemo(
     () =>

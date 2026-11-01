@@ -49,7 +49,7 @@ export function JourneyScroll() {
     if (paused) return;
     const id = window.setTimeout(() => setActive((i) => (i + 1) % items.length), CYCLE_MS);
     return () => window.clearTimeout(id);
-  }, [active, paused]);
+  }, [active, paused, items.length]);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">

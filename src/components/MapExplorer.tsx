@@ -7,7 +7,8 @@ import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useClientValue } from "@/lib/ui";
+import { useState } from "react";
 
 const flight: Record<string, { time: string; label: string }> = {
   hainan: { time: "5 цаг", label: "Шууд нислэг" },
@@ -25,9 +26,7 @@ export function MapExplorer() {
   const [dir, setDir] = useState(1);
   const [cardOpen, setCardOpen] = useState(true);
   const [listOpen, setListOpen] = useState(false);
-  const [isPhone, setIsPhone] = useState(false);
-
-  useEffect(() => setIsPhone(window.matchMedia("(max-width: 639px)").matches), []);
+  const isPhone = useClientValue(() => window.matchMedia("(max-width: 639px)").matches, false);
 
   const dest = destinations[index];
   const list = toursFor(dest.key);

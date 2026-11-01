@@ -8,6 +8,7 @@ import { useTours } from "@/lib/content";
 import { daysUntil } from "@/lib/dates";
 import { useTripSummaries } from "@/lib/trip-sync";
 import { removeBooking, useTraveller, type BookingRequest } from "@/lib/traveller-store";
+import { useClientValue } from "@/lib/ui";
 import { STATUS_LABEL, progressOf, type TripSummary } from "@/lib/trips";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
@@ -23,11 +24,11 @@ const airport: Partial<Record<string, string>> = { hainan: "HAK", hongkong: "HKG
 function Ticket({ b, index, summary }: { b: BookingRequest; index: number; summary?: TripSummary }) {
   const tour = getTour(useTours(), b.tourId);
   const filled = progressOf(summary?.status, summary?.paidAmount, summary?.total);
-  const [days, setDays] = useState<number | null>(null);
+  // Depends on today's date, so only the browser computes it
+  const days = useClientValue(() => daysUntil(b.date) ?? null, null);
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  useEffect(() => setDays(daysUntil(b.date)), [b.date]);
   useEffect(() => {
     if (!confirmDelete) return;
     const id = window.setTimeout(() => setConfirmDelete(false), 2500);

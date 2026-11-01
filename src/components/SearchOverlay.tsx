@@ -66,7 +66,12 @@ export function SearchOverlay() {
   const input = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
 
-  useEffect(() => setOpen(false), [pathname]);
+  // Navigating from a result closes the overlay
+  const [openOn, setOpenOn] = useState(pathname);
+  if (openOn !== pathname) {
+    setOpenOn(pathname);
+    setOpen(false);
+  }
 
   useEffect(() => {
     const show = () => setOpen(true);

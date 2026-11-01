@@ -91,10 +91,13 @@ export function Navbar() {
   }, []);
   const asDot = island === "wait" || island === "dot";
 
-  useEffect(() => {
+  // Navigating closes the menus
+  const [menusFor, setMenusFor] = useState(pathname);
+  if (menusFor !== pathname) {
+    setMenusFor(pathname);
     setOpen(false);
     setMega(false);
-  }, [pathname]);
+  }
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)");
     const sync = () => setIsPhone(mq.matches);

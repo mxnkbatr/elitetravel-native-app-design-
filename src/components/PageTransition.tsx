@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 const depth = (path: string) => path.split("/").filter(Boolean).length;
 
@@ -13,12 +13,12 @@ const depth = (path: string) => path.split("/").filter(Boolean).length;
  */
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const prev = useRef(pathname);
-  const dir = depth(pathname) >= depth(prev.current) ? "forward" : "back";
-
-  useEffect(() => {
-    prev.current = pathname;
-  }, [pathname]);
+  const [from, setFrom] = useState(pathname);
+  const [dir, setDir] = useState<"forward" | "back">("forward");
+  if (from !== pathname) {
+    setDir(depth(pathname) >= depth(from) ? "forward" : "back");
+    setFrom(pathname);
+  }
 
   return (
     <div key={pathname} className={`page-in page-in-${dir}`}>

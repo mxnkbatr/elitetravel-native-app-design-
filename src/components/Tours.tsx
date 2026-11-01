@@ -8,7 +8,7 @@ import { filterChipClass } from "@/lib/ui";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const filters = [
   { key: "all", label: "Бүгд" },
@@ -35,11 +35,12 @@ export function Tours({
     start as (typeof filters)[number]["key"],
   );
 
-  useEffect(() => {
-    if (filters.some((f) => f.key === initialFilter)) {
-      setFilter(initialFilter as (typeof filters)[number]["key"]);
-    }
-  }, [initialFilter]);
+  // A new ?dest= in the URL resets the chip
+  const [filterFrom, setFilterFrom] = useState(initialFilter);
+  if (filterFrom !== initialFilter) {
+    setFilterFrom(initialFilter);
+    if (filters.some((f) => f.key === initialFilter)) setFilter(initialFilter as (typeof filters)[number]["key"]);
+  }
 
   const visible = useMemo(() => {
     const list =

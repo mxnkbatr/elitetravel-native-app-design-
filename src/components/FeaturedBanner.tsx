@@ -30,7 +30,7 @@ export function FeaturedBanner() {
       setIndex((i) => (i + 1) % slides.length);
     }, INTERVAL_MS);
     return () => window.clearTimeout(id);
-  }, [index, paused]);
+  }, [index, paused, slides.length]);
 
   function onDragEnd(_: unknown, info: PanInfo) {
     setPaused(false);

@@ -140,7 +140,7 @@ export function Hero() {
     if (paused || slides.length < 2) return;
     const id = window.setTimeout(() => setIndex((i) => (i + 1) % slides.length), INTERVAL_MS);
     return () => window.clearTimeout(id);
-  }, [paused, index]);
+  }, [paused, index, slides.length]);
 
   useEffect(() => {
     const el = cardRef.current;
