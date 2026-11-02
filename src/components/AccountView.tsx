@@ -71,6 +71,7 @@ function SignInScreen({ children }: { children: ReactNode }) {
   return createPortal(
     <motion.div
       className="fixed inset-0 z-[85] overflow-y-auto overscroll-contain bg-[#062a2a]"
+      style={{ viewTransitionName: "site-overlay" }}
       data-lenis-prevent
       initial={reduce ? false : { opacity: 0 }}
       animate={{ opacity: closing ? 0 : 1 }}

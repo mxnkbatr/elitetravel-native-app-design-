@@ -46,6 +46,7 @@ export function AiHelper() {
         transition={{ delay: INTRO_HOLD_MS / 1000 + 0.6, type: "spring", stiffness: 260, damping: 20 }}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
+        style={{ viewTransitionName: "site-chat" }}
         className="fixed bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-4 z-[70] grid size-14 place-items-center rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0d6e66] text-white shadow-[0_14px_34px_rgba(13,110,102,0.45)] sm:bottom-6 sm:right-6"
       >
         <AnimatePresence mode="wait" initial={false}>

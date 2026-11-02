@@ -505,16 +505,126 @@ img[data-nimg]:not([data-loaded]) {
   }
 }
 
-/* Route transitions — no fill-mode, so no transform lingers on the page wrapper */
-.page-in {
+/* Route transitions (see PageTransition). With view transitions the browser animates snapshots,
+   so nothing ever lingers on the live page; the wrapper animation below is only the fallback. */
+::view-transition {
+  pointer-events: none;
+}
+/* Header, dock, chat button and the sign-in screen stay put above the sliding page */
+::view-transition-group(site-header),
+::view-transition-group(site-dock),
+::view-transition-group(site-chat),
+::view-transition-group(site-overlay) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-new(site-header),
+::view-transition-new(site-dock),
+::view-transition-new(site-chat),
+::view-transition-new(site-overlay) {
+  animation: none;
+}
+::view-transition-old(site-header),
+::view-transition-old(site-overlay) {
+  display: none;
+}
+::view-transition-old(site-dock),
+::view-transition-old(site-chat) {
+  animation: vt-fade-out 0.2s ease-out both;
+}
+@keyframes vt-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+::view-transition-old(.page-exit) {
+  animation: vt-page-out 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+}
+::view-transition-new(.page-enter) {
+  animation: vt-page-in 0.46s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
+}
+@keyframes vt-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.99);
+  }
+}
+@keyframes vt-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+@media (max-width: 639px) {
+  /* The page that moves across the screen paints on top: the new one going forward, the old one going back */
+  html[data-nav="forward"]::view-transition-group(.page-enter),
+  html[data-nav="back"]::view-transition-group(.page-exit) {
+    z-index: 2;
+  }
+  html[data-nav="forward"]::view-transition-old(.page-exit) {
+    animation: vt-push-out 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html[data-nav="forward"]::view-transition-new(.page-enter) {
+    animation: vt-push-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html[data-nav="back"]::view-transition-old(.page-exit) {
+    animation: vt-pop-out 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html[data-nav="back"]::view-transition-new(.page-enter) {
+    animation: vt-pop-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+}
+@keyframes vt-push-out {
+  to {
+    opacity: 0.4;
+    transform: translateX(-28%);
+  }
+}
+@keyframes vt-push-in {
+  from {
+    transform: translateX(100%);
+    box-shadow: -18px 0 40px rgba(6, 42, 42, 0.18);
+  }
+  to {
+    box-shadow: -18px 0 40px rgba(6, 42, 42, 0);
+  }
+}
+@keyframes vt-pop-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-pop-in {
+  from {
+    opacity: 0.4;
+    transform: translateX(-28%);
+  }
+}
+
+/* Without a view transition (old browsers, history back/forward) the new page animates itself in —
+   no fill-mode, so no transform lingers on the page wrapper */
+html[data-pop] .page-in {
   animation: page-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @media (max-width: 639px) {
-  .page-in-forward {
+  html[data-pop] .page-in-forward {
     animation: page-push-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  .page-in-back {
+  html[data-pop] .page-in-back {
     animation: page-pop-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}
+@supports not (view-transition-name: none) {
+  .page-in {
+    animation: page-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (max-width: 639px) {
+    .page-in-forward {
+      animation: page-push-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .page-in-back {
+      animation: page-pop-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+    }
   }
 }
 @keyframes page-fade-up {
@@ -531,6 +641,12 @@ img[data-nimg]:not([data-loaded]) {
   .page-in-forward,
   .page-in-back {
     animation: none;
+  }
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
   }
 }
 

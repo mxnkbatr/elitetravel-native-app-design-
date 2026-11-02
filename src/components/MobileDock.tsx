@@ -24,6 +24,7 @@ export function MobileDock() {
 
   return (
     <nav
+      style={{ viewTransitionName: "site-dock" }}
       className="fixed inset-x-0 bottom-0 z-[60] px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 sm:hidden"
       aria-label="Үндсэн цэс"
     >

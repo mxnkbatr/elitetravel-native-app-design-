@@ -125,6 +125,7 @@ export function Navbar() {
       <motion.header
         animate={{ y: hidden && !open ? "-130%" : "0%" }}
         transition={{ type: "spring", stiffness: 380, damping: 36 }}
+        style={{ viewTransitionName: "site-header" }}
         className={`fixed inset-x-0 top-0 z-[65] px-3 pt-[calc(0.6rem+env(safe-area-inset-top,0px))] sm:px-5 ${
           pathname === "/map" ? "max-sm:hidden" : ""
         }`}
