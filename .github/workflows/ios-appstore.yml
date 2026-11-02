@@ -10,7 +10,6 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     env:
-      PROFILE_NAME: Elite Travel AppStore
       TEAM_ID: 78XCG6RMZS
       BUNDLE_ID: mn.elitetravel.app
     steps:
@@ -52,13 +51,20 @@ jobs:
           for d in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
             mkdir -p "$d"; cp $RUNNER_TEMP/p.mobileprovision "$d/$UUID.mobileprovision"
           done
-          echo "Profile UUID $UUID"
+          PNAME=$(/usr/libexec/PlistBuddy -c "Print Name" /dev/stdin <<< "$(security cms -D -i $RUNNER_TEMP/p.mobileprovision)")
+          echo "PROFILE_NAME=$PNAME" >> $GITHUB_ENV
+          echo "PROFILE_UUID=$UUID" >> $GITHUB_ENV
+          security cms -D -i $RUNNER_TEMP/p.mobileprovision | grep -A1 aps-environment || echo "WARNING: profile has no aps-environment"
+          echo "Profile $PNAME UUID $UUID"
 
       - name: Configure manual signing for App target
         run: |
           P=mobile/ios/App/App.xcodeproj/project.pbxproj
-          sed -i '' "s/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual; DEVELOPMENT_TEAM = $TEAM_ID; \"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]\" = \"$PROFILE_NAME\"; \"CODE_SIGN_IDENTITY[sdk=iphoneos*]\" = \"iPhone Distribution\";/" $P
+          sed -i '' "s/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual; DEVELOPMENT_TEAM = $TEAM_ID; \"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]\" = \"$PROFILE_UUID\"; \"CODE_SIGN_IDENTITY[sdk=iphoneos*]\" = \"iPhone Distribution\";/" $P
           grep -n "CODE_SIGN_STYLE" $P
+          # App Store builds need production push environment
+          /usr/libexec/PlistBuddy -c "Set :aps-environment production" mobile/ios/App/App/App.entitlements
+          cat mobile/ios/App/App/App.entitlements
 
       - name: Archive
         working-directory: mobile/ios/App
@@ -80,7 +86,7 @@ jobs:
             <key>signingStyle</key><string>manual</string>
             <key>teamID</key><string>$TEAM_ID</string>
             <key>signingCertificate</key><string>iPhone Distribution</string>
-            <key>provisioningProfiles</key><dict><key>$BUNDLE_ID</key><string>$PROFILE_NAME</string></dict>
+            <key>provisioningProfiles</key><dict><key>$BUNDLE_ID</key><string>$PROFILE_UUID</string></dict>
             <key>uploadSymbols</key><true/>
           </dict></plist>
           PLIST
