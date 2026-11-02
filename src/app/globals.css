@@ -707,3 +707,15 @@ header [data-island="open"] > div:last-child > * {
     animation: none !important;
   }
 }
+
+/* Inside the native app (data-app, set before paint): no website chrome — the dock is the
+   navigation, the footer's link columns and scrollbars belong to the browser version */
+html[data-app] .site-footer {
+  display: none;
+}
+html[data-app] ::-webkit-scrollbar {
+  display: none;
+}
+html[data-app] body {
+  overscroll-behavior: none;
+}

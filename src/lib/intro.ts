@@ -2,8 +2,10 @@
 export const INTRO_KEY = "elite-intro-seen";
 
 /**
- * Runs before paint (inlined in <head>): flags a first visit this session so the
- * curtain is already covering the page on the very first frame — no content flash.
- * Never on /admin: nothing there lifts the curtain, so staff would face a blank, locked screen.
+ * Runs before paint (inlined in <head>):
+ * - marks the native app (`data-app` on <html>) so app-only styles apply on the first frame;
+ * - flags a first visit this session so the curtain already covers the page — no content flash.
+ * The app has its own native splash, so it never gets the curtain. Neither does /admin:
+ * nothing there lifts it, so staff would face a blank, locked screen.
  */
-export const introBootScript = `try{if(location.pathname.indexOf("/admin")!==0&&!sessionStorage.getItem("${INTRO_KEY}")&&!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.dataset.intro="1"}}catch(e){}`;
+export const introBootScript = `try{var d=document.documentElement,a=!!window.Capacitor||/EliteTravelApp/.test(navigator.userAgent);if(a)d.dataset.app="1";if(!a&&location.pathname.indexOf("/admin")!==0&&!sessionStorage.getItem("${INTRO_KEY}")&&!matchMedia("(prefers-reduced-motion: reduce)").matches){d.dataset.intro="1"}}catch(e){}`;

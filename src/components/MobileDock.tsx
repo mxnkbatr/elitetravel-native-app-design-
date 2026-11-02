@@ -1,5 +1,6 @@
 "use client";
 
+import { haptic } from "@/lib/native";
 import { useTripSummaries } from "@/lib/trip-sync";
 import { useTraveller } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
@@ -40,6 +41,7 @@ export function MobileDock() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => haptic("tap")}
               className={`relative flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.15rem] text-[0.66rem] font-medium tracking-[0.02em] transition active:scale-95 ${
                 active ? "text-[#7ef0e0]" : "text-white/55"
               }`}

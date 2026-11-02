@@ -8,6 +8,7 @@ import { addBooking, type BookingRequest } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { quote } from "@/lib/pricing";
+import { haptic } from "@/lib/native";
 import { track, trackOnce } from "@/lib/track";
 import { useMemo, useState, type FormEvent } from "react";
 
@@ -140,6 +141,7 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
       }
       if (res.ok && data.id) {
         track("booking_submit", { tour: tour.id });
+        haptic("success");
         setWaitlisted(data.status === "waitlist");
         setDone(addBooking({ ...request, id: data.id, total: data.total ?? total, deposit: data.deposit ?? deposit, synced: true, token: data.token }));
         return;

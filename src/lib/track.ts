@@ -28,7 +28,7 @@ function ids() {
 }
 
 function device(): Device {
-  if (document.documentElement.classList.contains("elite-app") || "Capacitor" in window) return "app";
+  if (document.documentElement.dataset.app === "1" || document.documentElement.classList.contains("elite-app")) return "app";
   const w = window.innerWidth;
   return w < 640 ? "phone" : w < 1024 ? "tablet" : "desktop";
 }

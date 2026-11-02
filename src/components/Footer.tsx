@@ -19,7 +19,7 @@ const contact = [
 
 export function Footer() {
   return (
-    <footer className="relative overflow-hidden bg-[#062a2a] text-white">
+    <footer className="site-footer relative overflow-hidden bg-[#062a2a] text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_10%_0%,rgba(46, 196, 182,0.18),transparent_50%),radial-gradient(ellipse_at_100%_100%,rgba(232, 184, 109,0.14),transparent_45%)]" />
 
       <div className="relative mx-auto max-w-6xl px-4 pb-[calc(2.5rem+var(--dock-h))] pt-16 sm:px-6 sm:pt-20">

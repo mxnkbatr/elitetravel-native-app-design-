@@ -1,10 +1,12 @@
 "use client";
 
 import { AiHelper } from "@/components/AiHelper";
+import { AppOnboarding } from "@/components/AppOnboarding";
 import { Footer } from "@/components/Footer";
 import { ImageLoadMarker } from "@/components/ImageLoadMarker";
 import { IntroCurtain } from "@/components/IntroCurtain";
 import { MobileDock } from "@/components/MobileDock";
+import { NativeReady } from "@/components/NativeReady";
 import { Navbar } from "@/components/Navbar";
 import { PageTracker } from "@/components/PageTracker";
 import { PageTransition } from "@/components/PageTransition";
@@ -21,6 +23,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
   if (usePathname().startsWith("/admin"))
     return (
       <>
+        <NativeReady />
         <PushBridge />
         {children}
       </>
@@ -28,6 +31,8 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
 
   return (
     <div className="relative flex min-h-dvh flex-col">
+      <NativeReady />
+      <AppOnboarding />
       <PushBridge />
       <PageTracker />
       <IntroCurtain />
