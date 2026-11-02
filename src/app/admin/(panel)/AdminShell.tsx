@@ -43,7 +43,7 @@ function useNotificationPermission() {
 function Badge({ n, className = "" }: { n: number; className?: string }) {
   if (!n) return null;
   return (
-    <span className={`grid min-w-[1.2rem] place-items-center rounded-md bg-[#ef4444] px-1 font-mono text-[0.62rem] font-bold leading-[1.2rem] text-white shadow-[0_0_12px_rgba(239,68,68,0.55)] ${className}`}>
+    <span className={`grid min-w-[1.2rem] place-items-center rounded-full bg-[#ef4444] px-1 font-mono text-[0.62rem] font-bold leading-[1.2rem] text-white ${className}`}>
       {n > 99 ? "99+" : n}
     </span>
   );
@@ -83,7 +83,7 @@ function SearchButton({ wide }: { wide?: boolean }) {
       type="button"
       onClick={openPalette}
       aria-label="Хайх (Ctrl K)"
-      className={`group flex h-10 items-center gap-2.5 rounded-xl border border-[var(--line)] bg-white/[0.03] text-sm text-muted transition hover:border-accent/50 hover:text-ink ${
+      className={`group flex h-10 items-center gap-2.5 rounded-xl border border-[var(--line)] bg-white text-sm text-muted transition hover:border-accent/50 hover:text-ink ${
         wide ? "w-full max-w-md px-3.5" : "w-10 justify-center"
       }`}
     >
@@ -107,10 +107,9 @@ function SideLink({ item, active, badge }: { item: NavItem; active: boolean; bad
       href={item.href}
       title={item.hint}
       className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-        active ? "bg-accent/[0.12] text-accent" : "text-ink/65 hover:bg-white/[0.04] hover:text-ink"
+        active ? "bg-white text-ink shadow-[0_6px_18px_rgba(0,0,0,0.18)]" : "text-white/65 hover:bg-white/[0.07] hover:text-white"
       }`}
     >
-      {active ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-accent shadow-[0_0_10px_var(--admin-glow)]" /> : null}
       <item.icon active={active} />
       <span className="min-w-0 flex-1 truncate">{item.label}</span>
       <Badge n={badge} />
@@ -147,20 +146,20 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
   const initial = email.slice(0, 1).toUpperCase();
 
   return (
-    <div className="min-h-dvh text-ink lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
+    <div className="min-h-dvh bg-bg text-ink lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-[var(--line)] bg-[#020a09]/85 px-3 py-5 backdrop-blur-xl lg:flex">
+      <aside className="sticky top-0 hidden h-dvh flex-col bg-[#062a2a] px-3 py-5 text-white lg:flex">
         <Link href="/admin" className="mb-6 flex items-center gap-3 px-2">
-          <Image src="/admin-icon-192.png" alt="" width={38} height={38} className="rounded-xl ring-1 ring-accent/30" />
+          <Image src="/admin-icon-192.png" alt="" width={38} height={38} className="rounded-xl" />
           <span>
             <span className="block font-display text-lg font-semibold leading-none">Elite Admin</span>
-            <span className="mt-1 block font-mono text-[0.62rem] uppercase tracking-[0.22em] text-accent/80">travel · ops</span>
+            <span className="mt-1 block text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/45">Travel desk</span>
           </span>
         </Link>
         <nav className="flex-1 space-y-5 overflow-y-auto pr-1">
           {groups.map((g) => (
             <div key={g.title}>
-              <p className="mb-1 px-3 font-mono text-[0.6rem] uppercase tracking-[0.22em] text-muted/80">{g.title}</p>
+              <p className="mb-1 px-3 text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-white/35">{g.title}</p>
               <div className="space-y-0.5">
                 {g.items.map((l) => (
                   <SideLink key={l.href} item={l} active={isActive(pathname, l.href)} badge={badges[l.href] ?? 0} />
@@ -169,23 +168,23 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
             </div>
           ))}
         </nav>
-        <div className="mt-4 space-y-1 border-t border-[var(--line)] pt-4">
+        <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
           {permission === "default" ? (
-            <button type="button" onClick={ask} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-gold hover:bg-white/[0.04]">
+            <button type="button" onClick={ask} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#f3e0c2] hover:bg-white/[0.07]">
               <BellIcon /> Мэдэгдэл асаах
             </button>
           ) : null}
-          <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-ink/60 hover:bg-white/[0.04] hover:text-ink">
+          <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-white/55 hover:bg-white/[0.07] hover:text-white">
             <ExternalIcon /> Сайт харах
           </a>
           <div className="flex items-center gap-3 rounded-xl px-3 py-2">
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent/15 font-mono text-sm font-semibold text-accent">{initial}</span>
+            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/10 text-sm font-semibold text-[#f3e0c2]">{initial}</span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-xs text-ink/80">{email}</span>
-              <span className="block font-mono text-[0.62rem] uppercase tracking-[0.16em] text-muted">{ROLE_LABEL[role]}</span>
+              <span className="block truncate text-xs text-white/80">{email}</span>
+              <span className="block text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-white/40">{ROLE_LABEL[role]}</span>
             </span>
             <form action={logout} onSubmit={() => void disableStaffPush()}>
-              <button type="submit" title="Гарах" aria-label="Гарах" className="grid size-8 place-items-center rounded-lg text-ink/50 hover:bg-white/[0.06] hover:text-ink">
+              <button type="submit" title="Гарах" aria-label="Гарах" className="grid size-8 place-items-center rounded-lg text-white/50 hover:bg-white/[0.07] hover:text-white">
                 <LogoutIcon />
               </button>
             </form>
@@ -195,9 +194,9 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
 
       <div className="min-w-0">
         {/* Top bar: where you are, search, live status */}
-        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--line)] bg-[var(--bg)]/80 px-4 pb-2.5 pt-[calc(0.6rem+env(safe-area-inset-top))] backdrop-blur-xl sm:px-6 lg:px-10 lg:py-3">
+        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--line)] bg-[var(--bg)]/85 px-4 pb-2.5 pt-[calc(0.6rem+env(safe-area-inset-top))] backdrop-blur-xl sm:px-6 lg:px-10 lg:py-3">
           <Link href="/admin" className="flex items-center gap-2.5 lg:hidden">
-            <Image src="/admin-icon-192.png" alt="" width={30} height={30} className="rounded-[0.6rem] ring-1 ring-accent/30" />
+            <Image src="/admin-icon-192.png" alt="" width={30} height={30} className="rounded-[0.6rem]" />
           </Link>
           <p className="min-w-0 flex-1 truncate font-mono text-xs text-muted">
             <span className="text-accent">elite</span>
@@ -213,7 +212,7 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
               <SearchButton />
             </span>
             {permission === "default" ? (
-              <button type="button" onClick={ask} aria-label="Мэдэгдэл асаах" className="grid size-10 place-items-center rounded-xl border border-[var(--line)] text-gold lg:hidden">
+              <button type="button" onClick={ask} aria-label="Мэдэгдэл асаах" className="grid size-10 place-items-center rounded-xl bg-[#062a2a] text-[#f3e0c2] lg:hidden">
                 <BellIcon />
               </button>
             ) : null}
@@ -226,7 +225,7 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
       {/* Phone tab bar */}
       {!editor ? (
         <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 lg:hidden" aria-label="Админ цэс">
-          <div className="mx-auto flex max-w-md items-stretch justify-between rounded-[1.4rem] border border-[var(--line)] bg-[#020a09]/95 px-1.5 py-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+          <div className="mx-auto flex max-w-md items-stretch justify-between rounded-[1.4rem] border border-white/10 bg-[#062a2a]/[0.97] px-1.5 py-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.35)] backdrop-blur-xl">
             {tabs.map((t) => {
               const active = isActive(pathname, t.href);
               return (
@@ -234,7 +233,7 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
                   key={t.href}
                   href={t.href}
                   className={`relative flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.05rem] text-[0.64rem] font-medium transition active:scale-95 ${
-                    active ? "bg-accent/[0.14] text-accent" : "text-ink/55"
+                    active ? "bg-white/10 text-white ring-1 ring-white/15" : "text-white/55"
                   }`}
                 >
                   <span className="relative">
@@ -249,7 +248,7 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
               type="button"
               onClick={() => setMenu(true)}
               className={`relative flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.05rem] text-[0.64rem] font-medium transition active:scale-95 ${
-                restActive ? "bg-accent/[0.14] text-accent" : "text-ink/55"
+                restActive ? "bg-white/10 text-white ring-1 ring-white/15" : "text-white/55"
               }`}
             >
               <span className="relative">

@@ -138,7 +138,7 @@ export function CommandPalette({ role }: { role: Role }) {
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-start justify-center bg-black/60 px-3 pt-[max(4rem,12vh)] backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-start justify-center bg-[#062a2a]/45 px-3 pt-[max(4rem,12vh)] backdrop-blur-[2px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -151,7 +151,7 @@ export function CommandPalette({ role }: { role: Role }) {
             animate={{ y: 0, scale: 1, opacity: 1 }}
             exit={{ y: -8, scale: 0.98, opacity: 0 }}
             transition={{ duration: 0.16 }}
-            className="admin-glow w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--line)] bg-[#061412]"
+            className="w-full max-w-xl overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-soft)] shadow-[0_30px_80px_rgba(6,42,42,0.25)]"
           >
             <div className="flex items-center gap-3 border-b border-[var(--line)] px-4">
               <span className="font-mono text-lg text-accent">›</span>
@@ -184,9 +184,9 @@ export function CommandPalette({ role }: { role: Role }) {
                     data-index={i}
                     onMouseMove={() => setIndex(i)}
                     onClick={() => go(e)}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${i === active ? "bg-accent/[0.14] text-ink" : "text-ink/85"}`}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${i === active ? "bg-accent/[0.1] text-ink" : "text-ink/85"}`}
                   >
-                    <span className={`grid size-7 shrink-0 place-items-center rounded-lg font-mono text-sm ${i === active ? "bg-accent text-[#04100e]" : "bg-white/[0.06] text-accent"}`}>{e.mark}</span>
+                    <span className={`grid size-7 shrink-0 place-items-center rounded-lg font-mono text-sm ${i === active ? "bg-accent text-white" : "bg-accent/10 text-accent"}`}>{e.mark}</span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold">{e.title}</span>
                       <span className="block truncate text-xs text-muted">{e.sub}</span>

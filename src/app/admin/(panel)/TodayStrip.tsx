@@ -6,7 +6,7 @@ import Link from "next/link";
 /** «Одоо хийх»: everything waiting on staff, each a tap away from the right list. */
 export function TodayStrip() {
   const { pulse } = usePulse();
-  if (!pulse) return <div className="mt-5 h-[4.25rem] animate-pulse rounded-2xl border border-[var(--line)] bg-white/[0.02]" />;
+  if (!pulse) return <div className="mt-5 h-[4.25rem] animate-pulse rounded-2xl border border-[var(--line)] bg-white" />;
 
   const items = [
     { n: pulse.unread.length, label: "хариулаагүй чат", href: "/admin?f=unread", tone: "text-red-600" },
