@@ -6,11 +6,11 @@ import { biometricEnabled, biometryName, disableBiometric, enableBiometric } fro
 import { cldImage } from "@/lib/cloudinary";
 import { haptic } from "@/lib/native";
 import { useTraveller } from "@/lib/traveller-store";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useDragControls, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 
 const SIGN_IN_PHOTO = "elitetravel/tours/tropical-aerial-coast";
@@ -36,45 +36,172 @@ export function AccountView({ mode, linkExpired, welcome }: { mode: "login" | "s
   );
 }
 
-/** Full-screen sign-in, like a native app's: photo and logo on top, the form in a sheet below. */
+const EASE = [0.22, 1, 0.36, 1] as const;
+const rise = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } } };
+
+/** One block of the sign-in sheet; blocks fade up one after another once the sheet lands. */
+function Rise({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <motion.div variants={rise} className={className}>
+      {children}
+    </motion.div>
+  );
+}
+
+/**
+ * Full-screen sign-in, like a native app's: the photo drifts in, the logo resolves out of a blur,
+ * and the form arrives as a sheet from the bottom that can be dragged back down to close.
+ */
 function SignInScreen({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const reduce = useReducedMotion();
+  const drag = useDragControls();
+  const [closing, setClosing] = useState(false);
   const close = () => {
+    if (closing) return;
     haptic("tap");
+    setClosing(true);
+  };
+  const leave = () => {
     if (window.history.length > 1) router.back();
     else router.push("/");
   };
+
   // Portaled: the page transition wrapper would otherwise keep it under the header, dock and chat button
   return createPortal(
-    <div className="fixed inset-0 z-[85] overflow-y-auto overscroll-contain bg-[#062a2a]" data-lenis-prevent>
-      <div className="absolute inset-x-0 top-0 h-[46svh] sm:fixed sm:inset-0 sm:h-auto">
-        <Image src={cldImage(SIGN_IN_PHOTO)} alt="" fill priority sizes="100vw" className="object-cover" />
+    <motion.div
+      className="fixed inset-0 z-[85] overflow-y-auto overscroll-contain bg-[#062a2a]"
+      data-lenis-prevent
+      initial={reduce ? false : { opacity: 0 }}
+      animate={{ opacity: closing ? 0 : 1 }}
+      transition={{ duration: closing ? 0.35 : 0.3, delay: closing ? 0.15 : 0 }}
+      onAnimationComplete={() => closing && leave()}
+    >
+      <div className="absolute inset-x-0 top-0 h-[46svh] overflow-hidden sm:fixed sm:inset-0 sm:h-auto">
+        <motion.div
+          className="absolute inset-0"
+          initial={reduce ? false : { scale: 1.22 }}
+          animate={{ scale: 1.04 }}
+          transition={{ duration: 2.6, ease: EASE }}
+        >
+          <Image src={cldImage(SIGN_IN_PHOTO)} alt="" fill priority sizes="100vw" className="object-cover" />
+        </motion.div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#031a1a]/55 via-[#062a2a]/20 to-[#062a2a]/85 sm:to-[#062a2a]/70" />
+        <div className="auth-glow pointer-events-none absolute -bottom-24 left-1/2 size-[28rem] -translate-x-1/2 rounded-full bg-[#14b8a6]/25 blur-3xl" />
       </div>
-      <button
+
+      <motion.button
         type="button"
         onClick={close}
         aria-label="Хаах"
-        className="fixed left-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-10 grid size-10 place-items-center rounded-full bg-black/25 text-xl text-white backdrop-blur-md active:scale-90"
+        initial={reduce ? false : { opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.5, type: "spring", stiffness: 400, damping: 22 }}
+        whileTap={{ scale: 0.85 }}
+        className="fixed left-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-10 grid size-10 place-items-center rounded-full bg-black/25 text-xl text-white backdrop-blur-md"
       >
         ×
-      </button>
+      </motion.button>
+
       <div className="relative flex min-h-full flex-col sm:items-center sm:justify-center sm:p-6">
         <div className="flex h-[38svh] min-h-[220px] shrink-0 flex-col items-center justify-end pb-10 text-center sm:h-auto sm:min-h-0 sm:pb-8">
-          <EliteLogo href="" size="lg" light />
-          <p className="mt-3 text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-white/70">Explore · Dream · Discover</p>
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 18, scale: 0.92, filter: "blur(10px)" }}
+            animate={closing ? { opacity: 0, y: -12 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            transition={{ duration: 0.9, delay: closing ? 0 : 0.2, ease: EASE }}
+          >
+            <EliteLogo href="" size="lg" light />
+          </motion.div>
+          <motion.p
+            initial={reduce ? false : { opacity: 0, letterSpacing: "0.7em" }}
+            animate={{ opacity: closing ? 0 : 1, letterSpacing: "0.32em" }}
+            transition={{ duration: 1.1, delay: closing ? 0 : 0.45, ease: EASE }}
+            className="mt-3 text-[0.68rem] font-semibold uppercase text-white/70"
+          >
+            Explore · Dream · Discover
+          </motion.p>
         </div>
+
         <motion.div
-          initial={{ y: 40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 32 }}
-          className="relative -mt-6 flex-1 rounded-t-[2rem] bg-bg-elevated px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-7 text-foam shadow-[0_-20px_60px_rgba(0,0,0,0.25)] sm:mt-0 sm:w-full sm:max-w-md sm:flex-none sm:rounded-[2rem] sm:pb-7"
+          initial={reduce ? false : { y: "100%" }}
+          animate={{ y: closing ? "110%" : 0 }}
+          transition={closing ? { duration: 0.38, ease: [0.4, 0, 1, 1] } : { type: "spring", stiffness: 240, damping: 30, delay: 0.12 }}
+          drag={closing ? false : "y"}
+          dragControls={drag}
+          dragListener={false}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={{ top: 0, bottom: 0.7 }}
+          onDragEnd={(_, info) => {
+            if (info.offset.y > 110 || info.velocity.y > 600) close();
+          }}
+          className="relative -mt-6 flex-1 rounded-t-[2rem] bg-bg-elevated px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-3 text-foam shadow-[0_-20px_60px_rgba(0,0,0,0.25)] sm:mt-0 sm:w-full sm:max-w-md sm:flex-none sm:rounded-[2rem] sm:pb-7 sm:pt-7"
         >
-          {children}
+          <div onPointerDown={(e) => drag.start(e)} className="-mx-5 mb-4 flex cursor-grab touch-none justify-center pb-1 pt-1 active:cursor-grabbing sm:hidden" aria-hidden>
+            <span className="h-1.5 w-11 rounded-full bg-foam/15" />
+          </div>
+          <motion.div initial={reduce ? false : "hidden"} animate="show" variants={{ show: { transition: { staggerChildren: 0.07, delayChildren: 0.32 } } }}>
+            {children}
+          </motion.div>
         </motion.div>
       </div>
-    </div>,
+    </motion.div>,
     document.body,
+  );
+}
+
+function Spinner() {
+  return (
+    <span className="inline-flex items-center gap-1.5" aria-label="Түр хүлээнэ үү">
+      {[0, 1, 2].map((i) => (
+        <motion.span key={i} className="size-1.5 rounded-full bg-white" animate={{ y: [0, -4, 0], opacity: [0.5, 1, 0.5] }} transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.12 }} />
+      ))}
+    </span>
+  );
+}
+
+/** Six code boxes over one real input, so paste and iOS one-time-code autofill keep working. */
+function CodeBoxes({ value, onChange, inputRef, disabled }: { value: string; onChange: (v: string) => void; inputRef: RefObject<HTMLInputElement | null>; disabled: boolean }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div className="relative">
+      <div className="grid grid-cols-6 gap-2" aria-hidden>
+        {Array.from({ length: 6 }, (_, i) => {
+          const digit = value[i];
+          const active = focused && (i === value.length || (i === 5 && value.length >= 6));
+          return (
+            <div
+              key={i}
+              className={`grid h-14 place-items-center rounded-2xl border bg-bg font-num text-2xl font-semibold transition-colors ${
+                active ? "border-accent ring-4 ring-accent/15" : digit ? "border-accent/40" : "border-[var(--line)]"
+              }`}
+            >
+              <AnimatePresence mode="popLayout">
+                {digit ? (
+                  <motion.span key={digit + i} initial={{ scale: 0.4, opacity: 0, y: 6 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.4, opacity: 0 }} transition={{ type: "spring", stiffness: 500, damping: 24 }}>
+                    {digit}
+                  </motion.span>
+                ) : active ? (
+                  <motion.span key="caret" className="h-6 w-0.5 rounded-full bg-accent" animate={{ opacity: [1, 0, 1] }} transition={{ duration: 1, repeat: Infinity }} />
+                ) : null}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        disabled={disabled}
+        aria-label="Имэйлээр ирсэн 6 оронтой код"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        maxLength={6}
+        className="absolute inset-0 h-full w-full cursor-text opacity-0"
+      />
+    </div>
   );
 }
 
@@ -151,93 +278,153 @@ function SignIn({ initialMode, linkExpired }: { initialMode: "login" | "signup";
 
   return (
     <SignInScreen>
-      <h1 className="font-display text-[2.1rem] font-semibold leading-[1] tracking-[-0.035em]">{mode === "signup" ? "Бүртгүүлэх" : "Тавтай морил 👋"}</h1>
-      <p className="mt-2.5 text-sm leading-relaxed text-muted">
-        {mode === "signup"
-          ? "Нууц үг хэрэггүй — имэйлээр тань 6 оронтой код очно. Захиалга, чат, төлбөр тань бүх төхөөрөмж дээр хадгалагдана."
-          : "Имэйлээ оруулаад ирсэн кодоор нэвтэрнэ. Захиалга, чат, төлбөр тань утсаа солисон ч хадгалагдана."}
-      </p>
+      <Rise>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.h1
+            key={step === "code" ? "code" : mode}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25, ease: EASE }}
+            className="font-display text-[2.1rem] font-semibold leading-[1] tracking-[-0.035em]"
+          >
+            {step === "code" ? "Кодоо оруулна уу" : mode === "signup" ? "Бүртгүүлэх" : "Тавтай морил 👋"}
+          </motion.h1>
+        </AnimatePresence>
+      </Rise>
+      <Rise>
+        <p className="mt-2.5 text-sm leading-relaxed text-muted">
+          {step === "code" ? (
+            <>
+              <b className="text-foam">{email}</b> хаяг руу 6 оронтой код илгээлээ. Spam хавтсыг ч шалгаарай.
+            </>
+          ) : mode === "signup" ? (
+            "Нууц үг хэрэггүй — имэйлээр тань 6 оронтой код очно. Захиалга, чат, төлбөр тань бүх төхөөрөмж дээр хадгалагдана."
+          ) : (
+            "Имэйлээ оруулаад ирсэн кодоор нэвтэрнэ. Захиалга, чат, төлбөр тань утсаа солисон ч хадгалагдана."
+          )}
+        </p>
+      </Rise>
 
       {step === "email" && faceId ? (
-        <div className="mt-6">
-          <button type="button" disabled={busy} onClick={() => void viaFaceId()} className={`${primary} h-14`}>
+        <Rise className="mt-6">
+          <motion.button type="button" disabled={busy} onClick={() => void viaFaceId()} whileTap={{ scale: 0.97 }} className={`${primary} h-14`}>
             {busy ? "Шалгаж байна…" : `🔐 ${faceId}-аар нэвтрэх`}
-          </button>
+          </motion.button>
           <p className="mt-3 text-center text-xs text-muted">эсвэл имэйлээр код авах</p>
-        </div>
+        </Rise>
       ) : null}
 
       {step === "email" ? (
-        <div className="mt-6 grid grid-cols-2 gap-1 rounded-2xl bg-foam/[0.06] p-1">
-          {(["login", "signup"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              className={`h-10 rounded-xl text-sm font-semibold transition ${mode === m ? "bg-bg-elevated text-foam shadow-sm" : "text-muted"}`}
-            >
-              {m === "login" ? "Нэвтрэх" : "Бүртгүүлэх"}
-            </button>
-          ))}
-        </div>
+        <Rise className="mt-6">
+          <div className="grid grid-cols-2 gap-1 rounded-2xl bg-foam/[0.06] p-1">
+            {(["login", "signup"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  if (m === mode) return;
+                  haptic("tap");
+                  setMode(m);
+                }}
+                className={`relative h-10 rounded-xl text-sm font-semibold transition-colors ${mode === m ? "text-foam" : "text-muted"}`}
+              >
+                {mode === m ? <motion.span layoutId="auth-tab" className="absolute inset-0 rounded-xl bg-bg-elevated shadow-sm" transition={{ type: "spring", stiffness: 500, damping: 36 }} /> : null}
+                <span className="relative">{m === "login" ? "Нэвтрэх" : "Бүртгүүлэх"}</span>
+              </button>
+            ))}
+          </div>
+        </Rise>
       ) : null}
 
-      <AnimatePresence mode="wait">
-        {step === "email" ? (
-          <motion.form key="email" onSubmit={send} className="mt-5 space-y-3" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-            {mode === "signup" ? (
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Таны нэр" autoComplete="name" maxLength={80} className={field} />
-            ) : null}
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Имэйл хаяг"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              required
-              className={field}
-            />
-            <button type="submit" disabled={busy || !email.includes("@") || (mode === "signup" && name.trim().length < 2)} className={primary}>
-              {busy ? "Илгээж байна…" : "Код авах"}
-            </button>
-          </motion.form>
-        ) : (
-          <motion.div key="code" className="mt-6 space-y-3" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-            <p className="text-sm">
-              <b>{email}</b> хаяг руу код илгээлээ. Ирсэн имэйлээ (Spam хавтсыг ч) шалгаарай.
-            </p>
-            <input
-              ref={codeInput}
-              value={code}
-              onChange={(e) => {
-                const v = e.target.value.replace(/\D/g, "").slice(0, 10);
-                setCode(v);
-                if (v.length === 6) void verify(v);
-              }}
-              placeholder="••••••"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              className={`${field} text-center font-num text-2xl tracking-[0.5em]`}
-            />
-            <button type="button" disabled={busy || code.length < 6} onClick={() => void verify()} className={primary}>
-              {busy ? "Шалгаж байна…" : "Нэвтрэх"}
-            </button>
-            <div className="flex items-center justify-between text-sm">
-              <button type="button" onClick={() => setStep("email")} className="font-semibold text-muted">
-                ← Имэйл солих
-              </button>
-              <button type="button" disabled={wait > 0 || busy} onClick={() => void send()} className="font-semibold text-accent disabled:text-muted">
-                {wait > 0 ? `Дахин илгээх (${wait})` : "Дахин илгээх"}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Rise>
+        <AnimatePresence mode="wait" initial={false}>
+          {step === "email" ? (
+            <motion.form
+              key="email"
+              onSubmit={send}
+              className="mt-5 space-y-3"
+              initial={{ opacity: 0, x: -28 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -28 }}
+              transition={{ duration: 0.28, ease: EASE }}
+            >
+              <AnimatePresence initial={false}>
+                {mode === "signup" ? (
+                  <motion.div key="name" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.28, ease: EASE }} className="overflow-hidden">
+                    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Таны нэр" autoComplete="name" maxLength={80} className={field} />
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Имэйл хаяг"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                required
+                className={field}
+              />
+              <motion.button
+                type="submit"
+                disabled={busy || !email.includes("@") || (mode === "signup" && name.trim().length < 2)}
+                whileTap={{ scale: 0.97 }}
+                className={`${primary} relative overflow-hidden`}
+              >
+                {busy ? <Spinner /> : "Код авах"}
+              </motion.button>
+            </motion.form>
+          ) : (
+            <motion.div
+              key="code"
+              className="mt-6 space-y-3"
+              initial={{ opacity: 0, x: 28 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 28 }}
+              transition={{ duration: 0.28, ease: EASE }}
+            >
+              <CodeBoxes
+                value={code}
+                inputRef={codeInput}
+                disabled={busy}
+                onChange={(v) => {
+                  setCode(v);
+                  if (v.length === 6) void verify(v);
+                }}
+              />
+              <motion.button type="button" disabled={busy || code.length < 6} onClick={() => void verify()} whileTap={{ scale: 0.97 }} className={primary}>
+                {busy ? <Spinner /> : "Нэвтрэх"}
+              </motion.button>
+              <div className="flex items-center justify-between text-sm">
+                <button type="button" onClick={() => setStep("email")} className="font-semibold text-muted">
+                  ← Имэйл солих
+                </button>
+                <button type="button" disabled={wait > 0 || busy} onClick={() => void send()} className="font-semibold text-accent disabled:text-muted">
+                  {wait > 0 ? `Дахин илгээх (${wait})` : "Дахин илгээх"}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Rise>
 
-      {error ? <p className="mt-4 rounded-2xl bg-[#c2410c]/10 px-4 py-3 text-sm text-[#c2410c]">{error}</p> : null}
-      <div className="mt-7 border-t border-[var(--line)] pt-5 text-center">
+      <AnimatePresence>
+        {error ? (
+          <motion.p
+            key={error}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto", x: [0, -8, 8, -5, 5, 0] }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mt-4 overflow-hidden rounded-2xl bg-[#c2410c]/10 px-4 py-3 text-sm text-[#c2410c]"
+          >
+            {error}
+          </motion.p>
+        ) : null}
+      </AnimatePresence>
+      <Rise className="mt-7 border-t border-[var(--line)] pt-5 text-center">
         <Link href="/tours" className="text-sm font-semibold text-accent">
           Бүртгэлгүйгээр үргэлжлүүлэх →
         </Link>
@@ -247,7 +434,7 @@ function SignIn({ initialMode, linkExpired }: { initialMode: "login" | "signup";
             +976 9003 1771
           </a>
         </p>
-      </div>
+      </Rise>
     </SignInScreen>
   );
 }

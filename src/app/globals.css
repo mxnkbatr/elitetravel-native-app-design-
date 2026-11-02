@@ -719,3 +719,24 @@ html[data-app] ::-webkit-scrollbar {
 html[data-app] body {
   overscroll-behavior: none;
 }
+
+/* Sign-in screen: a slow teal glow breathing behind the logo */
+.auth-glow {
+  animation: auth-glow 6s ease-in-out infinite;
+}
+@keyframes auth-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.12);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-glow {
+    animation: none;
+  }
+}
