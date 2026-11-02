@@ -2,6 +2,8 @@ import { formatPrice, getTour, isBookable, tourDates } from "@/data/tours";
 import { getTours } from "@/lib/server/content";
 import { quote } from "@/lib/pricing";
 import { currentTraveller } from "@/lib/server/account";
+import { clientIp, rateLimit } from "@/lib/server/chat-security";
+import { reportError } from "@/lib/server/error-log";
 import { pushToStaff, sendLater } from "@/lib/server/push";
 import { departureState } from "@/lib/server/seats";
 import { supabaseAdmin } from "@/lib/server/supabase-admin";
@@ -50,6 +52,10 @@ export async function POST(request: Request) {
   }
 
   if (text(body.website, 100)) return Response.json({ id: bookingId() }); // quietly drop bots
+  // New requests hold seats, so a flood could make a departure look sold out
+  if (!rateLimit(`booking:${clientIp(request)}`, 5) || !rateLimit(`booking-phone:${text(body.phone, 20).replace(/\D/g, "")}`, 3, 10 * 60_000)) {
+    return fail(429, "Хэт олон хүсэлт илгээлээ. Хэдэн минут хүлээгээд дахин оролдоно уу, эсвэл манай утсаар холбогдоно уу.");
+  }
 
   const tour = typeof body.tourId === "string" ? getTour(await getTours(), body.tourId) : undefined;
   if (!tour || !isBookable(tour)) return fail(400, "Энэ аялал захиалгад нээлттэй биш байна.");
@@ -102,7 +108,7 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    console.error("booking insert failed", error.code, error.message);
+    await reportError("booking insert failed", error, { tour: tour.id });
     return fail(502, "Хүсэлт хадгалахад алдаа гарлаа.");
   }
 
