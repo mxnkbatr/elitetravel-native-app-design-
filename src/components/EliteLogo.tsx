@@ -59,7 +59,7 @@ export function EliteLogo({
         <span className="flex flex-col items-center justify-center leading-none">
           <span className={`font-brand font-semibold uppercase tracking-[0.32em] ${s.elite}`} style={{ color }}>
             Elite
-          </span>
+          </span>{" "}
           <span className={`font-brand mt-[0.45em] flex items-center gap-[0.5em] uppercase tracking-[0.42em] ${s.travel}`} style={{ color: sub }}>
             <span className="h-px w-[1.2em]" style={{ background: sub }} />
             Travel
@@ -72,7 +72,7 @@ export function EliteLogo({
 
   if (!href) return inner;
   return (
-    <Link href={href} className="inline-flex items-center" aria-label="Elite Travel">
+    <Link href={href} className="inline-flex items-center" aria-label={showWordmark ? undefined : "Elite Travel"}>
       {inner}
     </Link>
   );

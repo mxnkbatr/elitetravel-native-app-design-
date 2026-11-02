@@ -173,7 +173,7 @@ export function Hero() {
             <source src={media.heroVideo} />
           </video>
         ) : (
-          <Image src={media.heroPoster} unoptimized alt="" fill priority className="object-cover" sizes="100vw" />
+          <Image src={media.heroStill} alt="" fill priority className="object-cover" sizes="100vw" />
         )}
       </div>
 

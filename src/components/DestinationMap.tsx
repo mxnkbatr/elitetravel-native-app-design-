@@ -3,7 +3,7 @@
 import { destinations, formatPrice, isBookable, type Tour } from "@/data/tours";
 import { withTransforms } from "@/lib/cloudinary";
 import { useTours } from "@/lib/content";
-import { Map, Marker, NavigationControl, setWorkerUrl, type LngLatLike } from "maplibre-gl";
+import type { LngLatLike, Map as MapLibre, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef } from "react";
 
@@ -65,7 +65,7 @@ export function DestinationMap({ active, onSelect, bottomInset = 0, fullscreen =
   const tours = useTours();
   const pins = useMemo(() => buildPins(tours), [tours]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<Map | null>(null);
+  const mapRef = useRef<MapLibre | null>(null);
   const pinEls = useRef<Record<string, HTMLElement>>({});
   const planeRef = useRef<Marker | null>(null);
   const rafRef = useRef(0);
@@ -81,153 +81,159 @@ export function DestinationMap({ active, onSelect, bottomInset = 0, fullscreen =
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    let cancelled = false;
 
-    // Turbopack does not emit maplibre v6's worker chunk; serve the copy from public/ (see postinstall)
-    setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
-    const map = new Map({
-      container: containerRef.current,
-      style: STYLE_URL,
-      center: [98, 32],
-      zoom: 0.8,
-      attributionControl: { compact: true },
-      renderWorldCopies: false,
-      // Phones have 2–3× screens; drawing every vector tile at full density is what stutters
-      pixelRatio: Math.min(window.devicePixelRatio || 1, window.matchMedia("(max-width: 639px)").matches ? 1.5 : 2),
-      fadeDuration: 0,
-    });
-    map.addControl(new NavigationControl({ showCompass: false }), "top-right");
-    map.dragRotate.disable();
-    map.touchZoomRotate.disableRotation();
-    mapRef.current = map;
-
-    map.on("load", () => {
-      // Brand tint: sea in the site's pale teal, land in warm off-white
-      if (map.getLayer("water")) map.setPaintProperty("water", "fill-color", "#cfe8e3");
-      if (map.getLayer("background")) map.setPaintProperty("background", "background-color", "#f5f7f2");
-      // One clean label per place: Mongolian where OSM has it, else English (positron prints two scripts)
-      for (const layer of map.getStyle().layers ?? []) {
-        if (layer.type !== "symbol" || !map.getLayoutProperty(layer.id, "text-field")) continue;
-        if (/poi|road|highway|transport|housenumber|waterway/.test(layer.id)) {
-          map.setLayoutProperty(layer.id, "visibility", "none");
-          continue;
-        }
-        map.setLayoutProperty(layer.id, "text-field", ["coalesce", ["get", "name:mn"], ["get", "name:en"], ["get", "name"]]);
-      }
-
-      map.addSource("routes", {
-        type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: pins.map((p) => ({
-            type: "Feature",
-            properties: { key: p.key },
-            geometry: { type: "LineString", coordinates: routes[p.key] },
-          })),
-        },
+    // ~1 MB, loaded with the map itself so link prefetches to /map stay light
+    void import("maplibre-gl").then(({ Map, Marker, NavigationControl, setWorkerUrl }) => {
+      if (cancelled || !containerRef.current) return;
+      // Turbopack does not emit maplibre v6's worker chunk; serve the copy from public/ (see postinstall)
+      setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
+      const map = new Map({
+        container: containerRef.current,
+        style: STYLE_URL,
+        center: [98, 32],
+        zoom: 0.8,
+        attributionControl: { compact: true },
+        renderWorldCopies: false,
+        // Phones have 2–3× screens; drawing every vector tile at full density is what stutters
+        pixelRatio: Math.min(window.devicePixelRatio || 1, window.matchMedia("(max-width: 639px)").matches ? 1.5 : 2),
+        fadeDuration: 0,
       });
-      map.addLayer({
-        id: "routes-base",
-        type: "line",
-        source: "routes",
-        layout: { "line-cap": "round" },
-        // No line-dasharray: maplibre 6.16 throws in setConstantDashPositions with it
-        paint: { "line-color": "#0e8f84", "line-width": 1.4, "line-opacity": 0.3 },
-      });
-      map.addLayer({
-        id: "routes-active-glow",
-        type: "line",
-        source: "routes",
-        filter: ["==", ["get", "key"], activeRef.current],
-        layout: { "line-cap": "round" },
-        paint: { "line-color": "#e8b86d", "line-width": 9, "line-opacity": 0.25, "line-blur": 4 },
-      });
-      map.addLayer({
-        id: "routes-active",
-        type: "line",
-        source: "routes",
-        filter: ["==", ["get", "key"], activeRef.current],
-        layout: { "line-cap": "round" },
-        paint: { "line-color": "#0e8f84", "line-width": 2.6 },
-      });
+      map.addControl(new NavigationControl({ showCompass: false }), "top-right");
+      map.dragRotate.disable();
+      map.touchZoomRotate.disableRotation();
+      mapRef.current = map;
 
-      // Hub
-      const hub = document.createElement("div");
-      hub.className = "map-hub";
-      hub.innerHTML = `<span class="map-hub-dot"></span><span class="map-hub-label">${HUB.name}</span>`;
-      new Marker({ element: hub, anchor: "center" }).setLngLat([HUB.lng, HUB.lat]).addTo(map);
-
-      // Photo pins
-      pins.forEach((p, i) => {
-        const root = document.createElement("div");
-        const el = document.createElement("button");
-        el.type = "button";
-        el.className = "map-pin";
-        el.style.setProperty("--d", `${0.6 + i * 0.12}s`);
-        el.setAttribute("aria-label", p.name);
-        el.innerHTML = `
-          <span class="map-pin-ring"></span>
-          <span class="map-pin-photo" style="background-image:url('${p.photo}')"></span>
-          <span class="map-pin-label"><b>${p.name}</b><i>${p.label}</i></span>`;
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          onSelectRef.current(p.key);
-        });
-        root.appendChild(el);
-        pinEls.current[p.key] = el;
-        new Marker({ element: root, anchor: "bottom" }).setLngLat([p.lng, p.lat]).addTo(map);
-      });
-
-      // Plane that flies the active route
-      const plane = document.createElement("div");
-      plane.className = "map-plane";
-      plane.innerHTML = PLANE_SVG;
-      planeRef.current = new Marker({ element: plane, anchor: "center", rotationAlignment: "map" })
-        .setLngLat([HUB.lng, HUB.lat])
-        .addTo(map);
-
-      let t0 = performance.now();
-      let lastStep = "";
-      const fly = (now: number) => {
-        const path = routes[activeRef.current];
-        if (path && planeRef.current) {
-          const t = ((now - t0) / 4200) % 1;
-          const eased = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-          const i = Math.min(path.length - 2, Math.floor(eased * (path.length - 1)));
-          // Only touch the marker when it advances to the next route point (~15×/s, not 60)
-          const step = `${activeRef.current}:${i}`;
-          if (step === lastStep) {
-            rafRef.current = requestAnimationFrame(fly);
-            return;
+      map.on("load", () => {
+        // Brand tint: sea in the site's pale teal, land in warm off-white
+        if (map.getLayer("water")) map.setPaintProperty("water", "fill-color", "#cfe8e3");
+        if (map.getLayer("background")) map.setPaintProperty("background", "background-color", "#f5f7f2");
+        // One clean label per place: Mongolian where OSM has it, else English (positron prints two scripts)
+        for (const layer of map.getStyle().layers ?? []) {
+          if (layer.type !== "symbol" || !map.getLayoutProperty(layer.id, "text-field")) continue;
+          if (/poi|road|highway|transport|housenumber|waterway/.test(layer.id)) {
+            map.setLayoutProperty(layer.id, "visibility", "none");
+            continue;
           }
-          lastStep = step;
-          const a = map.project(path[i] as LngLatLike);
-          const b = map.project(path[i + 1] as LngLatLike);
-          const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI + 90;
-          planeRef.current.setLngLat(path[i] as LngLatLike).setRotation(angle);
-          plane.style.opacity = String(t < 0.06 ? t / 0.06 : t > 0.94 ? (1 - t) / 0.06 : 1);
+          map.setLayoutProperty(layer.id, "text-field", ["coalesce", ["get", "name:mn"], ["get", "name:en"], ["get", "name"]]);
         }
+
+        map.addSource("routes", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: pins.map((p) => ({
+              type: "Feature",
+              properties: { key: p.key },
+              geometry: { type: "LineString", coordinates: routes[p.key] },
+            })),
+          },
+        });
+        map.addLayer({
+          id: "routes-base",
+          type: "line",
+          source: "routes",
+          layout: { "line-cap": "round" },
+          // No line-dasharray: maplibre 6.16 throws in setConstantDashPositions with it
+          paint: { "line-color": "#0e8f84", "line-width": 1.4, "line-opacity": 0.3 },
+        });
+        map.addLayer({
+          id: "routes-active-glow",
+          type: "line",
+          source: "routes",
+          filter: ["==", ["get", "key"], activeRef.current],
+          layout: { "line-cap": "round" },
+          paint: { "line-color": "#e8b86d", "line-width": 9, "line-opacity": 0.25, "line-blur": 4 },
+        });
+        map.addLayer({
+          id: "routes-active",
+          type: "line",
+          source: "routes",
+          filter: ["==", ["get", "key"], activeRef.current],
+          layout: { "line-cap": "round" },
+          paint: { "line-color": "#0e8f84", "line-width": 2.6 },
+        });
+
+        // Hub
+        const hub = document.createElement("div");
+        hub.className = "map-hub";
+        hub.innerHTML = `<span class="map-hub-dot"></span><span class="map-hub-label">${HUB.name}</span>`;
+        new Marker({ element: hub, anchor: "center" }).setLngLat([HUB.lng, HUB.lat]).addTo(map);
+
+        // Photo pins
+        pins.forEach((p, i) => {
+          const root = document.createElement("div");
+          const el = document.createElement("button");
+          el.type = "button";
+          el.className = "map-pin";
+          el.style.setProperty("--d", `${0.6 + i * 0.12}s`);
+          el.setAttribute("aria-label", p.name);
+          el.innerHTML = `
+            <span class="map-pin-ring"></span>
+            <span class="map-pin-photo" style="background-image:url('${p.photo}')"></span>
+            <span class="map-pin-label"><b>${p.name}</b><i>${p.label}</i></span>`;
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            onSelectRef.current(p.key);
+          });
+          root.appendChild(el);
+          pinEls.current[p.key] = el;
+          new Marker({ element: root, anchor: "bottom" }).setLngLat([p.lng, p.lat]).addTo(map);
+        });
+
+        // Plane that flies the active route
+        const plane = document.createElement("div");
+        plane.className = "map-plane";
+        plane.innerHTML = PLANE_SVG;
+        planeRef.current = new Marker({ element: plane, anchor: "center", rotationAlignment: "map" })
+          .setLngLat([HUB.lng, HUB.lat])
+          .addTo(map);
+
+        let t0 = performance.now();
+        let lastStep = "";
+        const fly = (now: number) => {
+          const path = routes[activeRef.current];
+          if (path && planeRef.current) {
+            const t = ((now - t0) / 4200) % 1;
+            const eased = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+            const i = Math.min(path.length - 2, Math.floor(eased * (path.length - 1)));
+            // Only touch the marker when it advances to the next route point (~15×/s, not 60)
+            const step = `${activeRef.current}:${i}`;
+            if (step === lastStep) {
+              rafRef.current = requestAnimationFrame(fly);
+              return;
+            }
+            lastStep = step;
+            const a = map.project(path[i] as LngLatLike);
+            const b = map.project(path[i + 1] as LngLatLike);
+            const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI + 90;
+            planeRef.current.setLngLat(path[i] as LngLatLike).setRotation(angle);
+            plane.style.opacity = String(t < 0.06 ? t / 0.06 : t > 0.94 ? (1 - t) / 0.06 : 1);
+          }
+          rafRef.current = requestAnimationFrame(fly);
+        };
         rafRef.current = requestAnimationFrame(fly);
-      };
-      rafRef.current = requestAnimationFrame(fly);
-      map.on("click", () => (t0 = performance.now()));
+        map.on("click", () => (t0 = performance.now()));
 
-      readyRef.current = true;
-      highlight(activeRef.current);
+        readyRef.current = true;
+        highlight(activeRef.current);
 
-      // Opening shot: from the globe down to a frame holding every route
-      map.fitBounds(
-        [
-          [28, -12],
-          [120, 50],
-        ],
-        { padding: { top: 90, bottom: 40 + insetRef.current, left: 40, right: 40 }, duration: 2600, essential: true },
-      );
-      window.setTimeout(() => focus(activeRef.current), 3000);
+        // Opening shot: from the globe down to a frame holding every route
+        map.fitBounds(
+          [
+            [28, -12],
+            [120, 50],
+          ],
+          { padding: { top: 90, bottom: 40 + insetRef.current, left: 40, right: 40 }, duration: 2600, essential: true },
+        );
+        window.setTimeout(() => focus(activeRef.current), 3000);
+      });
     });
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(rafRef.current);
-      map.remove();
+      mapRef.current?.remove();
       mapRef.current = null;
       readyRef.current = false;
       pinEls.current = {};

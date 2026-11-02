@@ -26,6 +26,8 @@ export function withTransforms(url: string, transforms: string) {
 export const media = {
   heroVideo: cldVideo("elitetravel/media/web-hero-background"),
   heroPoster: cldImageWith("elitetravel/media/hero-frame", "f_auto,q_auto,w_1920"),
+  /** Same frame through next/image, so phones get a screen-sized copy instead of the 1920 px poster */
+  heroStill: cldImage("elitetravel/media/hero-frame"),
   seascapeVideo: cldVideo("elitetravel/media/web-hero-seascape"),
   seascapePoster: cldImageWith("elitetravel/media/web-hero-seascape-frame", "f_auto,q_auto,w_1600"),
 };

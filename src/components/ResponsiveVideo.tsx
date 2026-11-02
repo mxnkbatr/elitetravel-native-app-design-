@@ -35,6 +35,7 @@ export function ResponsiveVideo({
         alt=""
         className={className}
         style={{ objectPosition }}
+        loading="lazy"
         decoding="async"
       />
     );
