@@ -1,6 +1,7 @@
 "use client";
 
-import { deleteAccount, logout, requestCode, updateProfile, useAccount, verifyCode } from "@/lib/account";
+import { deleteAccount, faceIdSignIn, logout, requestCode, updateProfile, useAccount, verifyCode } from "@/lib/account";
+import { biometricEnabled, biometryName, disableBiometric, enableBiometric } from "@/lib/biometric";
 import { haptic } from "@/lib/native";
 import { useTraveller } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
@@ -39,6 +40,26 @@ function SignIn({ initialMode, linkExpired }: { initialMode: "login" | "signup";
   const [error, setError] = useState<string | null>(linkExpired ? "Холбоосны хугацаа дууссан байна. Шинэ код аваарай." : null);
   const [wait, setWait] = useState(0);
   const codeInput = useRef<HTMLInputElement>(null);
+  // Native app with Face ID sign-in turned on earlier
+  const [faceId, setFaceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void biometryName().then((name) => setFaceId(name && biometricEnabled("traveller") ? name : null));
+  }, []);
+
+  async function viaFaceId() {
+    setBusy(true);
+    setError(null);
+    try {
+      await faceIdSignIn();
+      haptic("success");
+    } catch (err) {
+      setError((err as Error).message);
+      if (!biometricEnabled("traveller")) setFaceId(null);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (wait <= 0) return;
@@ -87,6 +108,15 @@ function SignIn({ initialMode, linkExpired }: { initialMode: "login" | "signup";
       <p className="mt-3 text-sm leading-relaxed text-muted">
         Нууц үг хэрэггүй. Имэйлээ оруулахад 6 оронтой код очно. Нэвтэрсний дараа захиалга, чат, төлбөр тань утсаа солисон ч хадгалагдана.
       </p>
+
+      {step === "email" && faceId ? (
+        <div className="mt-6">
+          <button type="button" disabled={busy} onClick={() => void viaFaceId()} className={`${primary} h-14`}>
+            {busy ? "Шалгаж байна…" : `🔐 ${faceId}-аар нэвтрэх`}
+          </button>
+          <p className="mt-3 text-center text-xs text-muted">эсвэл имэйлээр код авах</p>
+        </div>
+      ) : null}
 
       {step === "email" ? (
         <div className="mt-6 grid grid-cols-2 gap-1 rounded-2xl bg-foam/[0.06] p-1">
@@ -229,6 +259,8 @@ function Profile({ welcome }: { welcome: boolean }) {
         </button>
       </form>
 
+      <FaceIdCard highlight={welcome} />
+
       <button
         type="button"
         onClick={() => void logout()}
@@ -252,7 +284,8 @@ function Profile({ welcome }: { welcome: boolean }) {
               disabled={deleting}
               onClick={() => {
                 setDeleting(true);
-                void deleteAccount()
+                void disableBiometric("traveller")
+                  .then(() => deleteAccount())
                   .catch((err: Error) => setNote({ ok: false, text: err.message }))
                   .finally(() => setDeleting(false));
               }}
@@ -267,6 +300,57 @@ function Profile({ welcome }: { welcome: boolean }) {
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Native app only: sign in next time with Face ID instead of an emailed code. */
+function FaceIdCard({ highlight }: { highlight: boolean }) {
+  const [name, setName] = useState<string | null>(null);
+  const [on, setOn] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void biometryName().then((n) => {
+      setName(n);
+      setOn(biometricEnabled("traveller"));
+    });
+  }, []);
+
+  if (!name) return null;
+  return (
+    <div className={`mt-4 rounded-3xl border p-4 ${highlight && !on ? "border-accent bg-accent/[0.06]" : "border-[var(--line)] bg-bg-elevated"}`}>
+      <div className="flex items-center gap-3">
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent/10 text-xl" aria-hidden>
+          🔐
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{name}-аар нэвтрэх</p>
+          <p className="text-xs text-muted">{on ? "Дараа нь имэйл код хүлээх шаардлагагүй." : "Дахин нэвтрэхдээ имэйл код хүлээлгүй шууд орно."}</p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            setError(null);
+            (on ? disableBiometric("traveller") : enableBiometric("traveller"))
+              .then(() => {
+                setOn(!on);
+                if (!on) haptic("success");
+              })
+              .catch((e: Error) => setError(e.message))
+              .finally(() => setBusy(false));
+          }}
+          className={`relative h-7 w-12 shrink-0 rounded-full transition ${on ? "bg-accent" : "bg-foam/20"} disabled:opacity-60`}
+        >
+          <span className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-all ${on ? "left-[1.375rem]" : "left-0.5"}`} />
+        </button>
+      </div>
+      {error ? <p className="mt-2 text-xs text-[#c2410c]">{error}</p> : null}
     </div>
   );
 }

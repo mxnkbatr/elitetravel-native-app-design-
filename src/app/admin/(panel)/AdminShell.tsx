@@ -5,6 +5,7 @@ import { CommandPalette, openPalette } from "@/app/admin/(panel)/CommandPalette"
 import { BellIcon, ExternalIcon, GridIcon, LogoutIcon } from "@/app/admin/(panel)/icons";
 import { PulseProvider, usePulse } from "@/app/admin/(panel)/pulse-context";
 import { Sheet } from "@/app/admin/(panel)/Sheet";
+import { StaffFaceId } from "@/app/admin/(panel)/StaffFaceId";
 import { ROLE_LABEL, type Role } from "@/lib/permissions";
 import { disableStaffPush, enablePush, pushState, staffPushOn } from "@/lib/push-client";
 import Image from "next/image";
@@ -289,6 +290,7 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
                 <BellIcon /> Мэдэгдэл асаах
               </button>
             ) : null}
+            <StaffFaceId />
             <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-ink">
               <ExternalIcon /> Сайт харах
             </a>

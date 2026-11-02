@@ -1,6 +1,7 @@
 "use client";
 
 import type { AccountProfile, AccountState } from "@/lib/account-types";
+import { biometricSignIn } from "@/lib/biometric";
 import { bookingTokens, mergeAccount, savedTours } from "@/lib/traveller-store";
 import { useSyncExternalStore } from "react";
 
@@ -67,6 +68,12 @@ export async function requestCode(email: string) {
 
 export async function verifyCode(email: string, code: string, name?: string) {
   apply(await call<AccountState>("/api/account/verify", { method: "POST", body: JSON.stringify({ email, code, name }) }));
+  await pushDevice();
+}
+
+/** Face ID instead of an emailed code (native app, after Face ID was turned on in the profile). */
+export async function faceIdSignIn() {
+  apply(await biometricSignIn<AccountState & { secret: string }>("traveller"));
   await pushDevice();
 }
 
