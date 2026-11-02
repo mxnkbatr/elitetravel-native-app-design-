@@ -2,6 +2,7 @@
 
 import { EliteLogo } from "@/components/EliteLogo";
 import { MegaMenu } from "@/components/MegaMenu";
+import { ProfileButton } from "@/components/ProfileMenu";
 import { openSearch } from "@/components/SearchOverlay";
 import { useTraveller } from "@/lib/traveller-store";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
@@ -221,22 +222,7 @@ export function Navbar() {
                 <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
               </svg>
             </button>
-            <a
-              href={`tel:${PHONE}`}
-              aria-label="Залгах"
-              className={`grid size-10 place-items-center rounded-full transition active:scale-90 ${
-                onDark ? "text-white hover:bg-white/10" : "text-foam hover:bg-ink/[0.06]"
-              }`}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M6.6 3.5h2.6l1.4 4.1-2 1.4a12 12 0 0 0 6.4 6.4l1.4-2 4.1 1.4v2.6a2 2 0 0 1-2.1 2A16.5 16.5 0 0 1 4.6 5.6a2 2 0 0 1 2-2.1Z"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </a>
+            <ProfileButton onDark={onDark} />
 
             <Link
               href="/bookings"

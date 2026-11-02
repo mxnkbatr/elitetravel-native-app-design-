@@ -100,6 +100,18 @@ export function addBooking(b: Omit<BookingRequest, "id" | "createdAt"> & { id?: 
   return booking;
 }
 
+/** Brings an account's bookings and saved tours onto this device; nothing already here is dropped. */
+export function mergeAccount(bookings: BookingRequest[], saved: string[]) {
+  const s = read();
+  const have = new Set(s.bookings.map((b) => b.id));
+  const added = bookings.filter((b) => !have.has(b.id));
+  const mergedSaved = [...new Set([...s.saved, ...saved])];
+  if (!added.length && mergedSaved.length === s.saved.length) return;
+  write({ saved: mergedSaved, bookings: [...s.bookings, ...added].sort((a, b) => b.createdAt.localeCompare(a.createdAt)) });
+}
+
+export const savedTours = () => read().saved;
+
 export function removeBooking(id: string) {
   const s = read();
   write({ ...s, bookings: s.bookings.filter((b) => b.id !== id) });

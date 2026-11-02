@@ -1,6 +1,7 @@
 import { formatPrice, getTour, isBookable, tourDates } from "@/data/tours";
 import { getTours } from "@/lib/server/content";
 import { quote } from "@/lib/pricing";
+import { currentTraveller } from "@/lib/server/account";
 import { pushToStaff, sendLater } from "@/lib/server/push";
 import { departureState } from "@/lib/server/seats";
 import { supabaseAdmin } from "@/lib/server/supabase-admin";
@@ -80,8 +81,10 @@ export async function POST(request: Request) {
 
   const id = bookingId();
   const token = newAccessToken();
+  const traveller = await currentTraveller();
   const { error } = await db.from("booking_requests").insert({
     access_token: token,
+    user_id: traveller?.id ?? null,
     status,
     id,
     tour_id: tour.id,

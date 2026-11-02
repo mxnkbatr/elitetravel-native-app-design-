@@ -8,6 +8,7 @@ import { addBooking, type BookingRequest } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { quote } from "@/lib/pricing";
+import { useAccount } from "@/lib/account";
 import { haptic } from "@/lib/native";
 import { track, trackOnce } from "@/lib/track";
 import { useMemo, useState, type FormEvent } from "react";
@@ -107,6 +108,14 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
   const willWaitlist = seatInfo != null && !seatInfo.closed && seatInfo.left < people;
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  // Signed-in travellers get their saved name and phone filled in once
+  const account = useAccount();
+  const [prefilled, setPrefilled] = useState(false);
+  if (!prefilled && account.profile) {
+    setPrefilled(true);
+    if (!name) setName(account.profile.name);
+    if (!phone) setPhone(account.profile.phone);
+  }
   const [note, setNote] = useState("");
   const [done, setDone] = useState<BookingRequest | null>(null);
   const [copied, setCopied] = useState(false);
