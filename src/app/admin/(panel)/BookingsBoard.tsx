@@ -43,7 +43,7 @@ const STATUSES: { key: TripStatus; label: string; tone: string; hint: string }[]
 const when = (iso: string) =>
   new Intl.DateTimeFormat("mn-MN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 
-type Filter = TripStatus | "all" | "unread";
+type Filter = TripStatus | "all" | "unread" | "docs";
 
 /** What the signed-in staff member may do on this board (the server checks again). */
 export type BoardPerms = { manage: boolean; money: boolean; passports: boolean };
@@ -54,13 +54,11 @@ function FilterChip({ active, label, n, alert, onClick }: { active: boolean; lab
       type="button"
       onClick={onClick}
       className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold transition active:scale-[0.97] lg:flex-col-reverse lg:items-start lg:gap-1.5 lg:rounded-[1.25rem] lg:p-4 ${
-        active ? "border-accent bg-accent text-white lg:bg-white lg:text-ink lg:ring-2 lg:ring-accent/25" : "border-[var(--line)] bg-white text-ink hover:border-accent/40"
+        active ? "admin-glow border-accent bg-accent/[0.14] text-accent" : "border-[var(--line)] bg-white text-ink hover:border-accent/40"
       }`}
     >
-      <span className={`lg:text-xs lg:text-muted ${active ? "" : ""}`}>{label}</span>
-      <span
-        className={`font-num tabular-nums lg:text-3xl lg:leading-none ${alert && n ? (active ? "lg:text-red-600" : "text-red-600") : active ? "text-white/80 lg:text-ink" : "text-muted lg:text-ink"}`}
-      >
+      <span className={`lg:text-xs ${active ? "lg:text-accent" : "lg:text-muted"}`}>{label}</span>
+      <span className={`font-num tabular-nums lg:text-3xl lg:leading-none ${alert && n ? "text-red-600" : active ? "text-accent" : "text-muted lg:text-ink"}`}>
         {n}
       </span>
     </button>
@@ -74,7 +72,11 @@ export function BookingsBoard({
   installments,
   perms,
   initialQuery = "",
+  initialFilter,
+  docs = [],
 }: {
+  /** Bookings with documents waiting for review */
+  docs?: string[];
   bookings: AdminBooking[];
   unread: string[];
   stale: string[];
@@ -82,10 +84,14 @@ export function BookingsBoard({
   perms: BoardPerms;
   /** From `/admin?q=…`, e.g. a tapped push notification */
   initialQuery?: string;
+  /** From `/admin?f=unread|new|…`, the «today» shortcuts */
+  initialFilter?: string;
 }) {
   const [rows, setRows] = useState(bookings);
   const [unread, setUnread] = useState(() => new Set(initialUnread));
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>(() =>
+    initialFilter === "unread" || initialFilter === "docs" || STATUSES.some((s) => s.key === initialFilter) ? (initialFilter as Filter) : "all",
+  );
   const [q, setQ] = useState(initialQuery);
 
   const counts = useMemo(() => Object.fromEntries(STATUSES.map((s) => [s.key, rows.filter((r) => r.status === s.key).length])), [rows]);
@@ -93,10 +99,10 @@ export function BookingsBoard({
     const query = q.trim().toLowerCase();
     return rows.filter(
       (r) =>
-        (filter === "all" || (filter === "unread" ? unread.has(r.id) : r.status === filter)) &&
+        (filter === "all" || (filter === "unread" ? unread.has(r.id) : filter === "docs" ? docs.includes(r.id) : r.status === filter)) &&
         (!query || `${r.id} ${r.name} ${r.phone} ${r.tour_title}`.toLowerCase().includes(query)),
     );
-  }, [rows, filter, q, unread]);
+  }, [rows, filter, q, unread, docs]);
 
   const patch = (id: string, change: Partial<AdminBooking>) => setRows((all) => all.map((r) => (r.id === id ? { ...r, ...change } : r)));
   const markRead = (id: string) =>
@@ -113,6 +119,7 @@ export function BookingsBoard({
       <div className="hide-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 lg:grid lg:grid-cols-8 lg:gap-3">
         <FilterChip active={filter === "all"} label="Бүгд" n={rows.length} onClick={() => setFilter("all")} />
         <FilterChip active={filter === "unread"} label="Хариулаагүй" n={unread.size} alert onClick={() => pick("unread")} />
+        {docs.length ? <FilterChip active={filter === "docs"} label="Шалгах баримт" n={docs.length} alert onClick={() => pick("docs")} /> : null}
         {STATUSES.map((s) => (
           <FilterChip key={s.key} active={filter === s.key} label={s.label} n={counts[s.key]} onClick={() => pick(s.key)} />
         ))}

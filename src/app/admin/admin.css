@@ -1,0 +1,166 @@
+/*
+ * Admin "command center" theme. Applies only while an admin screen is mounted
+ * (:root:has([data-admin])) so the public site keeps its light coastal look, and so
+ * sheets portalled to <body> pick it up too. The admin screens are written with the
+ * site's light palette; the class overrides below translate them to the dark one.
+ */
+
+:root:has([data-admin]) {
+  color-scheme: dark;
+  --bg: #04100e;
+  --bg-soft: #081a17;
+  --ink: #e2f3ef;
+  --ink-soft: #b6d0ca;
+  --muted: #7f9e97;
+  --line: rgba(110, 235, 218, 0.12);
+  --accent: #19d3c2;
+  --accent-soft: #46e6d7;
+  --accent-mist: rgba(25, 211, 194, 0.14);
+  --gold: #f0c27a;
+  --gold-soft: rgba(240, 194, 122, 0.16);
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+  --admin-card: #0a1c19;
+  --admin-card-2: #0f2522;
+  --admin-glow: rgba(25, 211, 194, 0.35);
+}
+
+:root:has([data-admin]) body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 70% -10%, rgba(25, 211, 194, 0.1), transparent 60%),
+    linear-gradient(rgba(110, 235, 218, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(110, 235, 218, 0.028) 1px, transparent 1px);
+  background-size: auto, 34px 34px, 34px 34px;
+  background-attachment: fixed;
+}
+
+:root:has([data-admin]) ::selection {
+  background: rgba(25, 211, 194, 0.35);
+}
+
+/* Surfaces */
+:root:has([data-admin]) .bg-white,
+:root:has([data-admin]) .hover\:bg-white:hover {
+  background-color: var(--admin-card);
+}
+@media (min-width: 64rem) {
+  :root:has([data-admin]) .lg\:bg-white {
+    background-color: var(--admin-card);
+  }
+}
+:root:has([data-admin]) .bg-\[\#f3f6f5\],
+:root:has([data-admin]) .bg-\[\#f8faf9\],
+:root:has([data-admin]) .bg-\[\#e7eeec\],
+:root:has([data-admin]) .bg-zinc-100,
+:root:has([data-admin]) .bg-zinc-200 {
+  background-color: var(--admin-card-2);
+}
+:root:has([data-admin]) .bg-black\/5,
+:root:has([data-admin]) .bg-black\/\[0\.04\],
+:root:has([data-admin]) .bg-black\/\[0\.05\],
+:root:has([data-admin]) .hover\:bg-black\/\[0\.04\]:hover,
+:root:has([data-admin]) .hover\:bg-black\/\[0\.05\]:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+:root:has([data-admin]) .text-zinc-500,
+:root:has([data-admin]) .text-zinc-600 {
+  color: var(--muted);
+}
+
+/* Status tints: same meaning, dark-friendly */
+:root:has([data-admin]) .bg-red-50,
+:root:has([data-admin]) .bg-red-50\/70,
+:root:has([data-admin]) .bg-red-100 {
+  background-color: rgba(248, 113, 113, 0.13);
+}
+:root:has([data-admin]) .text-red-600,
+:root:has([data-admin]) .text-red-700,
+:root:has([data-admin]) .text-red-900 {
+  color: #fca5a5;
+}
+:root:has([data-admin]) .border-red-200,
+:root:has([data-admin]) .border-red-300 {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+:root:has([data-admin]) .bg-emerald-50,
+:root:has([data-admin]) .bg-emerald-100 {
+  background-color: rgba(52, 211, 153, 0.13);
+}
+:root:has([data-admin]) .text-emerald-700,
+:root:has([data-admin]) .text-emerald-800,
+:root:has([data-admin]) .text-emerald-900 {
+  color: #6ee7b7;
+}
+:root:has([data-admin]) .bg-amber-50,
+:root:has([data-admin]) .bg-amber-100 {
+  background-color: rgba(251, 191, 36, 0.13);
+}
+:root:has([data-admin]) .text-amber-700,
+:root:has([data-admin]) .text-amber-800 {
+  color: #fcd34d;
+}
+:root:has([data-admin]) .border-amber-300 {
+  border-color: rgba(251, 191, 36, 0.4);
+}
+:root:has([data-admin]) .bg-sky-100 {
+  background-color: rgba(56, 189, 248, 0.15);
+}
+:root:has([data-admin]) .text-sky-800 {
+  color: #7dd3fc;
+}
+:root:has([data-admin]) .bg-violet-100 {
+  background-color: rgba(167, 139, 250, 0.16);
+}
+:root:has([data-admin]) .text-violet-700,
+:root:has([data-admin]) .text-violet-800 {
+  color: #c4b5fd;
+}
+:root:has([data-admin]) .bg-\[\#fff4e8\] {
+  background-color: rgba(251, 146, 60, 0.13);
+}
+:root:has([data-admin]) .text-\[\#c2410c\],
+:root:has([data-admin]) .text-\[\#b45309\] {
+  color: #fdba74;
+}
+
+/* Form controls */
+:root:has([data-admin]) input::placeholder,
+:root:has([data-admin]) textarea::placeholder {
+  color: rgba(127, 158, 151, 0.75);
+}
+:root:has([data-admin]) select option {
+  background: var(--admin-card);
+  color: var(--ink);
+}
+
+/* Numbers, ids and codes read like a terminal */
+:root:has([data-admin]) .font-num,
+:root:has([data-admin]) .font-mono {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Admin-only helpers */
+.admin-glow {
+  box-shadow:
+    0 0 0 1px rgba(25, 211, 194, 0.35),
+    0 0 24px -4px var(--admin-glow);
+}
+.admin-live-dot {
+  animation: admin-pulse 2s ease-in-out infinite;
+}
+@keyframes admin-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(25, 211, 194, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(25, 211, 194, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-live-dot {
+    animation: none;
+  }
+}

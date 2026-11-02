@@ -30,22 +30,19 @@ export function Traffic({
     { label: "Төлбөр эхлүүлсэн", n: f.pay_openers },
   ];
   const deviceTotal = Object.values(stats.devices).reduce((s, n) => s + n, 0);
+  const devices = Object.entries(stats.devices).sort((a, b) => b[1] - a[1]);
 
   return (
     <section className="mt-6 space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi label="Зочин (30 хоног)" value={String(stats.visitors)} sub={`${stats.sessions} айлчлал · ${stats.pageviews} хуудас`} />
-        <Kpi label="Захиалга илгээсэн" value={String(requests)} sub={`Зочдын ${pct(requests, stats.visitors)}`} />
+        {/* Requests come from the bookings table; the rate uses tracked visitors who sent one (same source as the visitor count) */}
+        <Kpi label="Захиалга илгээсэн" value={String(requests)} sub={`Зочдын ${pct(f.booking_submitters, stats.visitors)} нь захиалсан`} />
         <Kpi label="Төлбөр хийсэн захиалга" value={String(paid)} sub={`Хүсэлтийн ${pct(paid, requests)}`} />
         <Kpi
-          label="Төхөөрөмж"
-          value={deviceTotal ? pct(stats.devices.phone ?? 0, deviceTotal) : "—"}
-          sub={
-            Object.entries(stats.devices)
-              .sort((a, b) => b[1] - a[1])
-              .map(([d, n]) => `${DEVICE_LABEL[d] ?? d} ${pct(n, deviceTotal)}`)
-              .join(" · ") || "Утаснаас орсон хувь"
-          }
+          label="Ихэвчлэн ашигласан"
+          value={devices.length ? (DEVICE_LABEL[devices[0][0]] ?? devices[0][0]) : "—"}
+          sub={devices.map(([d, n]) => `${DEVICE_LABEL[d] ?? d} ${pct(n, deviceTotal)}`).join(" · ") || "Төхөөрөмжийн мэдээлэл алга"}
         />
       </div>
 

@@ -19,10 +19,12 @@ type Props = {
   statuses: Record<string, ProposalStatus>;
   role: Role;
   configured: boolean;
+  /** A question handed over from the command palette, sent once on arrival */
+  ask?: string;
 };
 
 /** Admin AI agent: saved chats on the side, the conversation with live tool steps and approval cards. */
-export function AgentChat({ conversations: initialList, initial, statuses, role, configured }: Props) {
+export function AgentChat({ conversations: initialList, initial, statuses, role, configured, ask }: Props) {
   const [chat, setChat] = useState(() => ({ id: initial?.id ?? crypto.randomUUID(), messages: initial?.messages ?? [] }));
   const [list, setList] = useState(initialList);
   const [history, setHistory] = useState(false);
@@ -74,7 +76,7 @@ export function AgentChat({ conversations: initialList, initial, statuses, role,
           }
         />
         {configured ? (
-          <ChatPane key={chat.id} id={chat.id} initialMessages={chat.messages} statuses={statuses} role={role} onSaved={remember} />
+          <ChatPane key={chat.id} id={chat.id} initialMessages={chat.messages} statuses={statuses} role={role} onSaved={remember} ask={chat.messages.length ? undefined : ask} />
         ) : (
           <p className="mt-6 rounded-2xl bg-[#fff4e8] p-4 text-sm text-[#b45309]">AI тохируулаагүй байна. Сервер дээр XAI_API_KEY нэмнэ үү.</p>
         )}
@@ -149,12 +151,14 @@ function ChatPane({
   statuses,
   role,
   onSaved,
+  ask,
 }: {
   id: string;
   initialMessages: UIMessage[];
   statuses: Record<string, ProposalStatus>;
   role: Role;
   onSaved: (id: string, title: string) => void;
+  ask?: string;
 }) {
   const [input, setInput] = useState("");
   const bottom = useRef<HTMLDivElement>(null);
@@ -182,6 +186,13 @@ function ChatPane({
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, status]);
+
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!ask || asked.current) return;
+    asked.current = true;
+    void sendMessage({ text: ask });
+  }, [ask, sendMessage]);
 
   function send(text: string) {
     const q = text.trim();

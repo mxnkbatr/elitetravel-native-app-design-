@@ -220,34 +220,6 @@ export async function saveProvider(id: string, patch: { enabled: boolean; min: n
   return { ok: true };
 }
 
-/** Polled by the panel: new requests, ones left unanswered for 2+ hours, unread traveller messages, new errors. */
-export async function adminPulse() {
-  const admin = await requireAdmin();
-  const client = db();
-  const since = new Date(Date.now() - 60 * 86400_000).toISOString();
-  const staleBefore = new Date(Date.now() - 2 * 3600_000).toISOString();
-  const seesBookings = can(admin.role, "bookings.view");
-  const [{ data: fresh }, { data: messages }, { count: installments }, { count: errors }] = await Promise.all([
-    seesBookings ? client.from("booking_requests").select("id, created_at").eq("status", "new") : Promise.resolve({ data: [] }),
-    seesBookings ? client.from("booking_messages").select("booking_id, created_at").eq("sender", "traveller").gt("created_at", since) : Promise.resolve({ data: [] }),
-    can(admin.role, "money.manage")
-      ? client.from("payments").select("id", { count: "exact", head: true }).eq("status", "pending").neq("method", "qpay")
-      : Promise.resolve({ count: 0 }),
-    can(admin.role, "audit.view")
-      ? client.from("error_log").select("id", { count: "exact", head: true }).eq("resolved", false).gt("at", new Date(Date.now() - 86400_000).toISOString())
-      : Promise.resolve({ count: 0 }),
-  ]);
-  const stale = (fresh ?? []).filter((b) => b.created_at < staleBefore).map((b) => b.id);
-  const latest = new Map<string, string>();
-  for (const m of messages ?? []) if ((latest.get(m.booking_id) ?? "") < m.created_at) latest.set(m.booking_id, m.created_at);
-  let unread: string[] = [];
-  if (latest.size) {
-    const { data: seen } = await client.from("booking_requests").select("id, staff_seen_at").in("id", [...latest.keys()]);
-    unread = (seen ?? []).filter((b) => !b.staff_seen_at || b.staff_seen_at < latest.get(b.id)!).map((b) => b.id);
-  }
-  return { newBookings: fresh?.length ?? 0, stale, unread, installments: installments ?? 0, errors: errors ?? 0 };
-}
-
 export async function saveDeparture(tourId: string, label: string, capacity: number | null, closed: boolean): Promise<SaveResult> {
   const admin = await requireAdmin("departures.manage");
   if (capacity != null && (!Number.isInteger(capacity) || capacity < 0 || capacity > 999)) return { ok: false, error: "Суудлын тоо буруу." };

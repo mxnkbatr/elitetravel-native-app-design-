@@ -11,7 +11,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function AdminAgentPage({ searchParams }: PageProps<"/admin/agent">) {
   const admin = await requireAdmin("agent.use");
-  const { c } = await searchParams;
+  const { c, ask } = await searchParams;
   const [conversations, open] = await Promise.all([
     listConversations(admin.email),
     typeof c === "string" && UUID.test(c) ? getConversation(c, admin.email) : Promise.resolve(null),
@@ -26,7 +26,8 @@ export default async function AdminAgentPage({ searchParams }: PageProps<"/admin
 
   return (
     <AgentChat
-      key={open?.id ?? "new"}
+      key={open?.id ?? `new-${typeof ask === "string" ? ask : ""}`}
+      ask={!open && typeof ask === "string" ? ask.slice(0, 1000) : undefined}
       conversations={conversations}
       initial={open ? { id: open.id, messages: open.messages } : null}
       statuses={statuses}

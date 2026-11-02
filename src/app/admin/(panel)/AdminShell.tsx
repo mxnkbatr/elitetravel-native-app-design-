@@ -1,133 +1,21 @@
 "use client";
 
-import { adminPulse } from "@/app/admin/(panel)/actions";
-import {
-  BellIcon,
-  CardIcon,
-  ChartIcon,
-  ChatIcon,
-  CompassIcon,
-  ExternalIcon,
-  GridIcon,
-  ImageIcon,
-  LogoutIcon,
-  NewsIcon,
-  AlertIcon,
-  ListIcon,
-  PlaneIcon,
-  SparkIcon,
-  TicketIcon,
-  UsersIcon,
-  type IconProps,
-} from "@/app/admin/(panel)/icons";
+import { isActive, NAV_GROUPS, navFor, PHONE_TABS, type NavItem } from "@/app/admin/(panel)/admin-nav";
+import { CommandPalette, openPalette } from "@/app/admin/(panel)/CommandPalette";
+import { BellIcon, ExternalIcon, GridIcon, LogoutIcon } from "@/app/admin/(panel)/icons";
+import { PulseProvider, usePulse } from "@/app/admin/(panel)/pulse-context";
 import { Sheet } from "@/app/admin/(panel)/Sheet";
-import { can, ROLE_LABEL, routePermission, type Role } from "@/lib/permissions";
+import { ROLE_LABEL, type Role } from "@/lib/permissions";
 import { disableStaffPush, enablePush, pushState, staffPushOn } from "@/lib/push-client";
-import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
-type NavItem = { href: string; label: string; icon: ComponentType<IconProps> };
-
-const groups: { title: string; items: NavItem[] }[] = [
-  {
-    title: "Ажил",
-    items: [
-      { href: "/admin", label: "Захиалга", icon: TicketIcon },
-      { href: "/admin/payments", label: "Төлбөр", icon: CardIcon },
-      { href: "/admin/departures", label: "Огноо, суудал", icon: PlaneIcon },
-    ],
-  },
-  {
-    title: "Контент",
-    items: [
-      { href: "/admin/tours", label: "Аялал", icon: CompassIcon },
-      { href: "/admin/news", label: "Мэдээ", icon: NewsIcon },
-      { href: "/admin/poster", label: "Постер", icon: ImageIcon },
-    ],
-  },
-  {
-    title: "Тойм",
-    items: [
-      { href: "/admin/agent", label: "AI туслах", icon: SparkIcon },
-      { href: "/admin/reports", label: "Тайлан", icon: ChartIcon },
-      { href: "/admin/chat-logs", label: "Чат лог", icon: ChatIcon },
-    ],
-  },
-  {
-    title: "Удирдлага",
-    items: [
-      { href: "/admin/staff", label: "Ажилтнууд", icon: UsersIcon },
-      { href: "/admin/contract", label: "Гэрээний загвар", icon: NewsIcon },
-      { href: "/admin/audit", label: "Үйлдлийн бүртгэл", icon: ListIcon },
-      { href: "/admin/errors", label: "Алдаа", icon: AlertIcon },
-    ],
-  },
-];
-
-/** Bottom tabs on phones; everything else lives in the «Цэс» sheet. */
-const tabs: NavItem[] = [
-  { href: "/admin", label: "Захиалга", icon: TicketIcon },
-  { href: "/admin/payments", label: "Төлбөр", icon: CardIcon },
-  { href: "/admin/departures", label: "Огноо", icon: PlaneIcon },
-  { href: "/admin/tours", label: "Аялал", icon: CompassIcon },
-];
-const tabHrefs = new Set(tabs.map((t) => t.href));
-const allowed = (role: Role, item: NavItem) => can(role, routePermission(item.href));
-
-const isActive = (pathname: string, href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
 /** Editors are "pushed" screens with their own bottom bar (save bar, the agent's message box). */
 const isEditor = (pathname: string) => /^\/admin\/(tours|news)\/[^/]+$/.test(pathname) || pathname === "/admin/agent";
 
-type Pulse = { newBookings: number; unread: string[]; installments: number; errors: number };
-
 const noop = () => () => {};
-
-/** Polls for new requests / traveller messages and raises a desktop notification when they grow. */
-function usePulse() {
-  const router = useRouter();
-  const [pulse, setPulse] = useState<Pulse | null>(null);
-  const last = useRef<Pulse | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    const tick = async () => {
-      const p = await adminPulse().catch(() => null);
-      if (!p || !alive) return;
-      const prev = last.current;
-      const grew = prev && (p.newBookings > prev.newBookings || p.unread.length > prev.unread.length || p.installments > prev.installments);
-      if (grew && "Notification" in window && Notification.permission === "granted") {
-        const installment = p.installments > prev.installments;
-        const n = new Notification("Elite Travel", {
-          body: installment ? "Хуваан төлөх хүсэлт ирлээ" : p.newBookings > prev.newBookings ? "Шинэ захиалгын хүсэлт ирлээ" : "Аялагч мессеж бичлээ",
-          tag: "elite-admin",
-        });
-        n.onclick = () => {
-          window.focus();
-          router.push(installment ? "/admin/payments" : "/admin");
-          router.refresh();
-        };
-      }
-      last.current = p;
-      setPulse(p);
-    };
-    void tick();
-    const t = window.setInterval(tick, 30_000);
-    return () => {
-      alive = false;
-      window.clearInterval(t);
-    };
-  }, [router]);
-
-  useEffect(() => {
-    const n = (pulse?.newBookings ?? 0) + (pulse?.unread.length ?? 0) + (pulse?.installments ?? 0);
-    document.title = n ? `(${n}) Elite Admin` : "Elite Admin";
-  }, [pulse]);
-
-  return pulse;
-}
 
 /** Browser alerts in a desktop tab; in the native app, real push to this phone. */
 function useNotificationPermission() {
@@ -154,193 +42,277 @@ function useNotificationPermission() {
 function Badge({ n, className = "" }: { n: number; className?: string }) {
   if (!n) return null;
   return (
-    <span className={`grid min-w-[1.15rem] place-items-center rounded-full bg-[#ef4444] px-1 text-[0.6rem] font-bold leading-[1.15rem] text-white ${className}`}>
+    <span className={`grid min-w-[1.2rem] place-items-center rounded-md bg-[#ef4444] px-1 font-mono text-[0.62rem] font-bold leading-[1.2rem] text-white shadow-[0_0_12px_rgba(239,68,68,0.55)] ${className}`}>
       {n > 99 ? "99+" : n}
     </span>
   );
 }
 
-export function AdminShell({ email, role, logout, children }: { email: string; role: Role; logout: () => Promise<void>; children: ReactNode }) {
-  const pathname = usePathname();
-  const pulse = usePulse();
-  const { permission, ask } = useNotificationPermission();
-  const [more, setMore] = useState(false);
-  const [moreOn, setMoreOn] = useState(pathname);
-  if (moreOn !== pathname) {
-    setMoreOn(pathname);
-    setMore(false);
-  }
-
-  const badges: Record<string, number> = {
+function useBadges(): Record<string, number> {
+  const { pulse } = usePulse();
+  return {
     "/admin": (pulse?.newBookings ?? 0) + (pulse?.unread.length ?? 0),
     "/admin/payments": pulse?.installments ?? 0,
     "/admin/errors": pulse?.errors ?? 0,
+    "/admin/agent": pulse?.proposals ?? 0,
   };
+}
+
+/** "● LIVE" with how long ago the panel last synced. */
+function LiveStatus({ compact }: { compact?: boolean }) {
+  const { syncedAt } = usePulse();
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 5_000);
+    return () => window.clearInterval(t);
+  }, []);
+  const ago = syncedAt ? Math.max(0, Math.round((now - syncedAt) / 1000)) : null;
+  const ok = ago != null && ago < 90;
+  return (
+    <span className="flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted" title={ago != null ? `Сүүлд ${ago} секундын өмнө шинэчлэгдсэн` : "Холбогдож байна…"}>
+      <span className={`size-2 rounded-full ${ok ? "admin-live-dot bg-accent" : "bg-amber-500"}`} />
+      {compact ? null : ok ? `live · ${ago}s` : "sync…"}
+    </span>
+  );
+}
+
+function SearchButton({ wide }: { wide?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={openPalette}
+      aria-label="Хайх (Ctrl K)"
+      className={`group flex h-10 items-center gap-2.5 rounded-xl border border-[var(--line)] bg-white/[0.03] text-sm text-muted transition hover:border-accent/50 hover:text-ink ${
+        wide ? "w-full max-w-md px-3.5" : "w-10 justify-center"
+      }`}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <circle cx="11" cy="11" r="7" />
+        <path d="m20 20-3.5-3.5" />
+      </svg>
+      {wide ? (
+        <>
+          <span className="flex-1 text-left">Хайх эсвэл үсрэх…</span>
+          <kbd className="rounded-md border border-[var(--line)] px-1.5 py-0.5 font-mono text-[0.65rem]">Ctrl K</kbd>
+        </>
+      ) : null}
+    </button>
+  );
+}
+
+function SideLink({ item, active, badge }: { item: NavItem; active: boolean; badge: number }) {
+  return (
+    <Link
+      href={item.href}
+      title={item.hint}
+      className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+        active ? "bg-accent/[0.12] text-accent" : "text-ink/65 hover:bg-white/[0.04] hover:text-ink"
+      }`}
+    >
+      {active ? <span className="absolute inset-y-2 left-0 w-[3px] rounded-full bg-accent shadow-[0_0_10px_var(--admin-glow)]" /> : null}
+      <item.icon active={active} />
+      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      <Badge n={badge} />
+    </Link>
+  );
+}
+
+function Shell({ email, role, logout, children }: { email: string; role: Role; logout: () => Promise<void>; children: ReactNode }) {
+  const pathname = usePathname();
+
+  // Arriving from the public site mid-intro would leave its cover (and scroll lock) behind
+  useEffect(() => {
+    const html = document.documentElement;
+    delete html.dataset.intro;
+    delete html.dataset.heroHold;
+  }, []);
+  const badges = useBadges();
+  const { permission, ask } = useNotificationPermission();
+  const [menu, setMenu] = useState(false);
+  const [menuOn, setMenuOn] = useState(pathname);
+  if (menuOn !== pathname) {
+    setMenuOn(pathname);
+    setMenu(false);
+  }
+
   const editor = isEditor(pathname);
-  const myGroups = groups.map((g) => ({ ...g, items: g.items.filter((i) => allowed(role, i)) })).filter((g) => g.items.length);
-  const myTabs = tabs.filter((t) => allowed(role, t));
-  const moreItems = myGroups.flatMap((g) => g.items).filter((i) => !tabHrefs.has(i.href));
-  const moreActive = moreItems.some((i) => isActive(pathname, i.href));
-  const moreBadge = moreItems.reduce((n, i) => n + (badges[i.href] ?? 0), 0);
+  const groups = navFor(role);
+  const all = groups.flatMap((g) => g.items);
+  const current = all.find((i) => isActive(pathname, i.href)) ?? NAV_GROUPS.flatMap((g) => g.items).find((i) => isActive(pathname, i.href));
+  const tabs = PHONE_TABS.map((href) => all.find((i) => i.href === href)).filter((i): i is NavItem => !!i);
+  const rest = all.filter((i) => !PHONE_TABS.includes(i.href));
+  const restActive = rest.some((i) => isActive(pathname, i.href));
+  const restBadge = rest.reduce((n, i) => n + (badges[i.href] ?? 0), 0);
+  const initial = email.slice(0, 1).toUpperCase();
 
   return (
-    <div className="min-h-dvh bg-bg text-ink lg:grid lg:grid-cols-[256px_1fr]">
+    <div className="min-h-dvh text-ink lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh flex-col bg-[#062a2a] px-4 py-6 text-white lg:flex">
-        <Link href="/admin" className="mb-8 flex items-center gap-3 px-2">
-          <Image src="/admin-icon-192.png" alt="" width={40} height={40} className="rounded-xl" />
+      <aside className="sticky top-0 hidden h-dvh flex-col border-r border-[var(--line)] bg-[#020a09]/85 px-3 py-5 backdrop-blur-xl lg:flex">
+        <Link href="/admin" className="mb-6 flex items-center gap-3 px-2">
+          <Image src="/admin-icon-192.png" alt="" width={38} height={38} className="rounded-xl ring-1 ring-accent/30" />
           <span>
-            <span className="block font-display text-xl font-semibold leading-none">Elite Admin</span>
-            <span className="mt-1 block text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-white/45">Travel desk</span>
+            <span className="block font-display text-lg font-semibold leading-none">Elite Admin</span>
+            <span className="mt-1 block font-mono text-[0.62rem] uppercase tracking-[0.22em] text-accent/80">travel · ops</span>
           </span>
         </Link>
-        <nav className="flex-1 space-y-6 overflow-y-auto">
-          {myGroups.map((g) => (
+        <nav className="flex-1 space-y-5 overflow-y-auto pr-1">
+          {groups.map((g) => (
             <div key={g.title}>
-              <p className="mb-1.5 px-3 text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/35">{g.title}</p>
+              <p className="mb-1 px-3 font-mono text-[0.6rem] uppercase tracking-[0.22em] text-muted/80">{g.title}</p>
               <div className="space-y-0.5">
+                {g.items.map((l) => (
+                  <SideLink key={l.href} item={l} active={isActive(pathname, l.href)} badge={badges[l.href] ?? 0} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+        <div className="mt-4 space-y-1 border-t border-[var(--line)] pt-4">
+          {permission === "default" ? (
+            <button type="button" onClick={ask} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-gold hover:bg-white/[0.04]">
+              <BellIcon /> Мэдэгдэл асаах
+            </button>
+          ) : null}
+          <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-ink/60 hover:bg-white/[0.04] hover:text-ink">
+            <ExternalIcon /> Сайт харах
+          </a>
+          <div className="flex items-center gap-3 rounded-xl px-3 py-2">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent/15 font-mono text-sm font-semibold text-accent">{initial}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-xs text-ink/80">{email}</span>
+              <span className="block font-mono text-[0.62rem] uppercase tracking-[0.16em] text-muted">{ROLE_LABEL[role]}</span>
+            </span>
+            <form action={logout} onSubmit={() => void disableStaffPush()}>
+              <button type="submit" title="Гарах" aria-label="Гарах" className="grid size-8 place-items-center rounded-lg text-ink/50 hover:bg-white/[0.06] hover:text-ink">
+                <LogoutIcon />
+              </button>
+            </form>
+          </div>
+        </div>
+      </aside>
+
+      <div className="min-w-0">
+        {/* Top bar: where you are, search, live status */}
+        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--line)] bg-[var(--bg)]/80 px-4 pb-2.5 pt-[calc(0.6rem+env(safe-area-inset-top))] backdrop-blur-xl sm:px-6 lg:px-10 lg:py-3">
+          <Link href="/admin" className="flex items-center gap-2.5 lg:hidden">
+            <Image src="/admin-icon-192.png" alt="" width={30} height={30} className="rounded-[0.6rem] ring-1 ring-accent/30" />
+          </Link>
+          <p className="min-w-0 flex-1 truncate font-mono text-xs text-muted">
+            <span className="text-accent">elite</span>
+            <span className="mx-1.5">›</span>
+            <span className="text-ink">{current?.label ?? "Админ"}</span>
+          </p>
+          <div className="hidden flex-1 justify-center md:flex">
+            <SearchButton wide />
+          </div>
+          <div className="flex items-center gap-2">
+            <LiveStatus />
+            <span className="md:hidden">
+              <SearchButton />
+            </span>
+            {permission === "default" ? (
+              <button type="button" onClick={ask} aria-label="Мэдэгдэл асаах" className="grid size-10 place-items-center rounded-xl border border-[var(--line)] text-gold lg:hidden">
+                <BellIcon />
+              </button>
+            ) : null}
+          </div>
+        </header>
+
+        <main className={`min-w-0 px-4 pt-5 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8 ${editor ? "pb-8" : "pb-[calc(6.5rem+env(safe-area-inset-bottom))]"}`}>{children}</main>
+      </div>
+
+      {/* Phone tab bar */}
+      {!editor ? (
+        <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 lg:hidden" aria-label="Админ цэс">
+          <div className="mx-auto flex max-w-md items-stretch justify-between rounded-[1.4rem] border border-[var(--line)] bg-[#020a09]/95 px-1.5 py-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+            {tabs.map((t) => {
+              const active = isActive(pathname, t.href);
+              return (
+                <Link
+                  key={t.href}
+                  href={t.href}
+                  className={`relative flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.05rem] text-[0.64rem] font-medium transition active:scale-95 ${
+                    active ? "bg-accent/[0.14] text-accent" : "text-ink/55"
+                  }`}
+                >
+                  <span className="relative">
+                    <t.icon active={active} />
+                    <Badge n={badges[t.href] ?? 0} className="absolute -right-3 -top-1.5" />
+                  </span>
+                  <span>{t.label}</span>
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setMenu(true)}
+              className={`relative flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.05rem] text-[0.64rem] font-medium transition active:scale-95 ${
+                restActive ? "bg-accent/[0.14] text-accent" : "text-ink/55"
+              }`}
+            >
+              <span className="relative">
+                <GridIcon active={restActive} />
+                <Badge n={restBadge} className="absolute -right-3 -top-1.5" />
+              </span>
+              <span>Цэс</span>
+            </button>
+          </div>
+        </nav>
+      ) : null}
+
+      <Sheet open={menu} onClose={() => setMenu(false)} title="Цэс" tall>
+        <div className="space-y-4 pt-1">
+          {groups.map((g) => (
+            <div key={g.title}>
+              <p className="mb-1.5 px-1 font-mono text-[0.62rem] uppercase tracking-[0.2em] text-muted">{g.title}</p>
+              <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
                 {g.items.map((l) => {
                   const active = isActive(pathname, l.href);
                   return (
-                    <Link
-                      key={l.href}
-                      href={l.href}
-                      className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
-                        active ? "text-[#062a2a]" : "text-white/70 hover:bg-white/[0.07] hover:text-white"
-                      }`}
-                    >
-                      {active ? <motion.span layoutId="side-pill" className="absolute inset-0 rounded-xl bg-white" transition={{ type: "spring", stiffness: 420, damping: 34 }} /> : null}
-                      <span className="relative">
-                        <l.icon active={active} />
+                    <Link key={l.href} href={l.href} className={`flex items-center gap-3 border-b border-[var(--line)] px-4 py-3 last:border-0 ${active ? "text-accent" : "text-ink"}`}>
+                      <l.icon active={active} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold">{l.label}</span>
+                        <span className="block truncate text-xs text-muted">{l.hint}</span>
                       </span>
-                      <span className="relative">{l.label}</span>
-                      <Badge n={badges[l.href] ?? 0} className="relative ml-auto" />
+                      <Badge n={badges[l.href] ?? 0} />
                     </Link>
                   );
                 })}
               </div>
             </div>
           ))}
-        </nav>
-        <div className="mt-4 space-y-1 border-t border-white/10 pt-4">
-          {permission === "default" ? (
-            <button type="button" onClick={ask} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-[#f3e0c2] hover:bg-white/[0.07]">
-              <BellIcon /> Мэдэгдэл асаах
-            </button>
-          ) : null}
-          <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/55 hover:bg-white/[0.07] hover:text-white">
-            <ExternalIcon /> Сайт харах
-          </a>
-          <p className="truncate px-3 pt-2 text-xs text-white/40">
+          <div className="divide-y divide-[var(--line)] overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
+            {permission === "default" ? (
+              <button type="button" onClick={ask} className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-semibold text-gold">
+                <BellIcon /> Мэдэгдэл асаах
+              </button>
+            ) : null}
+            <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-ink">
+              <ExternalIcon /> Сайт харах
+            </a>
+            <form action={logout} onSubmit={() => void disableStaffPush()}>
+              <button type="submit" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-semibold text-[#c2410c]">
+                <LogoutIcon /> Гарах
+              </button>
+            </form>
+          </div>
+          <p className="text-center font-mono text-[0.68rem] text-muted">
             {email} · {ROLE_LABEL[role]}
           </p>
-          <form action={logout} onSubmit={() => void disableStaffPush()}>
-            <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-white/55 hover:bg-white/[0.07] hover:text-white">
-              <LogoutIcon /> Гарах
-            </button>
-          </form>
         </div>
-      </aside>
-
-      <div className="min-w-0">
-        {/* Phone top bar */}
-        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--line)] bg-[var(--bg)]/85 px-4 pb-2.5 pt-[calc(0.6rem+env(safe-area-inset-top))] backdrop-blur-xl lg:hidden">
-          <Link href="/admin" className="flex items-center gap-2.5">
-            <Image src="/admin-icon-192.png" alt="" width={32} height={32} className="rounded-[0.6rem]" />
-            <span className="font-display text-lg font-semibold">Elite Admin</span>
-          </Link>
-          {permission === "default" ? (
-            <button type="button" onClick={ask} aria-label="Мэдэгдэл асаах" className="ml-auto grid size-9 place-items-center rounded-full bg-[#062a2a] text-[#f3e0c2]">
-              <BellIcon />
-            </button>
-          ) : null}
-        </header>
-
-        <main className={`min-w-0 px-4 pt-5 sm:px-6 lg:px-10 lg:pb-12 lg:pt-10 ${editor ? "pb-8" : "pb-[calc(6.5rem+env(safe-area-inset-bottom))]"}`}>{children}</main>
-      </div>
-
-      {/* Phone tab bar, styled like the site's dock */}
-      {!editor ? (
-        <nav className="fixed inset-x-0 bottom-0 z-50 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 lg:hidden" aria-label="Админ цэс">
-          <div className="mx-auto flex max-w-md items-stretch justify-between rounded-[1.5rem] border border-white/10 bg-[#062a2a]/[0.97] px-1.5 py-1.5 shadow-[0_12px_36px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-            {myTabs.map((t) => {
-              const active = isActive(pathname, t.href);
-              return (
-                <Link
-                  key={t.href}
-                  href={t.href}
-                  className={`relative flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.15rem] text-[0.64rem] font-medium transition active:scale-95 ${
-                    active ? "text-[#7ef0e0]" : "text-white/55"
-                  }`}
-                >
-                  {active ? <motion.span layoutId="tab-pill" className="absolute inset-[3px] rounded-[1.05rem] bg-white/10 ring-1 ring-white/15" transition={{ type: "spring", stiffness: 420, damping: 34 }} /> : null}
-                  <span className="relative">
-                    <t.icon active={active} />
-                    <Badge n={badges[t.href] ?? 0} className="absolute -right-2.5 -top-1.5" />
-                  </span>
-                  <span className="relative">{t.label}</span>
-                </Link>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => setMore(true)}
-              className={`relative flex min-h-[3.25rem] flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.15rem] text-[0.64rem] font-medium transition active:scale-95 ${
-                moreActive ? "text-[#7ef0e0]" : "text-white/55"
-              }`}
-            >
-              {moreActive ? <span className="absolute inset-[3px] rounded-[1.05rem] bg-white/10 ring-1 ring-white/15" /> : null}
-              <span className="relative">
-                <GridIcon active={moreActive} />
-                <Badge n={moreBadge} className="absolute -right-2.5 -top-1.5" />
-              </span>
-              <span className="relative">Цэс</span>
-            </button>
-          </div>
-        </nav>
-      ) : null}
-
-      <Sheet open={more} onClose={() => setMore(false)} title="Цэс">
-        <div className="grid grid-cols-2 gap-2.5 pt-1">
-          {moreItems.map((l) => {
-            const active = isActive(pathname, l.href);
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`flex flex-col gap-3 rounded-2xl border p-4 transition active:scale-[0.97] ${
-                  active ? "border-accent bg-accent/[0.08] text-accent" : "border-[var(--line)] bg-white text-ink"
-                }`}
-              >
-                <span className="flex items-center justify-between">
-                  <l.icon active={active} />
-                  <Badge n={badges[l.href] ?? 0} />
-                </span>
-                <span className="text-sm font-semibold">{l.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-        <div className="mt-4 divide-y divide-[var(--line)] overflow-hidden rounded-2xl border border-[var(--line)] bg-white">
-          {permission === "default" ? (
-            <button type="button" onClick={ask} className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-semibold text-ink">
-              <BellIcon /> Мэдэгдэл асаах
-            </button>
-          ) : null}
-          <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-4 py-3.5 text-sm font-semibold text-ink">
-            <ExternalIcon /> Сайт харах
-          </a>
-          <form action={logout} onSubmit={() => void disableStaffPush()}>
-            <button type="submit" className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-semibold text-[#c2410c]">
-              <LogoutIcon /> Гарах
-            </button>
-          </form>
-        </div>
-        <p className="mt-3 text-center text-xs text-muted">
-          {email} · {ROLE_LABEL[role]}
-        </p>
-        <p className="mt-1 text-center text-[0.7rem] text-muted">Утасны «Share → Add to Home Screen»-ээр апп болгон суулгаж болно.</p>
       </Sheet>
+
+      <CommandPalette role={role} />
     </div>
+  );
+}
+
+export function AdminShell(props: { email: string; role: Role; logout: () => Promise<void>; children: ReactNode }) {
+  return (
+    <PulseProvider>
+      <Shell {...props} />
+    </PulseProvider>
   );
 }
