@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "e2e": "node scripts/e2e-booking.mjs",
     "postinstall": "node -e \"require('fs').cpSync('node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs','public/maplibre/maplibre-gl-worker.mjs')\"",
     "db:migrate": "node scripts/db-migrate.mjs"
   },

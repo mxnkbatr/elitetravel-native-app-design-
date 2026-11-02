@@ -14,9 +14,9 @@ import { createSign } from "node:crypto";
 export type Push = { title: string; body: string; url: string; tag?: string };
 
 function credentials() {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const email = process.env.FIREBASE_CLIENT_EMAIL;
-  const key = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+  const email = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  const key = process.env.FIREBASE_PRIVATE_KEY?.trim().replace(/\\n/g, "\n");
   return projectId && email && key ? { projectId, email, key } : null;
 }
 
