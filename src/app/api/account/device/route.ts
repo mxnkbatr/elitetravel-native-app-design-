@@ -1,4 +1,4 @@
-import { currentTraveller } from "@/lib/server/account";
+import { currentTraveller, sessionUser } from "@/lib/server/account";
 import { getAdmin } from "@/lib/server/auth";
 import { clientIp, rateLimit } from "@/lib/server/chat-security";
 import { createDevice, revokeDevice, type DevicePurpose } from "@/lib/server/devices";
@@ -14,7 +14,7 @@ async function owner(purpose: DevicePurpose) {
   if (purpose === "staff") {
     const admin = await getAdmin();
     if (!admin) return null;
-    const user = await currentTraveller();
+    const user = await sessionUser();
     return user && user.email.toLowerCase() === admin.email.toLowerCase() ? user.id : null;
   }
   return (await currentTraveller())?.id ?? null;

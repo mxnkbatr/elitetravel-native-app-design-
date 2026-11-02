@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { AccountBooking, AccountProfile } from "@/lib/account-types";
-import { supabaseAuth } from "@/lib/server/auth";
+import { isAdminEmail, supabaseAuth } from "@/lib/server/auth";
 import { db } from "@/lib/server/trips";
 import { cookies } from "next/headers";
 import { cache } from "react";
@@ -14,14 +14,20 @@ import { cache } from "react";
 
 export type Traveller = { id: string; email: string };
 
-/** The signed-in traveller, verified from the session JWT, or null. */
-export const currentTraveller = cache(async (): Promise<Traveller | null> => {
+/** Whoever holds the session (traveller or staff), verified from the session JWT, or null. */
+export const sessionUser = cache(async (): Promise<Traveller | null> => {
   await cookies();
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_PUBLISHABLE_KEY) return null;
   const { data } = await (await supabaseAuth()).auth.getClaims();
   const id = typeof data?.claims?.sub === "string" ? data.claims.sub : null;
   const email = typeof data?.claims?.email === "string" ? data.claims.email : null;
   return id && email ? { id, email } : null;
+});
+
+/** The signed-in traveller, or null. A staff login shares the cookies but is not a traveller account. */
+export const currentTraveller = cache(async (): Promise<Traveller | null> => {
+  const user = await sessionUser();
+  return user && !(await isAdminEmail(user.email)) ? user : null;
 });
 
 export async function getProfile(user: Traveller): Promise<AccountProfile> {

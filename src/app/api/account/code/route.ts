@@ -1,5 +1,5 @@
 import { clientIp, rateLimit } from "@/lib/server/chat-security";
-import { supabaseAuth } from "@/lib/server/auth";
+import { isAdminEmail, supabaseAuth } from "@/lib/server/auth";
 import { reportError } from "@/lib/server/error-log";
 import { siteUrl } from "@/lib/site";
 
@@ -19,6 +19,10 @@ export async function POST(request: Request) {
   if (!EMAIL.test(email) || email.length > 254) return Response.json({ error: "Имэйл хаягаа шалгана уу." }, { status: 400 });
   if (!rateLimit(`acc-code:${clientIp(request)}`, 5) || !rateLimit(`acc-code:${email}`, 2)) {
     return Response.json({ error: "Түр хүлээгээд дахин оролдоно уу." }, { status: 429 });
+  }
+
+  if (await isAdminEmail(email)) {
+    return Response.json({ error: "Энэ имэйл ажилтны бүртгэлтэй тул аялагчаар нэвтрэх боломжгүй. Өөр имэйл ашиглана уу." }, { status: 400 });
   }
 
   const origin = process.env.SITE_URL ? siteUrl() : new URL(request.url).origin;
