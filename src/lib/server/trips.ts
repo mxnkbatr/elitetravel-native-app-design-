@@ -1,6 +1,7 @@
 import "server-only";
 
 import { formatPrice } from "@/data/tours";
+import { reportError } from "@/lib/server/error-log";
 import { pushToBooking, pushToStaff, sendLater } from "@/lib/server/push";
 import { supabaseAdmin } from "@/lib/server/supabase-admin";
 import type { TripStatus } from "@/lib/trips";
@@ -72,7 +73,7 @@ export async function postMessage(
     ? db().from("booking_messages").upsert(row, { onConflict: "booking_id,key", ignoreDuplicates: true }).select("id")
     : db().from("booking_messages").insert(row).select("id");
   const { data, error } = await query;
-  if (error) console.error("message insert failed", error.code, error.message);
+  if (error) await reportError("message insert failed", error, { booking: bookingId });
   const inserted = !error && (data?.length ?? 0) > 0;
   if (inserted && opts.push !== false) sendLater(() => notifyMessage(bookingId, sender, row.body));
   return !error;

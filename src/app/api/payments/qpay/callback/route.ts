@@ -1,3 +1,4 @@
+import { reportError } from "@/lib/server/error-log";
 import { settleQpayPayment } from "@/lib/server/payments";
 
 export const runtime = "nodejs";
@@ -13,7 +14,7 @@ async function handle(request: Request) {
   try {
     await settleQpayPayment(id);
   } catch (e) {
-    console.error("qpay callback failed", id, e);
+    await reportError("qpay callback failed", e, { payment: id });
     return new Response("retry", { status: 502 });
   }
   return new Response("SUCCESS");

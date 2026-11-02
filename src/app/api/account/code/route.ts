@@ -1,5 +1,6 @@
 import { clientIp, rateLimit } from "@/lib/server/chat-security";
 import { supabaseAuth } from "@/lib/server/auth";
+import { reportError } from "@/lib/server/error-log";
 import { siteUrl } from "@/lib/site";
 
 export const runtime = "nodejs";
@@ -26,8 +27,10 @@ export async function POST(request: Request) {
     options: { shouldCreateUser: true, emailRedirectTo: `${origin}/account/callback` },
   });
   if (error) {
-    console.error("account code failed", error.status, error.code);
     const limited = error.status === 429 || /rate limit/i.test(error.message);
+    // Anything but a rate limit means sign-in emails are broken for everyone (SMTP, template)
+    if (limited) console.error("account code failed", error.status, error.code);
+    else await reportError("account code email failed", `${error.status ?? ""} ${error.code ?? ""} ${error.message}`.trim());
     return Response.json(
       { error: limited ? "Хэт олон код илгээлээ. Хэдэн минут хүлээгээд дахин оролдоно уу." : "Код илгээж чадсангүй. Дахин оролдоно уу." },
       { status: limited ? 429 : 502 },

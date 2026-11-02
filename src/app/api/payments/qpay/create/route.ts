@@ -1,3 +1,4 @@
+import { reportError } from "@/lib/server/error-log";
 import { createQpayPayment, PaymentError } from "@/lib/server/payments";
 import { bookingFromRequest } from "@/lib/server/trip-view";
 import type { PayOption } from "@/lib/trips";
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
     return Response.json(await createQpayPayment(b, kind, new URL(request.url).origin));
   } catch (e) {
     if (e instanceof PaymentError) return Response.json({ error: e.message }, { status: e.status });
-    console.error("qpay invoice failed", e);
+    await reportError("qpay invoice failed", e, { booking: b.id, kind });
     return Response.json({ error: "QPay нэхэмжлэх үүсгэж чадсангүй. Дахин оролдоно уу." }, { status: 502 });
   }
 }

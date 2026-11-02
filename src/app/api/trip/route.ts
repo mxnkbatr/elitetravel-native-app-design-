@@ -3,6 +3,7 @@ import { fitsAmount, installmentProviders, pendingInstallments } from "@/lib/ser
 import type { Care } from "@/lib/documents";
 import { contractFor, getContractTemplate, sha256, signedContract } from "@/lib/server/contract";
 import { saveCare } from "@/lib/server/documents";
+import { reportError } from "@/lib/server/error-log";
 import { deletePassengers, passportStorageReady, savePassengers } from "@/lib/server/passports";
 import { sendLater } from "@/lib/server/push";
 import { assistantReply, tripRepliesEnabled } from "@/lib/server/trip-assistant";
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
       try {
         await savePassengers(b.id, passengers, b.travel_date);
       } catch (e) {
-        console.error("passport save failed", e);
+        await reportError("passport save failed", e, { booking: b.id });
         return fail(502, "Хадгалж чадсангүй.");
       }
       break;
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
       try {
         await saveCare(b.id, care);
       } catch (e) {
-        console.error("care save failed", e);
+        await reportError("care save failed", e, { booking: b.id });
         return fail(502, "Хадгалж чадсангүй.");
       }
       break;

@@ -2,6 +2,7 @@ import "server-only";
 
 import { seedNews, type NewsItem } from "@/data/news";
 import { seedTours, type Tour } from "@/data/tours";
+import { reportError } from "@/lib/server/error-log";
 import { supabaseAdmin } from "@/lib/server/supabase-admin";
 import { unstable_cache } from "next/cache";
 
@@ -14,7 +15,7 @@ async function load<T>(table: "tours" | "news", fallback: T[]): Promise<T[]> {
   if (!db) return fallback;
   const { data, error } = await db.from(table).select("data").order("position").order("id");
   if (error) {
-    console.error(`${table} load failed`, error.code, error.message);
+    await reportError(`${table} load failed`, error);
     throw new Error(`Could not load ${table}`);
   }
   return data.map((row) => row.data as T);

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { issueReceipt } from "@/lib/server/ebarimt";
+import { reportError } from "@/lib/server/error-log";
 import { qpay, qpayMode } from "@/lib/server/qpay";
 import { applyPayments, db, type BookingRow } from "@/lib/server/trips";
 import { payOptions, type PayOption } from "@/lib/trips";
@@ -116,7 +117,7 @@ export async function recheckPendingQpay(bookingId?: string) {
     try {
       if (await settleQpayPayment(p.id)) settled++;
     } catch (e) {
-      console.error("qpay recheck failed", p.id, e);
+      await reportError("qpay recheck failed", e, { payment: p.id });
     }
   }
   return settled;

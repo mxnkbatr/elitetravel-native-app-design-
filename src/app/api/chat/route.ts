@@ -4,6 +4,7 @@ import { tripChecklist } from "@/lib/checklist";
 import { chatModel, chatProviderOptions, SITE_GUIDE } from "@/lib/server/ai";
 import { clientIp, originAllowed, rateLimit } from "@/lib/server/chat-security";
 import { getTours } from "@/lib/server/content";
+import { reportError } from "@/lib/server/error-log";
 import { bookingFacts } from "@/lib/server/trip-assistant";
 import { tripView } from "@/lib/server/trip-view";
 import { BOOKING_COLUMNS, db, type BookingRow } from "@/lib/server/trips";
@@ -186,7 +187,7 @@ export async function POST(req: Request) {
       const { error } = await db.from("chat_logs").insert({ question, answer: text.slice(0, 8000), messages: history });
       if (error) console.error("chat log insert failed", error.code, error.message);
     },
-    onError: ({ error }) => console.error("[chat]", error),
+    onError: ({ error }) => void reportError("chat assistant failed", error),
   });
 
   return result.toUIMessageStreamResponse();

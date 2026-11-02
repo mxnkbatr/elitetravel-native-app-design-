@@ -1,5 +1,6 @@
 import { isDocType, MAX_UPLOAD_BYTES, UPLOAD_MIME } from "@/lib/documents";
 import { storeDocument } from "@/lib/server/documents";
+import { reportError } from "@/lib/server/error-log";
 import { passportStorageReady } from "@/lib/server/passports";
 import { bookingFromRequest, requiredSlots, tripView } from "@/lib/server/trip-view";
 import { BOOKING_COLUMNS, db, type BookingRow } from "@/lib/server/trips";
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
   try {
     await storeDocument({ bookingId: b.id, type, slot, bytes: new Uint8Array(await file.arrayBuffer()), mime: file.type, check });
   } catch (e) {
-    console.error("document upload failed", e);
+    await reportError("document upload failed", e, { booking: b.id, type });
     return fail(502, "Хадгалж чадсангүй. Дахин оролдоно уу.");
   }
   const { data } = await db().from("booking_requests").select(BOOKING_COLUMNS).eq("id", b.id).single();
