@@ -5,18 +5,19 @@ import { haptic } from "@/lib/native";
 import { onTravellerChange, savedTours, useTraveller } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 const PHONE = "+97690031771";
 const noop = () => () => {};
 
-/** Header avatar: opens the account sheet (sign in / sign up, or the signed-in traveller's shortcuts). */
+/** Header avatar: guests go straight to the sign-in screen; a signed-in traveller gets the shortcuts sheet. */
 export function ProfileButton({ onDark }: { onDark: boolean }) {
   const account = useAccount();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const [openOn, setOpenOn] = useState(pathname);
   if (openOn !== pathname) {
     setOpenOn(pathname);
@@ -42,7 +43,8 @@ export function ProfileButton({ onDark }: { onDark: boolean }) {
         aria-label={account.status === "user" ? "Миний профайл" : "Нэвтрэх, бүртгүүлэх"}
         onClick={() => {
           haptic("tap");
-          setOpen(true);
+          if (account.status === "user") setOpen(true);
+          else router.push("/account?mode=login");
         }}
         className={`grid size-10 place-items-center rounded-full transition active:scale-90 ${onDark ? "text-white hover:bg-white/10" : "text-foam hover:bg-ink/[0.06]"}`}
       >
@@ -70,7 +72,7 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
   const user = account.status === "user" ? account.profile : null;
   return createPortal(
     <AnimatePresence>
-      {open ? (
+      {open && user ? (
         <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center" role="dialog" aria-label="Профайл">
           <motion.button
             type="button"
@@ -96,57 +98,38 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
           >
             <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-foam/15 sm:hidden" />
 
-            {user ? (
-              <div className="flex items-center gap-3">
-                <span className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0d6e66] text-lg font-bold text-white">
-                  {(user.name || user.email).charAt(0).toUpperCase()}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate font-display text-xl font-semibold">{user.name || "Сайн байна уу 👋"}</p>
-                  <p className="truncate text-sm text-foam/60">{user.email}</p>
-                </div>
+            <div className="flex items-center gap-3">
+              <span className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0d6e66] text-lg font-bold text-white">
+                {(user.name || user.email).charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-display text-xl font-semibold">{user.name || "Сайн байна уу 👋"}</p>
+                <p className="truncate text-sm text-foam/60">{user.email}</p>
               </div>
-            ) : (
-              <div>
-                <p className="font-display text-2xl font-semibold">Сайн байна уу 👋</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-foam/65">
-                  Нэвтэрвэл захиалга, чат, төлбөр тань утсаа солисон ч хадгалагдана. Нууц үг хэрэггүй — имэйлээр тань код очно.
-                </p>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <Link href="/account?mode=login" onClick={onClose} className="flex h-12 items-center justify-center rounded-2xl bg-accent text-sm font-semibold text-white">
-                    Нэвтрэх
-                  </Link>
-                  <Link href="/account?mode=signup" onClick={onClose} className="flex h-12 items-center justify-center rounded-2xl border border-accent/40 text-sm font-semibold text-accent">
-                    Бүртгүүлэх
-                  </Link>
-                </div>
-              </div>
-            )}
+            </div>
 
             <div className="mt-5 divide-y divide-[var(--line)] overflow-hidden rounded-2xl border border-[var(--line)] bg-bg">
               <Row href="/bookings" onClick={onClose} icon="🎫" label="Миний захиалга" aside={bookings.length ? String(bookings.length) : undefined} />
               <Row href="/bookings" onClick={onClose} icon="♡" label="Хадгалсан аялал" aside={saved.length ? String(saved.length) : undefined} />
-              {user ? <Row href="/account" onClick={onClose} icon="👤" label="Профайл, тохиргоо" /> : null}
+              <Row href="/account" onClick={onClose} icon="👤" label="Профайл, тохиргоо" />
               <Row href={`tel:${PHONE}`} icon="☏" label="Залгах" aside="+976 9003 1771" external />
               <Row href="https://ig.me/m/elitetravelmn" icon="✉" label="Instagram-аар бичих" external />
             </div>
 
-            {user ? (
-              <button
-                type="button"
-                disabled={leaving}
-                onClick={() => {
-                  setLeaving(true);
-                  void logout().finally(() => {
-                    setLeaving(false);
-                    onClose();
-                  });
-                }}
-                className="mt-3 h-12 w-full rounded-2xl text-sm font-semibold text-[#c2410c] disabled:opacity-60"
-              >
-                {leaving ? "…" : "Гарах"}
-              </button>
-            ) : null}
+            <button
+              type="button"
+              disabled={leaving}
+              onClick={() => {
+                setLeaving(true);
+                void logout().finally(() => {
+                  setLeaving(false);
+                  onClose();
+                });
+              }}
+              className="mt-3 h-12 w-full rounded-2xl text-sm font-semibold text-[#c2410c] disabled:opacity-60"
+            >
+              {leaving ? "…" : "Гарах"}
+            </button>
           </motion.div>
         </div>
       ) : null}

@@ -1,12 +1,19 @@
 "use client";
 
+import { EliteLogo } from "@/components/EliteLogo";
 import { deleteAccount, faceIdSignIn, logout, requestCode, updateProfile, useAccount, verifyCode } from "@/lib/account";
 import { biometricEnabled, biometryName, disableBiometric, enableBiometric } from "@/lib/biometric";
+import { cldImage } from "@/lib/cloudinary";
 import { haptic } from "@/lib/native";
 import { useTraveller } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+
+const SIGN_IN_PHOTO = "elitetravel/tours/tropical-aerial-coast";
 
 const field = "h-12 w-full rounded-2xl border border-[var(--line)] bg-bg px-4 text-base outline-none focus:border-accent";
 const primary = "h-12 w-full rounded-2xl bg-accent text-[0.95rem] font-semibold text-white transition active:scale-[0.98] disabled:opacity-50";
@@ -14,19 +21,60 @@ const primary = "h-12 w-full rounded-2xl bg-accent text-[0.95rem] font-semibold 
 /** /account: passwordless sign in / sign up with an emailed code, then the traveller's profile. */
 export function AccountView({ mode, linkExpired, welcome }: { mode: "login" | "signup"; linkExpired: boolean; welcome: boolean }) {
   const account = useAccount();
+  if (account.status === "guest") return <SignIn initialMode={mode} linkExpired={linkExpired} />;
   return (
     <div className="mx-auto min-h-dvh max-w-md px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-[calc(5.5rem+env(safe-area-inset-top))] sm:pt-32">
-      {account.status === "loading" ? (
+      {account.status === "user" && account.profile ? (
+        <Profile welcome={welcome} />
+      ) : (
         <div className="mt-10 space-y-3">
           <div className="h-10 w-2/3 animate-pulse rounded-xl bg-foam/10" />
           <div className="h-32 animate-pulse rounded-3xl bg-foam/10" />
         </div>
-      ) : account.status === "user" && account.profile ? (
-        <Profile welcome={welcome} />
-      ) : (
-        <SignIn initialMode={mode} linkExpired={linkExpired} />
       )}
     </div>
+  );
+}
+
+/** Full-screen sign-in, like a native app's: photo and logo on top, the form in a sheet below. */
+function SignInScreen({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const close = () => {
+    haptic("tap");
+    if (window.history.length > 1) router.back();
+    else router.push("/");
+  };
+  // Portaled: the page transition wrapper would otherwise keep it under the header, dock and chat button
+  return createPortal(
+    <div className="fixed inset-0 z-[85] overflow-y-auto overscroll-contain bg-[#062a2a]" data-lenis-prevent>
+      <div className="absolute inset-x-0 top-0 h-[46svh] sm:fixed sm:inset-0 sm:h-auto">
+        <Image src={cldImage(SIGN_IN_PHOTO)} alt="" fill priority sizes="100vw" className="object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#031a1a]/55 via-[#062a2a]/20 to-[#062a2a]/85 sm:to-[#062a2a]/70" />
+      </div>
+      <button
+        type="button"
+        onClick={close}
+        aria-label="Хаах"
+        className="fixed left-4 top-[calc(env(safe-area-inset-top)+0.75rem)] z-10 grid size-10 place-items-center rounded-full bg-black/25 text-xl text-white backdrop-blur-md active:scale-90"
+      >
+        ×
+      </button>
+      <div className="relative flex min-h-full flex-col sm:items-center sm:justify-center sm:p-6">
+        <div className="flex h-[38svh] min-h-[220px] shrink-0 flex-col items-center justify-end pb-10 text-center sm:h-auto sm:min-h-0 sm:pb-8">
+          <EliteLogo href="" size="lg" light />
+          <p className="mt-3 text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-white/70">Explore · Dream · Discover</p>
+        </div>
+        <motion.div
+          initial={{ y: 40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 32 }}
+          className="relative -mt-6 flex-1 rounded-t-[2rem] bg-bg-elevated px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-7 text-foam shadow-[0_-20px_60px_rgba(0,0,0,0.25)] sm:mt-0 sm:w-full sm:max-w-md sm:flex-none sm:rounded-[2rem] sm:pb-7"
+        >
+          {children}
+        </motion.div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -102,11 +150,12 @@ function SignIn({ initialMode, linkExpired }: { initialMode: "login" | "signup";
   }
 
   return (
-    <div>
-      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-accent">Elite Travel</p>
-      <h1 className="mt-2 font-display text-[2.5rem] font-semibold leading-[0.98] tracking-[-0.035em]">{mode === "signup" ? "Бүртгүүлэх" : "Нэвтрэх"}</h1>
-      <p className="mt-3 text-sm leading-relaxed text-muted">
-        Нууц үг хэрэггүй. Имэйлээ оруулахад 6 оронтой код очно. Нэвтэрсний дараа захиалга, чат, төлбөр тань утсаа солисон ч хадгалагдана.
+    <SignInScreen>
+      <h1 className="font-display text-[2.1rem] font-semibold leading-[1] tracking-[-0.035em]">{mode === "signup" ? "Бүртгүүлэх" : "Тавтай морил 👋"}</h1>
+      <p className="mt-2.5 text-sm leading-relaxed text-muted">
+        {mode === "signup"
+          ? "Нууц үг хэрэггүй — имэйлээр тань 6 оронтой код очно. Захиалга, чат, төлбөр тань бүх төхөөрөмж дээр хадгалагдана."
+          : "Имэйлээ оруулаад ирсэн кодоор нэвтэрнэ. Захиалга, чат, төлбөр тань утсаа солисон ч хадгалагдана."}
       </p>
 
       {step === "email" && faceId ? (
@@ -188,13 +237,18 @@ function SignIn({ initialMode, linkExpired }: { initialMode: "login" | "signup";
       </AnimatePresence>
 
       {error ? <p className="mt-4 rounded-2xl bg-[#c2410c]/10 px-4 py-3 text-sm text-[#c2410c]">{error}</p> : null}
-      <p className="mt-8 text-center text-xs text-muted">
-        Бүртгэлгүйгээр ч захиалж болно —{" "}
-        <Link href="/tours" className="font-semibold text-accent">
-          аяллууд үзэх
+      <div className="mt-7 border-t border-[var(--line)] pt-5 text-center">
+        <Link href="/tours" className="text-sm font-semibold text-accent">
+          Бүртгэлгүйгээр үргэлжлүүлэх →
         </Link>
-      </p>
-    </div>
+        <p className="mt-2 text-xs text-muted">
+          Асуух зүйл байвал{" "}
+          <a href="tel:+97690031771" className="font-semibold text-foam/80">
+            +976 9003 1771
+          </a>
+        </p>
+      </div>
+    </SignInScreen>
   );
 }
 
