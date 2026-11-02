@@ -11,6 +11,8 @@ const config: CapacitorConfig = {
   appId: "mn.elitetravel.app",
   appName: "Elite Travel",
   webDir: "www",
+  // Lets the site recognise the app before any script runs (skip the web intro, app-only screens)
+  appendUserAgent: "EliteTravelApp/1.1",
   server: {
     url: APP_URL,
     cleartext: false,
@@ -42,10 +44,11 @@ const config: CapacitorConfig = {
       presentationOptions: ["alert", "badge", "sound"],
     },
     SplashScreen: {
-      launchShowDuration: 1400,
+      // The site hides the splash once its first screen has painted; this is only the fallback
+      launchShowDuration: 10000,
       launchAutoHide: true,
-      launchFadeOutDuration: 400,
-      backgroundColor: "#062a2a",
+      launchFadeOutDuration: 350,
+      backgroundColor: "#0b241d",
       showSpinner: false,
       androidScaleType: "CENTER_INSIDE",
       splashFullScreen: false,

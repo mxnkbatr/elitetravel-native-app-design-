@@ -30,6 +30,12 @@
       </div>
     </main>
     <script>
+      // The live site normally hides the splash; offline it never loads, so this page does
+      try {
+        var cap = window.Capacitor;
+        if (cap && cap.Plugins && cap.Plugins.SplashScreen) cap.Plugins.SplashScreen.hide();
+        else if (cap && cap.nativePromise) cap.nativePromise("SplashScreen", "hide", {});
+      } catch (e) {}
       document.getElementById("retry").addEventListener("click", function () {
         location.replace(window.__ELITE_URL__ || "https://elitetravel-mn-wg6y.vercel.app");
       });
