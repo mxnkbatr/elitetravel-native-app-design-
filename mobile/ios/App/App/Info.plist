@@ -26,6 +26,8 @@
 	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>Паспортын зургаас зорчигчийн мэдээллийг автоматаар бөглөхөд камер ашиглана. Зураг таны утаснаас гарахгүй.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Имэйл код хүлээлгүй Face ID-аар аюулгүй, шуурхай нэвтрэхэд ашиглана.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Паспортын зургийг цомгоосоо сонгож зорчигчийн мэдээллийг бөглөхөд ашиглана.</string>
 	<key>UIBackgroundModes</key>
