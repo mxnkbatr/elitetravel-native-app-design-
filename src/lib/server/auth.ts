@@ -42,14 +42,18 @@ export async function isAdminEmail(email: string) {
 
 export type Admin = { email: string; role: Role };
 
-/** The signed-in staff member, or null. Verified against Supabase Auth on every request. */
+/**
+ * The signed-in staff member, or null. The session JWT is verified on every request
+ * (getClaims checks the signature against the project's published keys, cached, so no
+ * round trip to Supabase Auth), then the email is checked against the admin_users allowlist.
+ */
 export const getAdmin = cache(async (): Promise<Admin | null> => {
   await cookies();
   // A deployment without Supabase Auth configured has no staff: everyone lands on the login page
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_PUBLISHABLE_KEY) return null;
   const supabase = await supabaseAuth();
-  const { data } = await supabase.auth.getUser();
-  const email = data.user?.email;
+  const { data } = await supabase.auth.getClaims();
+  const email = typeof data?.claims?.email === "string" ? data.claims.email : undefined;
   if (!email) return null;
   const role = await adminRole(email);
   return role ? { email, role } : null;
