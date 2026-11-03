@@ -79,6 +79,10 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
           <input type="checkbox" checked={tour.status === "ended"} onChange={(e) => set("status", e.target.checked ? "ended" : undefined)} className="size-4 accent-[#0d8f84]" />
           Дууссан аялал — жагсаалтаас нуух (холбоосоор нээгдсээр байна)
         </label>
+        <label className="flex items-center gap-2.5 text-sm sm:col-span-2">
+          <input type="checkbox" checked={tour.unlisted === true} onChange={(e) => set("unlisted", e.target.checked ? true : undefined)} className="size-4 accent-[#0d8f84]" />
+          Нууц (туршилтын) аялал — зөвхөн холбоосоор захиалагдана, сайт, хайлт, чатад харагдахгүй
+        </label>
       </Section>
 
       <Section title="Үнэ">

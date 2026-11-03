@@ -25,6 +25,8 @@ export type Tour = {
   tag?: "hot" | "soon" | "sale";
   /** Past departures stay reachable by URL but drop out of listings */
   status?: "ended";
+  /** Bookable by direct link only (staff test tours): never in listings, search, menus, chat or the sitemap */
+  unlisted?: boolean;
   discount?: string;
   image: string;
   gallery: string[];

@@ -81,7 +81,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
       <body className="min-h-full bg-bg font-sans text-foam antialiased">
-        <ContentProvider tours={tours.map(toSummary)} news={news} seats={seats}>
+        <ContentProvider tours={tours.filter((t) => !t.unlisted).map(toSummary)} news={news} seats={seats}>
           <AppShell assistant={chatModel() != null}>{children}</AppShell>
         </ContentProvider>
       </body>

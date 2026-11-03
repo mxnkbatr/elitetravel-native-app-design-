@@ -78,6 +78,7 @@ export function parseTour(input: unknown): Tour {
     nights: num(t.nights, "Шөнө"),
     tag: t.tag ? oneOf(t.tag, ["hot", "soon", "sale"] as const, "Шошго") : undefined,
     status: t.status === "ended" ? "ended" : undefined,
+    unlisted: t.unlisted === true ? true : undefined,
     discount: optStr(t.discount, 30),
     image: url(t.image, "Нүүр зураг"),
     gallery: list(t.gallery, "Галерей").filter((g) => g.startsWith("https://")),

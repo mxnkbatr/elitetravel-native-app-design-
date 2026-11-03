@@ -7,7 +7,7 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const site = siteUrl();
-  const tours = (await getTours()).filter((t) => t.status !== "ended");
+  const tours = (await getTours()).filter((t) => t.status !== "ended" && !t.unlisted);
   const pages: MetadataRoute.Sitemap = [
     { url: site, changeFrequency: "daily", priority: 1 },
     { url: `${site}/tours`, changeFrequency: "daily", priority: 0.9 },

@@ -90,7 +90,9 @@ export async function POST(req: Request) {
   const recent = messages.slice(-MAX_TURNS);
   if (recent.some((m) => textOf(m).length > MAX_CHARS)) return Response.json({ error: "too long" }, { status: 413 });
 
-  const [tours, seats] = await Promise.all([getTours(), getSeats()]);
+  const [allTours, seats] = await Promise.all([getTours(), getSeats()]);
+  // Test tours are reachable by link only; the assistant never offers them
+  const tours = allTours.filter((t) => !t.unlisted);
   const live = tours.filter((t) => t.status !== "ended");
 
   const result = streamText({
