@@ -4,7 +4,7 @@ import { isActive, NAV_GROUPS, navFor, PHONE_TABS, type NavItem } from "@/app/ad
 import { CommandPalette, openPalette } from "@/app/admin/(panel)/CommandPalette";
 import { BellIcon, ExternalIcon, GridIcon, LogoutIcon } from "@/app/admin/(panel)/icons";
 import { PulseProvider, usePulse } from "@/app/admin/(panel)/pulse-context";
-import { Sheet } from "@/app/admin/(panel)/Sheet";
+import { Sheet } from "@/components/Sheet";
 import { StaffFaceId } from "@/app/admin/(panel)/StaffFaceId";
 import { ROLE_LABEL, type Role } from "@/lib/permissions";
 import { disableStaffPush, enablePush, pushState, staffPushOn } from "@/lib/push-client";

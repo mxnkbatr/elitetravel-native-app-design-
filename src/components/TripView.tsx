@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { formatPrice, getTour } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { PartnerLogo } from "@/components/PartnerLogo";
@@ -162,7 +163,7 @@ export function TripView({ id }: { id: string }) {
             <StatusBar trip={trip} />
           </header>
 
-          {error ? <p className="rounded-xl bg-[#c2410c]/10 px-3 py-2 text-sm text-[#c2410c]">{error}</p> : null}
+          {error ? <p className="rounded-xl bg-[#c2410c]/10 px-3 py-2 text-sm text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
 
           {trip.status !== "cancelled" ? <PushPrompt /> : null}
           {trip.status !== "cancelled" ? <PaySection trip={trip} call={call} pay={pay} /> : null}
@@ -178,7 +179,7 @@ export function TripView({ id }: { id: string }) {
 
           <div className="grid grid-cols-2 gap-2">
             <a href={`tel:${PHONE}`} className="flex h-12 items-center justify-center rounded-2xl border border-[var(--line)] bg-bg-elevated text-sm font-semibold">
-              ☏ Залгах
+              <Icon name="phone" size={17} className="mr-1.5" /> Залгах
             </a>
             <a href={INSTAGRAM_DM} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center rounded-2xl border border-[var(--line)] bg-bg-elevated text-sm font-semibold">
               Instagram
@@ -196,7 +197,7 @@ function Countdown({ date }: { date: string | null }) {
   return (
     <div className="absolute right-4 top-4 rounded-2xl bg-white/95 px-3 py-1.5 text-center">
       <p className="font-num text-2xl leading-none text-ink">{days}</p>
-      <p className="text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-muted">{days === 0 ? "өнөөдөр" : "хоног"}</p>
+      <p className="type-label text-muted">{days === 0 ? "өнөөдөр" : "хоног"}</p>
     </div>
   );
 }
@@ -204,7 +205,7 @@ function Countdown({ date }: { date: string | null }) {
 function StatusBar({ trip }: { trip: Trip }) {
   if (trip.status === "cancelled" || trip.status === "waitlist") {
     return (
-      <div className={`px-4 py-3.5 text-sm font-semibold ${trip.status === "cancelled" ? "bg-zinc-100 text-zinc-600" : "bg-amber-50 text-amber-800"}`}>
+      <div className={`px-4 py-3.5 text-sm font-semibold ${trip.status === "cancelled" ? "bg-zinc-100 text-zinc-600" : "bg-amber-50 dark:bg-amber-400/10 text-amber-800 dark:text-amber-200"}`}>
         {trip.status === "cancelled" ? "Захиалга цуцлагдсан" : "Хүлээлгийн жагсаалтад байна — суудал гармагц мэдэгдэнэ"}
       </div>
     );
@@ -309,8 +310,8 @@ function PaySection({ trip, call, pay }: { trip: Trip; call: Call; pay: PayApi }
       ) : null}
       {canPay && trip.paidAmount === 0 ? <p className="mt-2 text-xs text-muted">Төлбөр орж ирмэгц захиалга автоматаар баталгаажиж, И-баримт гарна.</p> : null}
       {trip.invoice && !sheet ? (
-        <button type="button" onClick={() => setSheet(true)} className="mt-3 w-full rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-left text-sm">
-          <span className="font-semibold text-ink">Нээлттэй нэхэмжлэх · {formatPrice(trip.invoice.amount)}</span>
+        <button type="button" onClick={() => setSheet(true)} className="mt-3 w-full rounded-2xl border border-[var(--line)] bg-card px-4 py-3 text-left text-sm">
+          <span className="font-semibold text-foam">Нээлттэй нэхэмжлэх · {formatPrice(trip.invoice.amount)}</span>
           <span className="block text-xs text-accent">QR болон банкны апп харах →</span>
         </button>
       ) : null}
@@ -322,7 +323,7 @@ function PaySection({ trip, call, pay }: { trip: Trip; call: Call; pay: PayApi }
       ) : null}
 
       {trip.receipts.length ? <Receipts trip={trip} /> : null}
-      {error ? <p className="mt-3 text-sm text-[#c2410c]">{error}</p> : null}
+      {error ? <p className="mt-3 text-sm text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
 
       <PaySheet open={sheet && trip.invoice != null} trip={trip} pay={pay} onClose={() => setSheet(false)} />
     </Card>
@@ -399,9 +400,9 @@ function PaySheet({ open, trip, pay, onClose }: { open: boolean; trip: Trip; pay
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 260, damping: 16 }}
-                  className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-3xl text-white"
+                  className="mx-auto grid size-16 place-items-center rounded-full bg-accent text-white"
                 >
-                  ✓
+                  <Icon name="check" size={30} strokeWidth={2.4} />
                 </motion.div>
                 <p className="mt-4 font-display text-2xl font-semibold">Төлбөр амжилттай</p>
                 <p className="mt-1 text-sm text-muted">Захиалга шинэчлэгдэж, И-баримт гарлаа.</p>
@@ -435,7 +436,7 @@ function PaySheet({ open, trip, pay, onClose }: { open: boolean; trip: Trip; pay
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={u.logo} alt="" className="size-12 rounded-2xl" />
                           ) : (
-                            <span className="grid size-12 place-items-center rounded-2xl bg-bg font-semibold text-ink">{u.name.charAt(0)}</span>
+                            <span className="grid size-12 place-items-center rounded-2xl bg-bg font-semibold text-foam">{u.name.charAt(0)}</span>
                           )}
                           <span className="line-clamp-2">{u.description ?? u.name}</span>
                         </a>
@@ -444,7 +445,7 @@ function PaySheet({ open, trip, pay, onClose }: { open: boolean; trip: Trip; pay
                   </>
                 ) : null}
 
-                <div className="mt-4 rounded-2xl bg-accent-mist/60 px-4 py-3 text-xs leading-relaxed text-ink">
+                <div className="mt-4 rounded-2xl bg-accent-mist/60 px-4 py-3 text-xs leading-relaxed text-foam">
                   <p className="font-semibold">Хуваан төлөх бол</p>
                   {/* TODO(confirm with provider): Toki PayLater through a QPay QR reaching us as PAID is unconfirmed;
                       Pocket, Simple and Dari support for QPay QR is unconfirmed, so they are not mentioned here. */}
@@ -468,7 +469,7 @@ function PaySheet({ open, trip, pay, onClose }: { open: boolean; trip: Trip; pay
                     Дараа төлөх
                   </button>
                 </div>
-                {error ? <p className="mt-2 text-center text-sm text-[#c2410c]">{error}</p> : null}
+                {error ? <p className="mt-2 text-center text-sm text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
               </>
             ) : null}
           </motion.div>
@@ -486,7 +487,7 @@ function Receipts({ trip }: { trip: Trip }) {
       <ul className="mt-2 space-y-1.5">
         {trip.receipts.map((r, i) => (
           <li key={i} className="flex items-center justify-between gap-3 rounded-xl bg-bg px-3 py-2 text-xs">
-            <span className="font-num text-sm text-ink">{formatPrice(r.amount)}</span>
+            <span className="font-num text-sm text-foam">{formatPrice(r.amount)}</span>
             <span className="text-right text-muted">
               {r.status === "issued" ? (
                 <>
@@ -511,10 +512,10 @@ function InstallmentStatus({ trip, busy, onCancel }: { trip: Trip; busy: boolean
   const r = trip.installment!;
   const name = providerName(r.provider);
   return (
-    <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--line)] bg-white p-4">
+    <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--line)] bg-card p-4">
       <PartnerLogo id={r.provider} />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink">
+        <p className="text-sm font-semibold text-foam">
           {name}-ээр хуваан төлөх · {formatPrice(r.amount)}
         </p>
         <p className="mt-0.5 text-xs leading-relaxed text-muted">
@@ -523,7 +524,7 @@ function InstallmentStatus({ trip, busy, onCancel }: { trip: Trip; busy: boolean
             : `Хүсэлт илгээгдсэн. Манай ажилтан ${r.phone ?? "таны"} дугаарт ${name} нэхэмжлэх илгээнэ.`}
         </p>
         {!r.sent ? (
-          <button type="button" disabled={busy} onClick={onCancel} className="mt-2 text-xs font-semibold text-[#c2410c] disabled:opacity-60">
+          <button type="button" disabled={busy} onClick={onCancel} className="mt-2 text-xs font-semibold text-[#c2410c] dark:text-[#ff8f66] disabled:opacity-60">
             Хүсэлт цуцлах
           </button>
         ) : null}
@@ -548,7 +549,7 @@ function InstallmentPicker({ trip, busy, onSubmit }: { trip: Trip; busy: boolean
         className="mt-3 flex w-full items-center justify-between rounded-2xl border border-dashed border-[var(--line)] px-4 py-3 text-left text-sm active:scale-[0.99]"
       >
         <span>
-          <span className="font-semibold text-ink">Хуваан төлөх</span>
+          <span className="font-semibold text-foam">Хуваан төлөх</span>
           <span className="block text-xs text-muted">{trip.installments.map((p) => p.name).join(", ")}</span>
         </span>
         <span className="flex -space-x-2">
@@ -561,8 +562,8 @@ function InstallmentPicker({ trip, busy, onSubmit }: { trip: Trip; busy: boolean
   }
 
   return (
-    <div className="mt-3 rounded-2xl border border-[var(--line)] bg-white p-4">
-      <p className="text-sm font-semibold text-ink">Хуваан төлөх</p>
+    <div className="mt-3 rounded-2xl border border-[var(--line)] bg-card p-4">
+      <p className="text-sm font-semibold text-foam">Хуваан төлөх</p>
       {trip.payOptions.length > 1 ? (
         <div className="mt-2 flex gap-2">
           {trip.payOptions.map((o) => (
@@ -588,7 +589,7 @@ function InstallmentPicker({ trip, busy, onSubmit }: { trip: Trip; busy: boolean
           >
             <PartnerLogo id={p.id} />
             <span className="min-w-0">
-              <span className="block text-sm font-semibold text-ink">{p.name}</span>
+              <span className="block text-sm font-semibold text-foam">{p.name}</span>
               {p.terms ? <span className="block text-xs text-muted">{p.terms}</span> : null}
             </span>
           </button>
@@ -659,7 +660,7 @@ function Chat({ trip, call }: { trip: Trip; call: Call }) {
                 m.sender === "traveller"
                   ? "rounded-br-md bg-accent text-white"
                   : m.sender === "system"
-                    ? "rounded-bl-md bg-accent-mist text-ink"
+                    ? "rounded-bl-md bg-accent-mist text-foam"
                     : "rounded-bl-md bg-white text-ink shadow-sm"
               }`}
             >
@@ -686,7 +687,7 @@ function Chat({ trip, call }: { trip: Trip; call: Call }) {
           {sending ? "…" : "Илгээх"}
         </button>
       </form>
-      {error ? <p className="mt-2 text-sm text-[#c2410c]">{error}</p> : null}
+      {error ? <p className="mt-2 text-sm text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
     </Card>
   );
 }
@@ -742,7 +743,7 @@ function Passengers({ trip, call }: { trip: Trip; call: Call }) {
             <div key={i} className="rounded-2xl bg-bg p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold">Зорчигч {i + 1}</p>
-                <span className={`text-[0.7rem] font-semibold ${issue ? "text-[#c2410c]" : "text-accent"}`}>{issue ?? "✓ Бэлэн"}</span>
+                <span className={`text-[0.7rem] font-semibold ${issue ? "text-[#c2410c] dark:text-[#ff8f66]" : "text-accent"}`}>{issue ?? "✓ Бэлэн"}</span>
               </div>
               <ScanButton
                 onResult={(r) =>
@@ -789,9 +790,9 @@ function Passengers({ trip, call }: { trip: Trip; call: Call }) {
         })}
       </div>
       {!trip.passportStorage ? (
-        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">Паспортын мэдээлэл хадгалах тохиргоо хийгдээгүй байна. Түр хүлээнэ үү эсвэл манай багтай холбогдоно уу.</p>
+        <p className="mt-3 rounded-xl bg-amber-50 dark:bg-amber-400/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">Паспортын мэдээлэл хадгалах тохиргоо хийгдээгүй байна. Түр хүлээнэ үү эсвэл манай багтай холбогдоно уу.</p>
       ) : null}
-      <label className="mt-3 flex items-start gap-2.5 rounded-xl bg-bg p-3 text-xs leading-relaxed text-ink">
+      <label className="mt-3 flex items-start gap-2.5 rounded-xl bg-bg p-3 text-xs leading-relaxed text-foam">
         <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-[#0d8f84]" />
         <span>
           Зорчигчдын паспортын мэдээллийг нислэг, буудал, даатгал, визийн бүрдүүлэлтэд ашиглуулахаар Elite Travel-д өгөхийг зөвшөөрч байна. Мэдээлэл шифрлэгдэн хадгалагдах
@@ -807,9 +808,9 @@ function Passengers({ trip, call }: { trip: Trip; call: Call }) {
         >
           {saving ? "Хадгалж байна…" : "Хадгалах"}
         </button>
-        {message ? <p className={`text-sm ${message.ok ? "text-accent" : "text-[#c2410c]"}`}>{message.text}</p> : null}
+        {message ? <p className={`text-sm ${message.ok ? "text-accent" : "text-[#c2410c] dark:text-[#ff8f66]"}`}>{message.text}</p> : null}
         {trip.passengers.length ? (
-          <button type="button" onClick={remove} disabled={saving} className="ml-auto text-xs font-semibold text-[#c2410c] disabled:opacity-50">
+          <button type="button" onClick={remove} disabled={saving} className="ml-auto text-xs font-semibold text-[#c2410c] dark:text-[#ff8f66] disabled:opacity-50">
             Паспортын мэдээллээ устгах
           </button>
         ) : null}
@@ -862,7 +863,9 @@ function ScanButton({ onResult }: { onResult: (r: MrzResult) => void }) {
             {progress ? `Уншиж байна… ${progress}%` : "Бэлтгэж байна…"}
           </>
         ) : (
-          <>📷 Паспортын зургаар бөглөх</>
+          <span className="inline-flex items-center gap-2">
+            <Icon name="camera" size={17} /> Паспортын зургаар бөглөх
+          </span>
         )}
         <input
           type="file"
@@ -875,7 +878,7 @@ function ScanButton({ onResult }: { onResult: (r: MrzResult) => void }) {
         />
       </label>
       {message ? (
-        <p className={`mt-1.5 text-[0.7rem] leading-relaxed ${message.ok ? "text-accent" : "text-[#c2410c]"}`}>{message.text}</p>
+        <p className={`mt-1.5 text-[0.7rem] leading-relaxed ${message.ok ? "text-accent" : "text-[#c2410c] dark:text-[#ff8f66]"}`}>{message.text}</p>
       ) : (
         <p className="mt-1.5 text-[0.65rem] text-muted">Зургийн хуудасны доод 2 мөр бүтэн, тод харагдахаар. Зураг таны утаснаас гарахгүй.</p>
       )}
@@ -903,9 +906,9 @@ function Notice({ title, body }: { title: string; body: string }) {
 function Skeleton() {
   return (
     <div className="mt-4 space-y-4">
-      <div className="h-56 animate-pulse rounded-[1.6rem] bg-bg-elevated" />
-      <div className="h-36 animate-pulse rounded-[1.4rem] bg-bg-elevated" />
-      <div className="h-64 animate-pulse rounded-[1.4rem] bg-bg-elevated" />
+      <div className="skeleton h-56 rounded-[1.6rem]" />
+      <div className="skeleton h-36 rounded-[1.4rem]" />
+      <div className="skeleton h-64 rounded-[1.4rem]" />
     </div>
   );
 }

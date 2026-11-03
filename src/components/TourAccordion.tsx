@@ -67,7 +67,7 @@ export function TourAccordion({ tours }: { tours: TourSummary[] }) {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full bg-white px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-ink">{t.destination}</span>
+                      <span className="rounded-full bg-white px-3 py-1 type-label text-ink">{t.destination}</span>
                       {t.discount ? <span className="rounded-full bg-accent px-3 py-1 text-[0.68rem] font-bold">{t.discount}</span> : null}
                       {t.tag === "hot" ? <span className="rounded-full bg-[#e8b86d] px-3 py-1 text-[0.68rem] font-bold text-ink">Эрэлттэй</span> : null}
                     </div>
@@ -75,7 +75,7 @@ export function TourAccordion({ tours }: { tours: TourSummary[] }) {
                   </div>
 
                   <div>
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[#f3d199]">
+                    <p className="type-eyebrow text-[#f3d199]">
                       {[t.dates, t.duration].filter(Boolean).join(" · ")}
                     </p>
                     <h3 className="mt-2 max-w-md font-display text-[2.6rem] font-semibold leading-[1] tracking-[-0.03em]">{t.title}</h3>

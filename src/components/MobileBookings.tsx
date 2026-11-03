@@ -1,19 +1,26 @@
 "use client";
 
 import { bookingMessage } from "@/components/BookingPlanner";
+import { EmptyState } from "@/components/EmptyState";
+import { Icon } from "@/components/Icon";
 import { MobileTitle } from "@/components/MobileTitle";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { SaveButton } from "@/components/SaveButton";
 import { formatPrice, getTour, isBookable } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { daysUntil } from "@/lib/dates";
-import { useTripSummaries } from "@/lib/trip-sync";
+import { haptic } from "@/lib/native";
+import { refreshTrips, useTripSummaries } from "@/lib/trip-sync";
 import { removeBooking, useTraveller, type BookingRequest } from "@/lib/traveller-store";
 import { useClientValue } from "@/lib/ui";
 import { STATUS_LABEL, progressOf, type TripSummary } from "@/lib/trips";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, animate, motion, useMotionValue, useTransform, type PanInfo } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+/** How far a ticket slides left to show its quick actions. */
+const ACTIONS_W = 152;
 
 const steps = ["Хүсэлт", "Холбогдсон", "Баталгаажсан", "Төлсөн"];
 
@@ -35,6 +42,18 @@ function Ticket({ b, index, summary }: { b: BookingRequest; index: number; summa
     return () => window.clearTimeout(id);
   }, [confirmDelete]);
 
+  const x = useMotionValue(0);
+  const actionsOpacity = useTransform(x, [-ACTIONS_W, -24, 0], [1, 0.4, 0]);
+  // A swipe ends in a pointer-up that would also "click" the photo link; swallow that one
+  const swiped = useRef(false);
+  function onSwipeEnd(_: unknown, info: PanInfo) {
+    swiped.current = true;
+    window.setTimeout(() => (swiped.current = false), 0);
+    const open = info.offset.x < -60 || info.velocity.x < -400;
+    if (open && x.get() > -ACTIONS_W) haptic("tap");
+    animate(x, open ? -ACTIONS_W : 0, { type: "spring", stiffness: 420, damping: 38 });
+  }
+
   if (!tour) return null;
   const people = b.adults + b.kidsOwnBed + b.kidsSharedBed;
 
@@ -54,8 +73,50 @@ function Ticket({ b, index, summary }: { b: BookingRequest; index: number; summa
       animate={{ opacity: 1, y: 0, rotate: 0 }}
       exit={{ opacity: 0, x: -80, transition: { duration: 0.25 } }}
       transition={{ delay: index * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="overflow-hidden rounded-[1.6rem] bg-bg-elevated shadow-[0_14px_40px_rgba(6,42,42,0.12)]"
+      className="relative overflow-hidden rounded-[1.6rem] bg-bg shadow-[0_14px_40px_rgba(6,42,42,0.12)]"
     >
+      {/* Revealed by swiping the ticket left */}
+      <motion.div style={{ opacity: actionsOpacity }} className="absolute inset-y-0 right-0 flex w-[152px] items-stretch gap-1.5 p-1.5">
+        {b.token ? (
+          <Link href={`/bookings/${b.id}`} className="flex flex-1 flex-col items-center justify-center gap-1 rounded-[1.2rem] bg-accent text-xs font-semibold text-white">
+            <Icon name="chat" size={20} />
+            Чат
+          </Link>
+        ) : (
+          <a href="tel:+97690031771" className="flex flex-1 flex-col items-center justify-center gap-1 rounded-[1.2rem] bg-accent text-xs font-semibold text-white">
+            <Icon name="phone" size={20} />
+            Залгах
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            haptic("press");
+            removeBooking(b.id);
+          }}
+          className="flex flex-1 flex-col items-center justify-center gap-1 rounded-[1.2rem] bg-[#c2410c] text-xs font-semibold text-white"
+        >
+          <Icon name="trash" size={20} />
+          Устгах
+        </button>
+      </motion.div>
+
+      <motion.div
+        drag="x"
+        dragDirectionLock
+        dragConstraints={{ left: -ACTIONS_W, right: 0 }}
+        dragElastic={{ left: 0.15, right: 0 }}
+        style={{ x, touchAction: "pan-y" }}
+        onDragEnd={onSwipeEnd}
+        onClickCapture={(e) => {
+          if (swiped.current || x.get() < -8) {
+            e.preventDefault();
+            e.stopPropagation();
+            animate(x, 0, { type: "spring", stiffness: 420, damping: 38 });
+          }
+        }}
+        className="relative overflow-hidden rounded-[1.6rem] bg-bg-elevated"
+      >
       {/* Photo header */}
       <Link href={`/tours/${tour.id}`} className="relative block h-36">
         <Image src={tour.image} alt="" fill className="object-cover" sizes="100vw" />
@@ -67,7 +128,7 @@ function Ticket({ b, index, summary }: { b: BookingRequest; index: number; summa
         {days != null && days >= 0 ? (
           <div className="absolute right-3.5 top-3.5 rounded-2xl bg-white/95 px-3 py-1.5 text-center">
             <p className="font-num text-2xl leading-none text-ink">{days}</p>
-            <p className="text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-muted">{days === 0 ? "өнөөдөр" : "хоног"}</p>
+            <p className="type-label text-muted">{days === 0 ? "өнөөдөр" : "хоног"}</p>
           </div>
         ) : null}
         <p className="absolute inset-x-3.5 bottom-3 truncate font-display text-2xl font-semibold text-white">{tour.title}</p>
@@ -81,7 +142,7 @@ function Ticket({ b, index, summary }: { b: BookingRequest; index: number; summa
         </div>
         <div className="relative flex-1">
           <div className="h-px border-t border-dashed border-[var(--line)]" />
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90 bg-bg-elevated px-1 text-accent">✈</span>
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-bg-elevated px-1 text-accent"><Icon name="plane" size={16} className="rotate-90" fill="currentColor" stroke="none" /></span>
         </div>
         <div className="text-right">
           <p className="font-num text-lg leading-none">{airport[tour.destinationKey] ?? "—"}</p>
@@ -144,11 +205,11 @@ function Ticket({ b, index, summary }: { b: BookingRequest; index: number; summa
               onClick={send}
               className="flex h-12 items-center justify-center rounded-2xl bg-accent text-sm font-semibold text-white active:scale-[0.97]"
             >
-              {copied ? "Хуулсан ✓ — Instagram" : "Багт илгээх"}
+              {copied ? "Хуулсан — Instagram" : "Багт илгээх"}
             </a>
           )}
-          <a href="tel:+97690031771" aria-label="Залгах" className="grid size-12 place-items-center rounded-2xl bg-bg text-lg active:scale-95">
-            ☏
+          <a href="tel:+97690031771" aria-label="Залгах" className="grid size-12 place-items-center rounded-2xl bg-bg text-foam">
+            <Icon name="phone" size={19} />
           </a>
           <button
             type="button"
@@ -158,10 +219,11 @@ function Ticket({ b, index, summary }: { b: BookingRequest; index: number; summa
               confirmDelete ? "bg-[#c2410c] text-white" : "bg-bg text-muted"
             }`}
           >
-            {confirmDelete ? "Устгах?" : "🗑"}
+            {confirmDelete ? "Устгах?" : <Icon name="trash" size={19} />}
           </button>
         </div>
       </div>
+      </motion.div>
     </motion.article>
   );
 }
@@ -175,7 +237,10 @@ export function MobileBookings() {
   const savedTours = saved.map((id) => getTour(tours, id)).filter((t) => t != null);
   const ideas = tours.filter((t) => isBookable(t) && !saved.includes(t.id)).slice(0, 4);
 
+  const tokens = bookings.map((b) => b.token).filter((t): t is string => !!t);
+
   return (
+    <PullToRefresh onRefresh={() => refreshTrips(tokens)}>
     <div className="px-4 pb-8">
       <MobileTitle title="Миний аялал" sub={bookings.length ? `${bookings.length} хүсэлт · ${savedTours.length} хадгалсан` : "Хүсэлт болон хадгалсан аяллууд"} />
 
@@ -219,7 +284,7 @@ export function MobileBookings() {
                 </p>
               </>
             ) : (
-              <EmptyState icon="🎫" title="Хүсэлт алга" body="Аяллаа сонгоод “Захиалах” дарж хүсэлт үүсгээрэй." href="/tours" cta="Аялал сонгох" />
+              <EmptyState icon="ticket" title="Анхны аяллаа сонгох уу?" body="Таалагдсан аялал дээрээ «Захиалах» дараад хэдхэн алхмаар хүсэлтээ илгээгээрэй." href="/tours" cta="Аялал сонгох" />
             )}
           </motion.div>
         ) : (
@@ -241,7 +306,7 @@ export function MobileBookings() {
                 ))}
               </div>
             ) : (
-              <EmptyState icon="♡" title="Хадгалсан аялал алга" body="Аяллын зурган дээрх ♡ дарж хадгалаарай." href="/tours" cta="Аялал үзэх" />
+              <EmptyState icon="heart" title="Мөрөөдлийн жагсаалтаа эхлүүлээрэй" body="Аяллын зурган дээрх зүрхийг дарж хадгалаад, дараа нь эндээс харьцуулаарай." href="/tours" cta="Аялал үзэх" />
             )}
           </motion.div>
         )}
@@ -264,25 +329,7 @@ export function MobileBookings() {
         </section>
       ) : null}
     </div>
+    </PullToRefresh>
   );
 }
 
-function EmptyState({ icon, title, body, href, cta }: { icon: string; title: string; body: string; href: string; cta: string }) {
-  return (
-    <div className="grid place-items-center rounded-[1.6rem] border border-dashed border-[var(--line)] bg-bg-elevated px-6 py-12 text-center">
-      <motion.div
-        animate={{ y: [0, -6, 0], rotate: [0, -4, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        className="grid size-16 place-items-center rounded-full bg-accent-mist text-2xl"
-        aria-hidden
-      >
-        {icon}
-      </motion.div>
-      <p className="mt-4 font-display text-2xl font-semibold">{title}</p>
-      <p className="mt-1.5 text-sm text-muted">{body}</p>
-      <Link href={href} className="mt-5 inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white active:scale-95">
-        {cta} →
-      </Link>
-    </div>
-  );
-}

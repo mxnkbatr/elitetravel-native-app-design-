@@ -1,3 +1,4 @@
+import { ThemePicker } from "@/components/ThemePicker";
 import { EliteLogo } from "@/components/EliteLogo";
 import { destinations } from "@/data/tours";
 import Link from "next/link";
@@ -76,8 +77,11 @@ export function Footer() {
           </FooterCol>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Elite Travel Mongolia. Бүх эрх хуулиар хамгаалагдсан.</p>
+          <div className="w-full sm:w-64">
+            <ThemePicker onDark />
+          </div>
           <p className="tracking-[0.2em] uppercase">Explore · Dream · Discover</p>
         </div>
       </div>
@@ -88,7 +92,7 @@ export function Footer() {
 function FooterCol({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[0.68rem] font-semibold uppercase tracking-[0.25em] text-[#7ef0e0]">{title}</p>
+      <p className="type-eyebrow text-[#7ef0e0]">{title}</p>
       <ul className="mt-4 space-y-2.5">{children}</ul>
     </div>
   );

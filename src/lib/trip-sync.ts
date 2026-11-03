@@ -8,16 +8,22 @@ import { useEffect, useSyncExternalStore } from "react";
 let summaries: Record<string, TripSummary> = {};
 const EMPTY: Record<string, TripSummary> = {};
 const listeners = new Set<() => void>();
-let inflight = false;
+let inflight: Promise<void> | null = null;
 
 function emit(next: Record<string, TripSummary>) {
   summaries = next;
   listeners.forEach((l) => l());
 }
 
-async function refresh(tokens: string[]) {
-  if (inflight) return;
-  inflight = true;
+function refresh(tokens: string[]) {
+  // A pull-to-refresh during the minute tick waits for the request already on its way
+  inflight ??= load(tokens).finally(() => {
+    inflight = null;
+  });
+  return inflight;
+}
+
+async function load(tokens: string[]) {
   try {
     const res = await fetch("/api/trips", {
       method: "POST",
@@ -28,9 +34,12 @@ async function refresh(tokens: string[]) {
     if (res.ok) emit(Object.fromEntries(((await res.json()) as TripSummary[]).map((s) => [s.id, s])));
   } catch {
     // Offline: keep the last known state
-  } finally {
-    inflight = false;
   }
+}
+
+/** Fetches every booking's status and unread count now (pull to refresh). */
+export function refreshTrips(tokens: string[]) {
+  return tokens.length ? refresh(tokens) : Promise.resolve();
 }
 
 export function markTripSeen(id: string) {

@@ -70,7 +70,7 @@ export function CinematicBand({
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="max-w-xl"
         >
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-[#7ef0e0]">
+          <p className="type-eyebrow text-[#7ef0e0]">
             {eyebrow}
           </p>
           <h2 className="mt-3 font-display text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-white sm:text-5xl">

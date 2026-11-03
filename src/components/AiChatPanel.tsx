@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { Icon } from "@/components/Icon";
 import { useTours } from "@/lib/content";
 import { bookingTokens, useTraveller } from "@/lib/traveller-store";
 import { DefaultChatTransport, type UIMessage } from "ai";
@@ -61,7 +62,16 @@ function useLinkify() {
  * The assistant's chat window, split out of AiHelper so the AI SDK loads on first open rather than
  * with every page. Stays mounted once opened, so the conversation survives closing the panel.
  */
-export default function AiChatPanel({ open, onStarted }: { open: boolean; onStarted: () => void }) {
+/** The panel unfolds from the floating button below its bottom-right corner, and folds back into it. */
+const FROM_BUTTON = "circle(22px at calc(100% - 30px) calc(100% + 42px))";
+const OPEN = "circle(150% at calc(100% - 30px) calc(100% + 42px))";
+const cascade = (i: number) => ({
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay: 0.18 + i * 0.07, duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
+});
+
+export default function AiChatPanel({ open, onStarted, onClose }: { open: boolean; onStarted: () => void; onClose: () => void }) {
   const [input, setInput] = useState("");
   const bottom = useRef<HTMLDivElement>(null);
   // The device's booking tokens let the assistant read only this traveller's own bookings
@@ -94,43 +104,69 @@ export default function AiChatPanel({ open, onStarted }: { open: boolean; onStar
   return (
     <AnimatePresence>
       {open ? (
+        <motion.button
+          key="backdrop"
+          type="button"
+          aria-label="Туслахыг хаах"
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[69] bg-[#031a1a]/35 backdrop-blur-[2px] sm:hidden"
+        />
+      ) : null}
+      {open ? (
         <motion.section
+          key="panel"
           role="dialog"
           aria-label="Аяллын туслах"
-          initial={{ opacity: 0, y: 28, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.97 }}
-          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          style={{ transformOrigin: "bottom right" }}
+          initial={{ clipPath: FROM_BUTTON, opacity: 0.6 }}
+          animate={{ clipPath: OPEN, opacity: 1 }}
+          exit={{ clipPath: FROM_BUTTON, opacity: 0, transition: { duration: 0.35, ease: [0.65, 0, 0.35, 1] } }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-x-3 bottom-[calc(10rem+env(safe-area-inset-bottom))] top-[max(5.5rem,calc(env(safe-area-inset-top)+4.5rem))] z-[70] flex flex-col overflow-hidden rounded-[1.6rem] border border-[var(--line)] bg-bg-elevated shadow-[0_28px_70px_rgba(10,42,38,0.25)] sm:inset-x-auto sm:bottom-24 sm:right-6 sm:top-auto sm:h-[min(72vh,560px)] sm:w-[380px]"
         >
           <header className="relative overflow-hidden bg-[#062a2a] px-5 pb-4 pt-5 text-white">
             <div className="pointer-events-none absolute -right-10 -top-16 size-44 rounded-full bg-[#14b8a6]/30 blur-3xl" />
-            <div className="relative flex items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-[#14b8a6] to-[#e8b86d] font-display text-lg font-semibold">E</span>
+            <motion.div {...cascade(0)} className="relative flex items-center gap-3">
+              <motion.span
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 16 }}
+                className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-[#14b8a6] to-[#e8b86d] font-display text-lg font-semibold"
+              >
+                E
+              </motion.span>
               <div>
                 <p className="font-display text-lg font-semibold leading-tight">Аяллын туслах</p>
                 <p className="flex items-center gap-1.5 text-xs text-white/70">
-                  <span className="size-1.5 rounded-full bg-emerald-400" /> Онлайн · ихэвчлэн хэдхэн секундэд хариулна
+                  <span className="relative flex size-1.5">
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400/70" />
+                    <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
+                  </span>
+                  Онлайн · ихэвчлэн хэдхэн секундэд хариулна
                 </p>
               </div>
-            </div>
+            </motion.div>
           </header>
 
           <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 text-[0.92rem]">
-            <Bubble>Сайн байна уу! 👋 Аялал, үнэ, огнооны талаар асуугаарай — тохирох аяллыг санал болгоё.</Bubble>
+            <Bubble delay={0.3}>Сайн байна уу! 👋 Аялал, үнэ, огнооны талаар асуугаарай — тохирох аяллыг санал болгоё.</Bubble>
 
             {messages.length === 0 ? (
               <div className="flex flex-wrap gap-2 pt-1">
-                {chips.map((s) => (
-                  <button
+                {chips.map((s, i) => (
+                  <motion.button
                     key={s}
                     type="button"
                     onClick={() => ask(s)}
-                    className="rounded-full border border-accent/30 bg-bg px-3 py-1.5 text-xs font-medium text-accent transition hover:bg-accent hover:text-white"
+                    initial={{ opacity: 0, scale: 0.85, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ delay: 0.5 + i * 0.06, type: "spring", stiffness: 380, damping: 24 }}
+                    className="min-h-9 rounded-full border border-accent/30 bg-bg px-3.5 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent hover:text-white"
                   >
                     {s}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             ) : null}
@@ -161,7 +197,7 @@ export default function AiChatPanel({ open, onStarted }: { open: boolean; onStar
             ) : null}
 
             {error ? (
-              <p className="rounded-2xl bg-[#fff4e8] px-3 py-2 text-xs text-[#b45309]">
+              <p className="rounded-2xl bg-[#fff4e8] dark:bg-amber-400/10 px-3 py-2 text-xs text-[#b45309] dark:text-amber-200">
                 Туслах түр холбогдсонгүй. Дахин оролдох эсвэл{" "}
                 <a href="tel:+97690031771" className="font-semibold underline">
                   +976 9003 1771
@@ -186,11 +222,9 @@ export default function AiChatPanel({ open, onStarted }: { open: boolean; onStar
                 type="submit"
                 disabled={busy || !input.trim()}
                 aria-label="Илгээх"
-                className="grid size-9 place-items-center rounded-full bg-accent text-white transition disabled:opacity-30"
+                className="grid size-10 place-items-center rounded-full bg-accent text-white transition disabled:opacity-30"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
+                <Icon name="send" size={17} strokeWidth={2} />
               </button>
             </div>
             <p className="mt-2 text-center text-[0.7rem] text-muted">
@@ -209,12 +243,14 @@ export default function AiChatPanel({ open, onStarted }: { open: boolean; onStar
   );
 }
 
-function Bubble({ mine, children }: { mine?: boolean; children: ReactNode }) {
+/** Messages slide in from their own side with a little spring, like a phone's chat app. */
+function Bubble({ mine, delay = 0, children }: { mine?: boolean; delay?: number; children: ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
+      initial={{ opacity: 0, y: 10, x: mine ? 18 : -18, scale: 0.94 }}
+      animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+      transition={{ delay, type: "spring", stiffness: 380, damping: 28 }}
+      style={{ transformOrigin: mine ? "bottom right" : "bottom left" }}
       className={`w-fit max-w-[88%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 leading-relaxed ${
         mine ? "ml-auto rounded-br-md bg-accent text-white" : "rounded-bl-md border border-[var(--line)] bg-bg text-foam"
       }`}

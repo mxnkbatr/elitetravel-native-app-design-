@@ -20,12 +20,83 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --dock-h: 0px;
   --nav-h: calc(4.5rem + env(safe-area-inset-top, 0px));
+  /* Page text and card surfaces follow the theme; --ink stays the brand's deep green (solid
+     buttons, dark text on light chips over photos) in both themes. */
+  --fg: var(--ink);
+  --card: #ffffff;
+  --skeleton: rgba(10, 42, 38, 0.07);
+  --glow-a: rgba(232, 184, 109, 0.14);
+  --glow-b: rgba(14, 143, 132, 0.12);
+  --glow-c: rgba(46, 196, 182, 0.08);
+  --logo: #123f30;
+  --logo-sub: #4f7363;
+  color-scheme: light;
+}
+
+/* Dark theme: picked in the profile menu (data-theme="dark"), or following the phone with "system" */
+:root[data-theme="dark"] {
+  --bg: #061917;
+  --bg-soft: #0b2522;
+  --card: #0f2c29;
+  --fg: #e4f2ee;
+  /* Solid "ink" buttons and chip text: a lifted deep green that still reads on the dark page */
+  --ink: #1f4f48;
+  --ink-soft: #b9d3cc;
+  --muted: #8eaea6;
+  --line: rgba(228, 242, 238, 0.1);
+  --accent: #14a396;
+  --accent-soft: #2bb8aa;
+  --accent-mist: #0f3b36;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
+  --skeleton: rgba(228, 242, 238, 0.07);
+  --glow-a: rgba(232, 184, 109, 0.06);
+  --glow-b: rgba(20, 163, 150, 0.1);
+  --glow-c: rgba(46, 196, 182, 0.05);
+  --logo: #c4d6bd;
+  --logo-sub: #a9c2a3;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    --bg: #061917;
+    --bg-soft: #0b2522;
+    --card: #0f2c29;
+    --fg: #e4f2ee;
+    /* Solid "ink" buttons and chip text: a lifted deep green that still reads on the dark page */
+    --ink: #1f4f48;
+    --ink-soft: #b9d3cc;
+    --muted: #8eaea6;
+    --line: rgba(228, 242, 238, 0.1);
+    --accent: #14a396;
+    --accent-soft: #2bb8aa;
+    --accent-mist: #0f3b36;
+    --shadow: 0 18px 48px rgba(0, 0, 0, 0.4);
+    --skeleton: rgba(228, 242, 238, 0.07);
+    --glow-a: rgba(232, 184, 109, 0.06);
+    --glow-b: rgba(20, 163, 150, 0.1);
+    --glow-c: rgba(46, 196, 182, 0.05);
+    --logo: #c4d6bd;
+    --logo-sub: #a9c2a3;
+    color-scheme: dark;
+  }
 }
 
 /* Mobile: room for the bottom dock / booking bar */
 @media (max-width: 639px) {
   :root {
     --dock-h: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* `dark:` utilities follow the picked theme (or the phone, with "system"), not just the OS */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where([data-theme="system"], [data-theme="system"] *) {
+      @slot;
+    }
   }
 }
 
@@ -36,8 +107,9 @@
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-accent-deep: var(--accent);
-  --color-foam: var(--ink);
+  --color-foam: var(--fg);
   --color-ink: var(--ink);
+  --color-card: var(--card);
   --color-muted: var(--muted);
   --color-mint: var(--mint);
   --color-mint-soft: var(--accent-soft);
@@ -86,11 +158,11 @@ body {
   min-height: 100%;
   min-height: 100dvh;
   background:
-    radial-gradient(ellipse 80% 50% at 8% -8%, rgba(232, 184, 109, 0.14), transparent 50%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(14, 143, 132, 0.12), transparent 45%),
-    radial-gradient(ellipse 50% 35% at 50% 100%, rgba(46, 196, 182, 0.08), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 8% -8%, var(--glow-a), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, var(--glow-b), transparent 45%),
+    radial-gradient(ellipse 50% 35% at 50% 100%, var(--glow-c), transparent 50%),
     var(--bg);
-  color: var(--ink);
+  color: var(--fg);
   font-family: var(--font-sans), system-ui, sans-serif;
   font-weight: 400;
   letter-spacing: 0.01em;
@@ -112,6 +184,100 @@ body {
 ::selection {
   background: color-mix(in oklab, var(--accent) 35%, white);
   color: var(--ink);
+}
+
+/* ── Type scale: one set of steps for every page ── */
+@utility type-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  line-height: 1.4;
+}
+@utility type-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+}
+@utility type-title {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+@utility type-subtitle {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+@utility type-caption {
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ── Touch: every tappable thing reacts, and small icons get a 44px hit area ── */
+/* In the base layer so Tailwind utilities (fixed, absolute, transition-*) always win over these defaults */
+@layer base {
+  :where(button, [role="button"], a[class*="rounded"]):not(:disabled):not([data-no-press]) {
+    transition-property: scale, color, background-color, border-color, opacity, box-shadow;
+    transition-duration: 0.18s;
+  }
+  :where(button, [role="button"], a[class*="rounded"]):not(:disabled):not([data-no-press]):active {
+    scale: 0.97;
+  }
+  /* Icon-only controls carry an aria-label; on touch screens give each an invisible 44×44 hit area */
+  @media (pointer: coarse) {
+    :where(button[aria-label], a[aria-label]):not(.btn-shine) {
+      position: relative;
+    }
+    :where(button[aria-label], a[aria-label]):not(.btn-shine)::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      translate: -50% -50%;
+    }
+  }
+}
+@utility tap {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    translate: -50% -50%;
+  }
+}
+
+/* ── Loading placeholders ── */
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    translate: -100% 0;
+    background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--card) 55%, transparent), transparent);
+    animation: skeleton-sweep 1.4s ease-in-out infinite;
+  }
+}
+@keyframes skeleton-sweep {
+  to {
+    translate: 100% 0;
+  }
 }
 
 .ambient {

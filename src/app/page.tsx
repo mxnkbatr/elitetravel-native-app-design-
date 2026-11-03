@@ -29,7 +29,7 @@ function HomeCta() {
           <div className="absolute inset-0 bg-gradient-to-r from-[#041f1f]/85 via-[#062a2a]/55 to-[#062a2a]/20" />
         </div>
         <div className="px-6 py-20 sm:px-12 sm:py-28">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-[#7ef0e0]">Your next escape</p>
+          <p className="type-eyebrow text-[#7ef0e0]">Your next escape</p>
           <h2 className="mt-4 max-w-xl font-display text-[clamp(2.4rem,5vw,4.25rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
             Дараагийн аяллаа <span className="italic text-[#e8b86d]">хамтдаа</span> төлөвлөе
           </h2>

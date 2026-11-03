@@ -1,6 +1,8 @@
 "use client";
 
 import { BookingPlanner } from "@/components/BookingPlanner";
+import { Icon, type IconName } from "@/components/Icon";
+import { SaveButton } from "@/components/SaveButton";
 import { GalleryLightbox } from "@/components/GalleryLightbox";
 import { TourCard } from "@/components/TourCard";
 import { TourHero } from "@/components/TourHero";
@@ -82,7 +84,7 @@ export function TourDetailView({ tour }: { tour: Tour }) {
                     <span className="absolute -left-[2.15rem] top-0.5 grid size-5 place-items-center rounded-full bg-accent text-[0.6rem] font-bold text-white ring-4 ring-bg">
                       {i + 1}
                     </span>
-                    <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-accent">{day.day}</p>
+                    <p className="type-label text-accent">{day.day}</p>
                     <p className="mt-1 font-display text-lg font-semibold text-foam">{day.title}</p>
                     <p className="mt-1 text-sm leading-relaxed text-muted">{day.detail}</p>
                     <DayMeta day={day} />
@@ -99,7 +101,7 @@ export function TourDetailView({ tour }: { tour: Tour }) {
                 <ul className="mt-3 space-y-2.5 text-sm text-foam">
                   {tour.includes.map((x) => (
                     <li key={x} className="flex gap-2.5">
-                      <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-accent text-[0.55rem] text-white">✓</span>
+                      <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-accent text-white"><Icon name="check" size={10} strokeWidth={3} /></span>
                       {x}
                     </li>
                   ))}
@@ -180,28 +182,29 @@ export function TourDetailView({ tour }: { tour: Tour }) {
 
       {/* Mobile: booking bar always within thumb reach */}
       <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-[var(--line)] bg-bg-elevated/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:hidden">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
             <p className="text-[0.65rem] text-muted">Үнэ / хүн</p>
-            <p className="truncate font-num text-xl font-semibold leading-tight text-accent">{formatPrice(tour.price)}</p>
+            <p className="truncate font-num text-lg font-semibold leading-tight text-accent">{formatPrice(tour.price)}</p>
           </div>
+          <SaveButton tourId={tour.id} variant="plain" className="size-11 shrink-0 border border-[var(--line)]" />
           <a
             href="tel:+97690031771"
-            className="grid size-12 shrink-0 place-items-center rounded-full border border-[var(--line)] text-lg"
+            className="grid size-11 shrink-0 place-items-center rounded-full border border-[var(--line)]"
             aria-label="Залгах"
           >
-            ☏
+            <Icon name="phone" size={19} />
           </a>
           {bookable ? (
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
-              className="btn-shine inline-flex h-12 shrink-0 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white active:scale-95"
+              className="btn-shine inline-flex h-12 shrink-0 items-center rounded-full bg-accent px-5 text-sm font-semibold text-white active:scale-95"
             >
               Захиалах
             </button>
           ) : (
-            <a href="tel:+97690031771" className="inline-flex h-12 shrink-0 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white">
+            <a href="tel:+97690031771" className="inline-flex h-12 shrink-0 items-center rounded-full bg-accent px-5 text-sm font-semibold text-white">
               Лавлах
             </a>
           )}
@@ -215,11 +218,11 @@ export function TourDetailView({ tour }: { tour: Tour }) {
 
 function DayMeta({ day }: { day: ItineraryDay }) {
   const items = [
-    day.flight && { icon: "✈", text: day.flight },
-    day.meals && { icon: "◐", text: `Хоол: ${day.meals}` },
-    day.hotel && { icon: "⌂", text: day.hotel },
-    day.host && { icon: "★", text: day.host },
-  ].filter(Boolean) as { icon: string; text: string }[];
+    day.flight && { icon: "plane", text: day.flight },
+    day.meals && { icon: "utensils", text: `Хоол: ${day.meals}` },
+    day.hotel && { icon: "hotel", text: day.hotel },
+    day.host && { icon: "star", text: day.host },
+  ].filter(Boolean) as { icon: IconName; text: string }[];
 
   if (!items.length) return null;
   return (
@@ -229,9 +232,7 @@ function DayMeta({ day }: { day: ItineraryDay }) {
           key={m.text}
           className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-bg-elevated px-2.5 py-1 text-[0.72rem] text-foam/80"
         >
-          <span aria-hidden className="text-accent">
-            {m.icon}
-          </span>
+          <Icon name={m.icon} size={14} className="text-accent" />
           {m.text}
         </li>
       ))}

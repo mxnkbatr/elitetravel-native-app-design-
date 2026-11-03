@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon, type IconName } from "@/components/Icon";
 import { FeaturedBanner } from "@/components/FeaturedBanner";
 import { SaveButton } from "@/components/SaveButton";
 import { formatPrice, getTour, isBookable, type TourSummary } from "@/data/tours";
@@ -13,10 +14,10 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 const categories = [
-  { key: "all", label: "Бүгд", icon: "✦", match: () => true },
-  { key: "beach", label: "Далай", icon: "🏝", match: (t: TourSummary) => t.destinationKey === "hainan" || t.destinationKey === "bali" },
-  { key: "show", label: "Концерт · Шоу", icon: "🎤", match: (t: TourSummary) => t.id === "weeknd-world-tour" || t.id === "dately-show-hainan" },
-  { key: "city", label: "Хот", icon: "🌆", match: (t: TourSummary) => t.destinationKey === "hongkong" },
+  { key: "all", label: "Бүгд", icon: "sparkle" as IconName, match: () => true },
+  { key: "beach", label: "Далай", icon: "beach" as IconName, match: (t: TourSummary) => t.destinationKey === "hainan" || t.destinationKey === "bali" },
+  { key: "show", label: "Концерт · Шоу", icon: "mic" as IconName, match: (t: TourSummary) => t.id === "weeknd-world-tour" || t.id === "dately-show-hainan" },
+  { key: "city", label: "Хот", icon: "city" as IconName, match: (t: TourSummary) => t.destinationKey === "hongkong" },
 ] as const;
 
 function greeting(h: number) {
@@ -119,7 +120,7 @@ export function MobileHome() {
                   <Image src={nextTour.image} alt="" fill className="object-cover" sizes="56px" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-[#7ef0e0]">Таны дараагийн аялал</p>
+                  <p className="type-eyebrow text-[#7ef0e0]">Таны дараагийн аялал</p>
                   <p className="truncate font-semibold">{nextTour.title}</p>
                   <p className="text-xs text-white/60">{next.date ?? nextTour.dates}</p>
                 </div>
@@ -144,7 +145,7 @@ export function MobileHome() {
                   }`}
                 >
                   {cat === c.key ? <motion.span layoutId="m-cat" className="absolute inset-0 rounded-full bg-ink" transition={{ type: "spring", stiffness: 420, damping: 34 }} /> : null}
-                  <span className="relative">{c.icon}</span>
+                  <span className="relative"><Icon name={c.icon} size={16} /></span>
                   <span className="relative">{c.label}</span>
                 </button>
               ))}
@@ -169,7 +170,7 @@ export function MobileHome() {
                         </span>
                         <SaveButton tourId={t.id} className="absolute right-3 top-3" />
                         <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-[#f3e0c2]">{t.destination} · {t.dates}</p>
+                          <p className="type-eyebrow text-[#f3e0c2]">{t.destination} · {t.dates}</p>
                           <p className="mt-1 font-display text-2xl font-semibold leading-tight">{t.title}</p>
                           <p className="mt-2 font-num text-lg text-[#f3d199]">{formatPrice(t.price)}</p>
                         </div>
@@ -184,7 +185,7 @@ export function MobileHome() {
             {cat === "all" ? (
               <Link href="/tours/bali" className="relative mt-7 flex items-center justify-between gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-[#e8b86d] to-[#f3d199] p-4 text-ink active:scale-[0.98]">
                 <div>
-                  <p className="text-[0.62rem] font-bold uppercase tracking-[0.2em]">Урамшуулал</p>
+                  <p className="type-eyebrow">Урамшуулал</p>
                   <p className="mt-0.5 font-display text-xl font-semibold leading-tight">Бали −8% · огноогоо өөрөө сонго</p>
                 </div>
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-ink text-white">→</span>
@@ -208,7 +209,7 @@ export function MobileHome() {
                           ) : null}
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col py-0.5">
-                          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-accent">{t.destination}</p>
+                          <p className="type-label text-accent">{t.destination}</p>
                           <p className="mt-0.5 line-clamp-2 font-semibold leading-snug">{t.title}</p>
                           <p className="mt-auto text-xs text-muted">{t.duration}</p>
                           <div className="flex items-baseline gap-2">
@@ -226,7 +227,7 @@ export function MobileHome() {
             {/* Help */}
             <div className="mt-7 grid grid-cols-2 gap-2">
               <a href="tel:+97690031771" className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-ink text-sm font-semibold text-white active:scale-95">
-                ☏ Зөвлөгөө авах
+                <Icon name="phone" size={17} /> Зөвлөгөө авах
               </a>
               <a href="https://ig.me/m/elitetravelmn" target="_blank" rel="noreferrer" className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-[var(--line)] bg-bg-elevated text-sm font-semibold active:scale-95">
                 Instagram DM

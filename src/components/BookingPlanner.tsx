@@ -1,5 +1,8 @@
 "use client";
 
+import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { BoardingPass } from "@/components/BoardingPass";
+import { Icon } from "@/components/Icon";
 import { PartnerLogo } from "@/components/PartnerLogo";
 import { formatPrice, tourDates, type Tour, type TourSummary } from "@/data/tours";
 import { INSTALLMENT_PROVIDERS } from "@/lib/trips";
@@ -64,8 +67,11 @@ function Stepper({
           type="button"
           aria-label={`${label} хасах`}
           disabled={value <= min}
-          onClick={() => onChange(value - 1)}
-          className="grid size-8 place-items-center rounded-full border border-[var(--line)] text-lg leading-none transition enabled:hover:border-accent enabled:hover:text-accent disabled:opacity-30"
+          onClick={() => {
+            haptic("tap");
+            onChange(value - 1);
+          }}
+          className="tap grid size-10 place-items-center rounded-full border border-[var(--line)] text-lg leading-none transition enabled:hover:border-accent enabled:hover:text-accent disabled:opacity-30"
         >
           −
         </button>
@@ -76,13 +82,41 @@ function Stepper({
           type="button"
           aria-label={`${label} нэмэх`}
           disabled={value >= max}
-          onClick={() => onChange(value + 1)}
-          className="grid size-8 place-items-center rounded-full border border-[var(--line)] text-lg leading-none transition enabled:hover:border-accent enabled:hover:text-accent disabled:opacity-30"
+          onClick={() => {
+            haptic("tap");
+            onChange(value + 1);
+          }}
+          className="tap grid size-10 place-items-center rounded-full border border-[var(--line)] text-lg leading-none transition enabled:hover:border-accent enabled:hover:text-accent disabled:opacity-30"
         >
           +
         </button>
       </div>
     </div>
+  );
+}
+
+const STEPS = ["Аялагчид", "Холбоо барих", "Баталгаа"];
+
+/** Where the traveller is in the phone booking flow; the last step lights up on the boarding pass. */
+function Steps({ current }: { current: number }) {
+  return (
+    <ol className="mb-4 flex items-start gap-2" aria-label="Захиалгын алхам">
+      {STEPS.map((label, i) => {
+        const done = i < current;
+        const on = i === current;
+        return (
+          <li key={label} className="flex-1" aria-current={on ? "step" : undefined}>
+            <div className="h-1 overflow-hidden rounded-full bg-[var(--line)]">
+              <motion.div className="h-full bg-accent" initial={false} animate={{ width: done || on ? "100%" : "0%" }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }} />
+            </div>
+            <p className={`mt-1.5 flex items-center gap-1 text-[0.68rem] font-semibold ${done || on ? "text-accent" : "text-muted"}`}>
+              {done ? <Icon name="check" size={12} strokeWidth={2.6} /> : <span className="font-num">{i + 1}.</span>}
+              {label}
+            </p>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -178,21 +212,11 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
       id={stepped ? undefined : "book"}
       className={stepped ? "" : "scroll-mt-28 rounded-[1.5rem] border border-[var(--line)] bg-bg-elevated p-5 shadow-[var(--shadow)]"}
     >
+      {stepped ? <Steps current={done ? 2 : step} /> : null}
       <AnimatePresence mode="wait">
         {done ? (
-          <motion.div key="done" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-            <motion.div
-              initial={{ scale: 0, rotate: -30 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 16 }}
-              className="mx-auto grid size-14 place-items-center rounded-full bg-accent text-2xl text-white"
-            >
-              ✓
-            </motion.div>
-            <h3 className="mt-4 font-display text-2xl font-semibold">
-              {!done.synced ? "Хүсэлт бэлэн боллоо" : waitlisted ? "Хүлээлгийн жагсаалтад орлоо" : "Хүсэлт хүлээн авлаа"}
-            </h3>
-            <p className="mt-1 text-xs text-muted">Дугаар: {done.id}</p>
+          <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+            <BoardingPass tour={tour} booking={done} state={!done.synced ? "offline" : waitlisted ? "waitlist" : "sent"} />
             <p className="mt-3 text-sm leading-relaxed text-muted">
               {!done.synced
                 ? "Сүлжээний алдаанаас болж хүсэлт манай системд очсонгүй. Мессежийг хуулаад Instagram-аар илгээх эсвэл шууд залгаарай."
@@ -243,21 +267,6 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
           >
-            {stepped ? (
-              <div className="mb-4 flex items-center gap-2">
-                {["Хүн ба огноо", "Холбоо барих"].map((label, i) => (
-                  <div key={label} className="flex-1">
-                    <div className="h-1 overflow-hidden rounded-full bg-[var(--line)]">
-                      <motion.div className="h-full bg-accent" initial={false} animate={{ width: step >= i ? "100%" : "0%" }} transition={{ duration: 0.4 }} />
-                    </div>
-                    <p className={`mt-1.5 text-[0.65rem] font-semibold ${step >= i ? "text-accent" : "text-muted"}`}>
-                      {i + 1}. {label}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
             <AnimatePresence initial={false}>
             {!stepped || step === 0 ? (
             <motion.div key="people" initial={stepped ? { opacity: 0, x: -24 } : false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.25 }}>
@@ -274,7 +283,7 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
 
             {dateOptions.length > 1 ? (
               <div className="mt-5">
-                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">Огноо сонгох</p>
+                <p className="type-label text-muted">Огноо сонгох</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {dateOptions.map((d) => {
                     const s = seats[d];
@@ -284,13 +293,13 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
                         type="button"
                         disabled={s?.closed}
                         onClick={() => setDate(d)}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:line-through disabled:opacity-40 ${
+                        className={`min-h-11 rounded-full border px-3.5 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:line-through disabled:opacity-40 ${
                           date === d ? "border-accent bg-accent text-white" : "border-[var(--line)] hover:border-accent"
                         }`}
                       >
                         {d}
                         {s && !s.closed && s.left <= 10 ? (
-                          <span className={`ml-1.5 text-[0.62rem] ${date === d ? "text-white/80" : "text-[#c9964a]"}`}>{s.left ? `${s.left} суудал` : "дүүрсэн"}</span>
+                          <span className={`ml-1.5 text-[0.62rem] ${date === d ? "text-white/80" : "text-[#c9964a] dark:text-[#e8b86d]"}`}>{s.left ? `${s.left} суудал` : "дүүрсэн"}</span>
                         ) : null}
                       </button>
                     );
@@ -300,11 +309,11 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
             ) : dateOptions[0] ? (
               <p className="mt-4 rounded-xl bg-accent-mist/60 px-3 py-2.5 text-sm">
                 <span className="text-muted">Огноо:</span> <span className="font-medium">{dateOptions[0]}</span>
-                {seatInfo && !seatInfo.closed && seatInfo.left <= 10 ? <span className="ml-2 text-xs text-[#c9964a]">{seatInfo.left ? `${seatInfo.left} суудал үлдсэн` : "дүүрсэн"}</span> : null}
+                {seatInfo && !seatInfo.closed && seatInfo.left <= 10 ? <span className="ml-2 text-xs text-[#c9964a] dark:text-[#e8b86d]">{seatInfo.left ? `${seatInfo.left} суудал үлдсэн` : "дүүрсэн"}</span> : null}
               </p>
             ) : null}
             {willWaitlist ? (
-              <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <p className="mt-3 rounded-xl bg-amber-50 dark:bg-amber-400/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
                 Энэ огноонд {seatInfo.left} суудал үлдсэн тул хүсэлт тань хүлээлгийн жагсаалтад орно.
               </p>
             ) : null}
@@ -342,9 +351,7 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
               ))}
               <div className="flex items-baseline justify-between gap-3 border-t border-[var(--line)] pt-2">
                 <span className="font-semibold">Нийт</span>
-                <motion.span key={total} initial={{ scale: 1.15, color: "#0e8f84" }} animate={{ scale: 1 }} className="font-num text-2xl font-semibold text-accent tabular-nums">
-                  {formatPrice(total)}
-                </motion.span>
+                <AnimatedNumber value={total} format={formatPrice} className="font-num text-2xl font-semibold text-accent" />
               </div>
               {deposit ? (
                 <div className="flex justify-between gap-3 text-muted">
@@ -360,10 +367,13 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
               <motion.button
                 key="next"
                 type="button"
-                onClick={() => setStep(1)}
-                className="btn-shine mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-accent text-sm font-semibold text-white"
+                onClick={() => {
+                  haptic("tap");
+                  setStep(1);
+                }}
+                className="btn-shine mt-4 flex h-13 w-full items-center justify-center gap-2 rounded-full bg-accent text-sm font-semibold text-white"
               >
-                Үргэлжлүүлэх · {formatPrice(total)} <span aria-hidden>→</span>
+                Үргэлжлүүлэх · <AnimatedNumber value={total} format={formatPrice} /> <Icon name="arrow-right" size={16} />
               </motion.button>
             ) : null}
 
@@ -416,7 +426,7 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
               />
             </div>
 
-            {error ? <p className="mt-3 rounded-xl bg-[#c2410c]/10 px-3 py-2 text-sm text-[#c2410c]">{error}</p> : null}
+            {error ? <p className="mt-3 rounded-xl bg-[#c2410c]/10 px-3 py-2 text-sm text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
             <button
               type="submit"
               disabled={sending}

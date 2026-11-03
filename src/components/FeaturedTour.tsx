@@ -34,7 +34,7 @@ export function FeaturedTour() {
           </div>
           <div className="flex flex-col justify-center p-6 sm:p-10">
             <div className="epic-rule mb-4" />
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-accent">
+            <p className="type-eyebrow text-accent">
               Featured · {tour.destination}
             </p>
             <h2 className="mt-3 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">

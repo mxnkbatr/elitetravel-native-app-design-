@@ -4,6 +4,7 @@ import { EliteLogo } from "@/components/EliteLogo";
 import { MegaMenu } from "@/components/MegaMenu";
 import { ProfileButton } from "@/components/ProfileMenu";
 import { openSearch } from "@/components/SearchOverlay";
+import { ThemePicker } from "@/components/ThemePicker";
 import { useTraveller } from "@/lib/traveller-store";
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
 import Link from "next/link";
@@ -320,8 +321,11 @@ export function Navbar() {
               })}
             </nav>
 
+            <motion.div className="relative mt-auto pt-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+              <ThemePicker onDark />
+            </motion.div>
             <motion.div
-              className="relative mt-auto grid grid-cols-2 gap-2"
+              className="relative mt-3 grid grid-cols-2 gap-2"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45 }}

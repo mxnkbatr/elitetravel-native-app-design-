@@ -1,5 +1,7 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
+import { haptic } from "@/lib/native";
 import { AnimatePresence, motion, useDragControls } from "framer-motion";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -14,12 +16,15 @@ export function Sheet({
   open,
   onClose,
   title,
+  label,
   children,
   tall,
 }: {
   open: boolean;
   onClose: () => void;
   title?: ReactNode;
+  /** Accessible name when the title is not plain text */
+  label?: string;
   children: ReactNode;
   /** Near full height (chat, long forms) */
   tall?: boolean;
@@ -47,6 +52,8 @@ export function Sheet({
           <button type="button" aria-label="Хаах" onClick={onClose} className="absolute inset-0 bg-[#062a2a]/45 backdrop-blur-[2px]" />
           <motion.div
             role="dialog"
+            aria-modal="true"
+            aria-label={label ?? (typeof title === "string" ? title : undefined)}
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -57,7 +64,10 @@ export function Sheet({
             dragElastic={{ top: 0, bottom: 0.6 }}
             dragListener={false}
             onDragEnd={(_, info) => {
-              if (info.offset.y > 110 || info.velocity.y > 600) onClose();
+              if (info.offset.y > 110 || info.velocity.y > 600) {
+                haptic("tap");
+                onClose();
+              }
             }}
             className={`relative flex w-full flex-col overflow-hidden rounded-t-[1.75rem] bg-[var(--bg-soft)] shadow-[0_-20px_60px_rgba(0,0,0,0.22)] sm:max-w-lg sm:rounded-[1.75rem] ${
               tall ? "h-[92dvh] sm:h-[min(80vh,720px)]" : "max-h-[90dvh]"
@@ -68,14 +78,16 @@ export function Sheet({
               <div className="mx-auto h-1.5 w-10 rounded-full bg-[var(--line)] sm:hidden" />
               {title ? (
                 <div className="mt-2 flex items-center justify-between gap-3">
-                  <div className="min-w-0 font-display text-xl font-semibold text-ink">{title}</div>
-                  <button type="button" onClick={onClose} className="grid size-8 shrink-0 place-items-center rounded-full bg-black/5 text-lg leading-none text-muted">
-                    ×
+                  <div className="min-w-0 font-display text-xl font-semibold text-foam">{title}</div>
+                  <button type="button" onClick={onClose} aria-label="Хаах" className="tap grid size-9 shrink-0 place-items-center rounded-full bg-[var(--skeleton)] text-muted">
+                    <Icon name="close" size={16} />
                   </button>
                 </div>
               ) : null}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">{children}</div>
+            <div data-lenis-prevent className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+              {children}
+            </div>
           </motion.div>
         </motion.div>
       ) : null}

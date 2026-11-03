@@ -1,6 +1,8 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { SaveButton } from "@/components/SaveButton";
+import { Sheet } from "@/components/Sheet";
 import { formatPrice, type TourSummary } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { daysUntil } from "@/lib/dates";
@@ -68,7 +70,7 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
                 key={p.key}
                 type="button"
                 onClick={() => setPlace(p.key)}
-                className={`relative shrink-0 rounded-full px-3.5 py-2 text-[0.82rem] font-semibold transition active:scale-95 ${
+                className={`relative min-h-11 shrink-0 rounded-full px-4 py-2 text-[0.82rem] font-semibold transition ${
                   place === p.key ? "text-white" : "border border-[var(--line)] bg-bg-elevated"
                 }`}
               >
@@ -81,7 +83,7 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
             type="button"
             onClick={() => setSheet(true)}
             aria-label="Шүүлтүүр"
-            className="relative grid size-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-bg-elevated active:scale-90"
+            className="relative grid size-11 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-bg-elevated"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path d="M4 7h10M18 7h2M4 17h4M12 17h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -112,7 +114,7 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
                     ) : null}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col py-0.5 pr-8">
-                    <p className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-accent">{t.destination}</p>
+                    <p className="type-label text-accent">{t.destination}</p>
                     <p className="mt-0.5 line-clamp-2 font-semibold leading-snug">{t.title}</p>
                     <p className="mt-1 text-xs text-muted">{t.duration}</p>
                     {t.dates ? <p className="truncate text-xs text-muted">{t.dates}</p> : null}
@@ -121,12 +123,12 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
                       {t.oldPrice ? <span className="text-[0.7rem] text-muted line-through">{formatPrice(t.oldPrice)}</span> : null}
                     </div>
                     {days != null && days >= 0 && days <= 30 ? (
-                      <span className="mt-1 w-fit rounded-full bg-[#e8b86d]/20 px-2 py-0.5 text-[0.65rem] font-semibold text-[#8a5a12]">
+                      <span className="mt-1 w-fit rounded-full bg-[#e8b86d]/20 px-2 py-0.5 text-[0.65rem] font-semibold text-[#8a5a12] dark:text-[#f3d199]">
                         {days === 0 ? "Өнөөдөр хөдөлнө" : `${days} хоногийн дараа`}
                       </span>
                     ) : null}
                   </div>
-                  <SaveButton tourId={t.id} className="absolute right-2.5 top-2.5 size-8 bg-bg shadow-none" />
+                  <SaveButton tourId={t.id} variant="plain" className="absolute right-2 top-2 size-10 bg-bg" />
                 </Link>
               </motion.li>
             );
@@ -135,46 +137,38 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
       </motion.ul>
 
       {!result.length ? (
-        <div className="rounded-2xl border border-dashed border-[var(--line)] p-8 text-center text-sm text-muted">
-          Шүүлтүүрт тохирох аялал алга.
-          <button type="button" onClick={() => { setPlace("all"); setMaxPrice(priceMax); }} className="mt-3 block w-full font-semibold text-accent">
-            Шүүлтүүр цэвэрлэх
+        <div className="grid place-items-center rounded-[1.6rem] border border-dashed border-[var(--line)] bg-bg-elevated px-6 py-10 text-center">
+          <span className="grid size-14 place-items-center rounded-[1.2rem] bg-accent-mist text-accent" aria-hidden>
+            <Icon name="search" size={24} />
+          </span>
+          <p className="type-subtitle mt-4">Яг ийм аялал алга</p>
+          <p className="mt-1 text-sm text-muted">Үнийн хязгаараа өсгөх эсвэл өөр чиглэл сонгоод үзээрэй.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setPlace("all");
+              setMaxPrice(priceMax);
+            }}
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-white"
+          >
+            <Icon name="refresh" size={16} /> Бүх аяллыг харах
           </button>
         </div>
       ) : null}
 
-      <AnimatePresence>
-        {sheet ? (
-          <motion.div className="fixed inset-0 z-[80] flex items-end" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <button type="button" aria-label="Хаах" onClick={() => setSheet(false)} className="absolute inset-0 bg-ink/45 backdrop-blur-[2px]" />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 320, damping: 34 }}
-              drag="y"
-              dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={{ top: 0, bottom: 0.5 }}
-              onDragEnd={(_, info) => (info.offset.y > 100 || info.velocity.y > 600) && setSheet(false)}
-              data-lenis-prevent
-              className="relative w-full rounded-t-[1.75rem] bg-bg-elevated px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3"
-            >
-              <div className="mx-auto h-1.5 w-10 rounded-full bg-[var(--line)]" />
-              <div className="mt-4 flex items-center justify-between">
-                <p className="font-display text-2xl font-semibold">Шүүлтүүр</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSort("soonest");
-                    setMaxPrice(priceMax);
-                  }}
-                  className="text-sm font-semibold text-accent"
-                >
-                  Цэвэрлэх
-                </button>
-              </div>
+      <Sheet open={sheet} onClose={() => setSheet(false)} title="Шүүлтүүр">
+              <button
+                type="button"
+                onClick={() => {
+                  setSort("soonest");
+                  setMaxPrice(priceMax);
+                }}
+                className="mt-1 text-sm font-semibold text-accent"
+              >
+                Цэвэрлэх
+              </button>
 
-              <p className="mt-5 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted">Эрэмбэлэх</p>
+              <p className="type-label mt-4 text-muted">Эрэмбэлэх</p>
               <div className="mt-2 grid gap-2">
                 {sorts.map((s) => (
                   <button
@@ -194,7 +188,7 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
               </div>
 
               <div className="mt-6 flex items-baseline justify-between">
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted">Дээд үнэ</p>
+                <p className="type-label text-muted">Дээд үнэ</p>
                 <p className="font-num text-lg text-accent">{formatPrice(maxPrice)}</p>
               </div>
               <input
@@ -212,13 +206,10 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
                 <span className="font-num font-medium">{formatPrice(priceMax)}</span>
               </div>
 
-              <button type="button" onClick={() => setSheet(false)} className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-ink text-sm font-semibold text-white active:scale-[0.98]">
+              <button type="button" onClick={() => setSheet(false)} className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-ink text-sm font-semibold text-white">
                 {result.length} аялал харах
               </button>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      </Sheet>
     </div>
   );
 }

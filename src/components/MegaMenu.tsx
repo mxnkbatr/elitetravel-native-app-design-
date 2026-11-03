@@ -35,7 +35,7 @@ export function MegaMenu({ onNavigate }: { onNavigate: () => void }) {
     <div className="grid grid-cols-[210px_1fr_250px] gap-5 p-5">
       {/* Destinations */}
       <div>
-        <p className="px-3 text-[0.62rem] font-semibold uppercase tracking-[0.25em] text-muted">Чиглэл</p>
+        <p className="px-3 type-eyebrow text-muted">Чиглэл</p>
         <ul className="mt-2 space-y-0.5">
           {groups.map((g) => {
             const on = g.key === dest;
@@ -65,7 +65,7 @@ export function MegaMenu({ onNavigate }: { onNavigate: () => void }) {
       {/* Tours of the destination */}
       <div className="min-w-0 border-x border-[var(--line)] px-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-[0.62rem] font-semibold uppercase tracking-[0.25em] text-muted">{group.en} · аяллууд</p>
+          <p className="type-eyebrow text-muted">{group.en} · аяллууд</p>
           <Link
             href={`/tours?dest=${group.key === "egypt" ? "soon" : group.key}`}
             onClick={onNavigate}
@@ -130,7 +130,7 @@ export function MegaMenu({ onNavigate }: { onNavigate: () => void }) {
               )}
             </div>
             <div className="min-w-0">
-              <p className="text-[0.58rem] font-semibold uppercase tracking-[0.2em] text-[#7ef0e0]">Удахгүй хөдлөх</p>
+              <p className="type-eyebrow text-[#7ef0e0]">Удахгүй хөдлөх</p>
               <p className="truncate text-sm font-semibold">{nextUp.t.title}</p>
             </div>
           </Link>

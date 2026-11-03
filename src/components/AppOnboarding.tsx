@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { cldImage } from "@/lib/cloudinary";
 import { haptic } from "@/lib/native";
 import { enablePush, pushState, type PushState } from "@/lib/push-client";
@@ -154,7 +155,7 @@ function Slides({ onDone }: { onDone: () => void }) {
               exit={{ opacity: 0, x: dir * -40 }}
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-[#7ef0e0]">{slide.eyebrow}</p>
+              <p className="type-eyebrow text-[#7ef0e0]">{slide.eyebrow}</p>
               <h2 className="mt-3 font-display text-[2.4rem] font-semibold leading-[1.02] tracking-[-0.03em]">{slide.title}</h2>
               <p className="mt-4 text-[0.98rem] leading-relaxed text-white/72">{slide.text}</p>
             </motion.div>
@@ -175,7 +176,13 @@ function Slides({ onDone }: { onDone: () => void }) {
               onClick={() => void finish(true)}
               className="h-14 w-full rounded-2xl bg-[#e8b86d] text-[0.95rem] font-bold text-[#0b241d] transition active:scale-[0.98] disabled:opacity-70"
             >
-              {busy ? "…" : push === "prompt" ? "🔔 Мэдэгдэл асаагаад эхлэх" : "Эхлэх"}
+              {busy ? "…" : push === "prompt" ? (
+                <span className="inline-flex items-center gap-2">
+                  <Icon name="bell" size={18} /> Мэдэгдэл асаагаад эхлэх
+                </span>
+              ) : (
+                "Эхлэх"
+              )}
             </button>
             {push === "prompt" ? (
               <button type="button" onClick={() => void finish(false)} className="h-11 w-full text-sm font-semibold text-white/60">

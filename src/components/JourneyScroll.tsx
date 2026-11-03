@@ -32,7 +32,7 @@ function Stat({ value, label, accent }: { value: string; label: string; accent?:
   return (
     <div className="px-4 py-3 text-center first:pl-0 last:pr-0">
       <p className={`font-num text-lg leading-none ${accent ? "text-[#f3d199]" : ""}`}>{value}</p>
-      <p className="mt-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-white/60">{label}</p>
+      <p className="mt-1.5 type-label text-white/60">{label}</p>
     </div>
   );
 }
@@ -68,7 +68,7 @@ export function JourneyScroll() {
           >
             <div className="flex items-center gap-3">
               <span className="epic-rule" />
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-accent">Destinations</p>
+              <p className="type-eyebrow text-accent">Destinations</p>
             </div>
             <h2 className="mt-4 font-display text-[clamp(2.6rem,4.6vw,3.9rem)] font-semibold leading-[0.95] tracking-[-0.04em]">
               Хаашаа <span className="italic text-accent">аялах</span> вэ?
@@ -178,7 +178,7 @@ export function JourneyScroll() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-black/25" />
 
           <div className="absolute left-7 top-7 flex items-center gap-2">
-            <span className="rounded-full bg-white/15 px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white backdrop-blur-md">
+            <span className="rounded-full bg-white/15 px-3 py-1.5 type-eyebrow text-white backdrop-blur-md">
               {String(active + 1).padStart(2, "0")} / {String(items.length).padStart(2, "0")}
             </span>
           </div>
@@ -232,7 +232,7 @@ export function JourneyScroll() {
           <div>
             <div className="flex items-center gap-3">
               <span className="epic-rule" />
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-accent">Destinations</p>
+              <p className="type-eyebrow text-accent">Destinations</p>
             </div>
             <h2 className="mt-3 font-display text-[2.5rem] font-semibold leading-[0.95] tracking-[-0.04em]">
               Хаашаа <span className="italic text-accent">аялах</span> вэ?

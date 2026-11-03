@@ -70,7 +70,7 @@ export function ResortsPage() {
             />
           </div>
           <div className="flex flex-col justify-center gap-4 p-6 sm:p-10">
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.25em] text-accent">{s.place}</p>
+            <p className="type-eyebrow text-accent">{s.place}</p>
             <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{s.name}</h2>
             <p className="max-w-md text-sm leading-relaxed text-muted sm:text-base">{s.blurb}</p>
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon, type IconName } from "@/components/Icon";
 import { Contact } from "@/components/Contact";
 import { useStays } from "@/components/ResortsPage";
 import { destinations, isBookable } from "@/data/tours";
@@ -48,11 +49,11 @@ const pillars = [
 ];
 
 const steps = [
-  { icon: "🧭", title: "Аяллаа сонго", body: "Огноо, хөтөлбөр, үнийг сайтаас харьцуулж сонгоно." },
-  { icon: "🧮", title: "Тооцоол", body: "Хүн, хүүхэд, өрөөгөө тохируулж нийт дүнгээ шууд харна." },
-  { icon: "💬", title: "Хүсэлт илгээ", body: "Instagram эсвэл утсаар манай багт хүсэлтээ илгээнэ." },
-  { icon: "✅", title: "Баталгаажуул", body: "Баг суудал, үнийг баталгаажуулж, 30–50% урьдчилгаа авна." },
-  { icon: "✈", title: "Аялаарай", body: "Монгол хөтөчтэйгээ хамт нисэж, мартагдашгүй аялалд гарна." },
+  { icon: "compass" as IconName, title: "Аяллаа сонго", body: "Огноо, хөтөлбөр, үнийг сайтаас харьцуулж сонгоно." },
+  { icon: "calculator" as IconName, title: "Тооцоол", body: "Хүн, хүүхэд, өрөөгөө тохируулж нийт дүнгээ шууд харна." },
+  { icon: "chat" as IconName, title: "Хүсэлт илгээ", body: "Instagram эсвэл утсаар манай багт хүсэлтээ илгээнэ." },
+  { icon: "badge-check" as IconName, title: "Баталгаажуул", body: "Баг суудал, үнийг баталгаажуулж, 30–50% урьдчилгаа авна." },
+  { icon: "plane" as IconName, title: "Аялаарай", body: "Монгол хөтөчтэйгээ хамт нисэж, мартагдашгүй аялалд гарна." },
 ];
 
 const payments = ["Pocket", "Toki", "Simple", "Dari"];
@@ -91,7 +92,7 @@ export function About() {
         <div>
           <motion.div {...fade} className="flex items-center gap-3">
             <span className="epic-rule" />
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-accent">About Elite Travel</p>
+            <p className="type-eyebrow text-accent">About Elite Travel</p>
           </motion.div>
           <h1 className="mt-5 font-display text-[clamp(2.8rem,7vw,5.6rem)] font-semibold leading-[0.92] tracking-[-0.045em]">
             {["Travel", "Beyond", "Ordinary."].map((w, i) => (
@@ -190,7 +191,7 @@ export function About() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#062a2a] via-[#062a2a]/60 to-transparent" />
               <div className="relative flex h-full flex-col">
                 <span className="font-num text-sm text-[#e8b86d]">0{i + 1}</span>
-                <p className="mt-auto pt-24 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-[#7ef0e0]">{p.en}</p>
+                <p className="mt-auto pt-24 type-eyebrow text-[#7ef0e0]">{p.en}</p>
                 <h3 className="mt-2 font-display text-[1.9rem] font-semibold leading-tight">{p.mn}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-white/75">{p.body}</p>
               </div>
@@ -226,11 +227,11 @@ export function About() {
               transition={{ delay: 0.2 + i * 0.15, duration: 0.6, ease }}
               className="relative flex gap-4 md:block"
             >
-              <span className="relative z-10 grid size-12 shrink-0 place-items-center rounded-full border-4 border-bg bg-bg-elevated text-xl shadow-[0_8px_24px_rgba(6,42,42,0.12)]">
-                {s.icon}
+              <span className="relative z-10 grid size-12 shrink-0 place-items-center rounded-full border-4 border-bg bg-bg-elevated text-accent shadow-[0_8px_24px_rgba(6,42,42,0.12)]">
+                <Icon name={s.icon} size={20} />
               </span>
               <div className="md:mt-4">
-                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-accent">Алхам {i + 1}</p>
+                <p className="type-label text-accent">Алхам {i + 1}</p>
                 <p className="mt-1 font-display text-xl font-semibold">{s.title}</p>
                 <p className="mt-1 text-sm leading-relaxed text-muted">{s.body}</p>
               </div>
@@ -243,7 +244,7 @@ export function About() {
       <motion.section {...fade} className="overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-[#e8b86d] to-[#f3d199] p-7 text-ink sm:p-10">
         <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
           <div>
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.25em]">Хуваан төлөх</p>
+            <p className="type-eyebrow">Хуваан төлөх</p>
             <h2 className="mt-2 font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-semibold leading-tight">Мөрөөдлийн аяллаа одоо захиалаад, дараа нь төл.</h2>
             <p className="mt-2 max-w-lg text-sm text-ink/70">Урьдчилгаа 30–50%. Үлдэгдлээ зээлийн апп, fintech-үүдээр хувааж төлөх боломжтой.</p>
           </div>

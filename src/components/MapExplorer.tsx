@@ -97,7 +97,7 @@ export function MapExplorer() {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
-              className="w-full max-w-md overflow-hidden rounded-[1.75rem] bg-white shadow-[0_24px_60px_rgba(6, 42, 42,0.28)]"
+              className="w-full max-w-md overflow-hidden rounded-[1.75rem] bg-card shadow-[0_24px_60px_rgba(6, 42, 42,0.28)]"
             >
               <motion.div drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.25} onDragEnd={onDragEnd} className="touch-pan-y px-4 pb-3 pt-4">
                 <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export function MapExplorer() {
                         exit={{ x: dir * -60, opacity: 0 }}
                         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                       >
-                        <p className="text-[0.66rem] font-bold uppercase tracking-[0.18em] text-[#0e8f84]">
+                        <p className="type-label text-[#0e8f84]">
                           {index + 1}/{destinations.length} · {dest.en}
                         </p>
                         <h2 className="mt-0.5 truncate font-display text-2xl font-semibold leading-tight">{dest.name}</h2>
@@ -142,17 +142,17 @@ export function MapExplorer() {
                   <div>
                     <dt className="sr-only">Нислэг</dt>
                     <dd className="font-num text-lg font-semibold leading-none">{flight[dest.key]?.time}</dd>
-                    <p className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-muted">{flight[dest.key]?.label}</p>
+                    <p className="mt-1 type-label text-muted">{flight[dest.key]?.label}</p>
                   </div>
                   <div className="border-x border-[var(--line)]">
                     <dt className="sr-only">Аялал</dt>
                     <dd className="font-num text-lg font-semibold leading-none">{list.length || "—"}</dd>
-                    <p className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-muted">Аялал</p>
+                    <p className="mt-1 type-label text-muted">Аялал</p>
                   </div>
                   <div>
                     <dt className="sr-only">Эхлэх үнэ</dt>
                     <dd className="font-num text-lg font-semibold leading-none text-accent">{from ? formatPrice(from) : "Удахгүй"}</dd>
-                    <p className="mt-1 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-muted">Эхлэх үнэ</p>
+                    <p className="mt-1 type-label text-muted">Эхлэх үнэ</p>
                   </div>
                 </motion.dl>
 
@@ -208,9 +208,9 @@ export function MapExplorer() {
               dragElastic={{ top: 0, bottom: 0.6 }}
               onDragEnd={(_, info) => info.offset.y > 100 && setListOpen(false)}
               data-lenis-prevent
-              className="relative max-h-[80svh] w-full max-w-md overflow-y-auto rounded-t-[1.75rem] bg-white pb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded-[1.75rem]"
+              className="relative max-h-[80svh] w-full max-w-md overflow-y-auto rounded-t-[1.75rem] bg-card pb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded-[1.75rem]"
             >
-              <div className="sticky top-0 z-10 bg-white px-5 pb-3 pt-3">
+              <div className="sticky top-0 z-10 bg-card px-5 pb-3 pt-3">
                 <div className="mx-auto h-1.5 w-10 rounded-full bg-[var(--line)]" />
                 <h3 className="mt-3 font-display text-2xl font-semibold">Бүх нээлттэй аялал</h3>
               </div>
@@ -222,7 +222,7 @@ export function MapExplorer() {
                         <Image src={t.image} alt="" fill className="object-cover" sizes="64px" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[0.62rem] font-bold uppercase tracking-[0.14em] text-accent">{t.destination}</p>
+                        <p className="type-label text-accent">{t.destination}</p>
                         <p className="truncate font-semibold">{t.title}</p>
                         <p className="truncate text-xs text-muted">{t.dates} · {t.duration}</p>
                       </div>

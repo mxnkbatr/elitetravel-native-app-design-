@@ -32,7 +32,7 @@ export function TourCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
         <SaveButton tourId={tour.id} className="absolute right-3 top-3 z-10" />
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-          <span className="rounded-md bg-white/95 px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-ink">
+          <span className="rounded-md bg-white/95 px-2 py-1 type-label text-ink">
             {tour.destination}
           </span>
           {tour.discount ? (
@@ -71,7 +71,7 @@ export function TourCard({
               <p className="mt-1 text-[0.7rem] text-muted line-through">{formatPrice(tour.oldPrice)}</p>
             ) : null}
             {tour.tag !== "soon" && seats != null && seats <= 15 ? (
-              <p className="mt-1.5 text-[0.68rem] font-medium text-[#c9964a]">
+              <p className="mt-1.5 text-[0.68rem] font-medium text-[#c9964a] dark:text-[#e8b86d]">
                 {seats ? `${seats} суудал үлдсэн` : "Дүүрсэн · хүлээлэг"}
               </p>
             ) : null}

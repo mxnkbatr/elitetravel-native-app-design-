@@ -1,16 +1,16 @@
 "use client";
 
+import { Icon, type IconName } from "@/components/Icon";
+import { Sheet } from "@/components/Sheet";
+import { ThemePicker } from "@/components/ThemePicker";
 import { logout, syncSaved, useAccount } from "@/lib/account";
 import { haptic } from "@/lib/native";
 import { onTravellerChange, savedTours, useTraveller } from "@/lib/traveller-store";
-import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
-import { createPortal } from "react-dom";
+import { useEffect, useState } from "react";
 
 const PHONE = "+97690031771";
-const noop = () => () => {};
 
 /** Header avatar: guests go straight to the sign-in screen; a signed-in traveller gets the shortcuts sheet. */
 export function ProfileButton({ onDark }: { onDark: boolean }) {
@@ -63,58 +63,35 @@ export function ProfileButton({ onDark }: { onDark: boolean }) {
 }
 
 function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const mounted = useSyncExternalStore(noop, () => true, () => false);
   const account = useAccount();
   const { bookings, saved } = useTraveller();
   const [leaving, setLeaving] = useState(false);
-  if (!mounted) return null;
 
   const user = account.status === "user" ? account.profile : null;
-  return createPortal(
-    <AnimatePresence>
-      {open && user ? (
-        <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center" role="dialog" aria-label="Профайл">
-          <motion.button
-            type="button"
-            aria-label="Хаах"
-            className="absolute inset-0 bg-black/45"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
-          <motion.div
-            className="relative w-full max-w-md rounded-t-[1.8rem] bg-bg-elevated px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 text-foam shadow-2xl sm:rounded-[1.8rem]"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 380, damping: 38 }}
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.6 }}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 90 || info.velocity.y > 500) onClose();
-            }}
-          >
-            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-foam/15 sm:hidden" />
-
+  return (
+    <Sheet open={open && user != null} onClose={onClose} label="Профайл">
+      {user ? (
+        <div className="pt-2 text-foam">
             <div className="flex items-center gap-3">
               <span className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#14b8a6] to-[#0d6e66] text-lg font-bold text-white">
                 {(user.name || user.email).charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0">
-                <p className="truncate font-display text-xl font-semibold">{user.name || "Сайн байна уу 👋"}</p>
+                <p className="type-subtitle truncate">{user.name || "Сайн байна уу"}</p>
                 <p className="truncate text-sm text-foam/60">{user.email}</p>
               </div>
             </div>
 
             <div className="mt-5 divide-y divide-[var(--line)] overflow-hidden rounded-2xl border border-[var(--line)] bg-bg">
-              <Row href="/bookings" onClick={onClose} icon="🎫" label="Миний захиалга" aside={bookings.length ? String(bookings.length) : undefined} />
-              <Row href="/bookings" onClick={onClose} icon="♡" label="Хадгалсан аялал" aside={saved.length ? String(saved.length) : undefined} />
-              <Row href="/account" onClick={onClose} icon="👤" label="Профайл, тохиргоо" />
-              <Row href={`tel:${PHONE}`} icon="☏" label="Залгах" aside="+976 9003 1771" external />
-              <Row href="https://ig.me/m/elitetravelmn" icon="✉" label="Instagram-аар бичих" external />
+              <Row href="/bookings" onClick={onClose} icon="ticket" label="Миний захиалга" aside={bookings.length ? String(bookings.length) : undefined} />
+              <Row href="/bookings" onClick={onClose} icon="heart" label="Хадгалсан аялал" aside={saved.length ? String(saved.length) : undefined} />
+              <Row href="/account" onClick={onClose} icon="user" label="Профайл, тохиргоо" />
+              <Row href={`tel:${PHONE}`} icon="phone" label="Залгах" aside="+976 9003 1771" external />
+              <Row href="https://ig.me/m/elitetravelmn" icon="mail" label="Instagram-аар бичих" external />
             </div>
+
+            <p className="type-label mb-2 mt-5 text-muted">Өнгөний горим</p>
+            <ThemePicker />
 
             <button
               type="button"
@@ -126,28 +103,28 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
                   onClose();
                 });
               }}
-              className="mt-3 h-12 w-full rounded-2xl text-sm font-semibold text-[#c2410c] disabled:opacity-60"
+              className="mt-3 h-12 w-full rounded-2xl text-sm font-semibold text-[#c2410c] dark:text-[#ff8f66] disabled:opacity-60"
             >
               {leaving ? "…" : "Гарах"}
             </button>
-          </motion.div>
         </div>
       ) : null}
-    </AnimatePresence>,
-    document.body,
+    </Sheet>
   );
 }
 
-function Row({ href, label, icon, aside, external, onClick }: { href: string; label: string; icon: ReactNode; aside?: string; external?: boolean; onClick?: () => void }) {
+function Row({ href, label, icon, aside, external, onClick }: { href: string; label: string; icon: IconName; aside?: string; external?: boolean; onClick?: () => void }) {
   const content = (
     <>
-      <span className="grid size-8 place-items-center rounded-xl bg-accent/10 text-sm text-accent">{icon}</span>
+      <span className="grid size-9 place-items-center rounded-xl bg-accent/10 text-accent">
+        <Icon name={icon} size={17} />
+      </span>
       <span className="flex-1 text-sm font-semibold">{label}</span>
       {aside ? <span className="text-xs text-foam/50">{aside}</span> : null}
-      <span className="text-foam/30">›</span>
+      <Icon name="chevron-right" size={16} className="text-foam/30" />
     </>
   );
-  const className = "flex items-center gap-3 px-4 py-3 active:bg-foam/[0.04]";
+  const className = "flex min-h-14 items-center gap-3 px-4 py-2.5 active:bg-foam/[0.04]";
   return external ? (
     <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className={className}>
       {content}

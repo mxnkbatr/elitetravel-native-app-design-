@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { enablePush, pushState, type PushState } from "@/lib/push-client";
 import { useEffect, useState } from "react";
 
@@ -17,15 +18,16 @@ export function PushPrompt() {
   if (state === "denied") {
     return (
       <p className="rounded-2xl bg-bg-elevated px-4 py-3 text-xs text-muted">
-        🔕 Мэдэгдэл унтраастай байна. Асаах бол утасныхаа <b>Тохиргоо → Elite Travel → Мэдэгдэл</b> хэсгийг нээнэ үү.
+        <Icon name="bell-off" size={14} className="inline -mt-0.5 mr-1" />
+        Мэдэгдэл унтраастай байна. Асаах бол утасныхаа <b>Тохиргоо → Elite Travel → Мэдэгдэл</b> хэсгийг нээнэ үү.
       </p>
     );
   }
 
   return (
     <div className="flex items-center gap-3 rounded-[1.4rem] border border-accent/25 bg-accent-mist/60 p-4">
-      <span className="text-2xl" aria-hidden>
-        🔔
+      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent text-white" aria-hidden>
+        <Icon name="bell" size={20} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">Мэдэгдэл асаах</p>

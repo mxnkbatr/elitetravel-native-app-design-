@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { DOC_STATUS_LABEL, docInfo, type Care, type DocType } from "@/lib/documents";
 import type { Trip, TripDocSlot } from "@/lib/trips";
 import { checkVisaPhoto, compressForUpload, type PhotoReport } from "@/lib/visa-photo";
@@ -26,7 +27,7 @@ const fieldClass = "h-11 w-full rounded-xl border border-[var(--line)] bg-bg px-
 
 /* ── Documents ──────────────────────────────────────────────────────── */
 
-const STATUS_TONE = { pending: "bg-amber-100 text-amber-800", approved: "bg-emerald-100 text-emerald-800", rejected: "bg-red-100 text-red-700" } as const;
+const STATUS_TONE = { pending: "bg-amber-100 text-amber-800 dark:text-amber-200", approved: "bg-emerald-100 text-emerald-800", rejected: "bg-red-100 text-red-700 dark:text-red-300" } as const;
 
 export function DocumentsCard({ trip, upload }: { trip: Trip; upload: Upload }) {
   const [consentOpen, setConsentOpen] = useState(false);
@@ -91,12 +92,13 @@ function DocRow({ d, upload }: { d: TripDocSlot; upload: Upload }) {
         </div>
         {d.status ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${STATUS_TONE[d.status]}`}>{DOC_STATUS_LABEL[d.status]}</span> : null}
       </div>
-      {d.status === "rejected" && d.note ? <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-xs text-red-700">{d.note}</p> : null}
+      {d.status === "rejected" && d.note ? <p className="mt-2 rounded-lg bg-red-50 dark:bg-red-500/10 px-2.5 py-1.5 text-xs text-red-700 dark:text-red-300">{d.note}</p> : null}
       {report ? (
         <ul className="mt-2 space-y-0.5 text-[0.7rem]">
           {report.checks.map((c) => (
-            <li key={c.id} className={c.ok ? "text-emerald-700" : "text-[#c2410c]"}>
-              {c.ok ? "✓" : "✗"} {c.label}
+            <li key={c.id} className={c.ok ? "text-emerald-700 dark:text-emerald-300" : "text-[#c2410c] dark:text-[#ff8f66]"}>
+              <Icon name={c.ok ? "check" : "close"} size={13} strokeWidth={2.4} className="inline -mt-0.5 mr-1" />
+              {c.label}
               {!c.ok && c.tip ? <span className="block pl-3 text-muted">{c.tip}</span> : null}
             </li>
           ))}
@@ -112,7 +114,9 @@ function DocRow({ d, upload }: { d: TripDocSlot; upload: Upload }) {
           ) : d.status ? (
             "Дахин хуулах"
           ) : (
-            "⬆ Хуулах"
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="upload" size={15} /> Хуулах
+            </span>
           )}
           <input
             type="file"
@@ -125,7 +129,7 @@ function DocRow({ d, upload }: { d: TripDocSlot; upload: Upload }) {
           />
         </label>
       ) : null}
-      {error ? <p className="mt-1.5 text-xs text-[#c2410c]">{error}</p> : null}
+      {error ? <p className="mt-1.5 text-xs text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
     </div>
   );
 }
@@ -141,8 +145,8 @@ function ConsentInfo({ trip }: { trip: Trip }) {
     ["Захиалгын дугаар", trip.id],
   ];
   return (
-    <div className="mt-2 rounded-2xl border border-[var(--line)] bg-white p-3 text-xs leading-relaxed">
-      <p className="font-semibold text-ink">Нотариатад өгөх мэдээлэл</p>
+    <div className="mt-2 rounded-2xl border border-[var(--line)] bg-card p-3 text-xs leading-relaxed">
+      <p className="font-semibold text-foam">Нотариатад өгөх мэдээлэл</p>
       <p className="mt-1 text-muted">
         Хүүхэд нэг эцэг эх эсвэл бусадтай гадаад явах бол нөгөө эцэг эх нь нотариатаар зөвшөөрөл батлуулдаг. Нотариатын газар маягтыг өөрөө бэлтгэнэ — доорх мэдээлэл, хүүхдийн төрсний
         гэрчилгээ, эцэг эхийн иргэний үнэмлэхийг авч очно уу. Эх хувийг хилээр гарахдаа биедээ авч явна.
@@ -151,7 +155,7 @@ function ConsentInfo({ trip }: { trip: Trip }) {
         {rows.map(([k, v]) => (
           <div key={k} className="contents">
             <dt className="text-muted">{k}</dt>
-            <dd className="font-semibold text-ink">{v}</dd>
+            <dd className="font-semibold text-foam">{v}</dd>
           </div>
         ))}
       </dl>
@@ -187,7 +191,7 @@ export function CareCard({ trip, call }: { trip: Trip; call: Call }) {
       {!open ? (
         <div className="flex items-center justify-between gap-3 text-sm">
           <p className="min-w-0 truncate text-muted">
-            Яаралтай үед: <span className="font-semibold text-ink">{care.emergencyName}</span> · {care.emergencyPhone}
+            Яаралтай үед: <span className="font-semibold text-foam">{care.emergencyName}</span> · {care.emergencyPhone}
           </p>
           <button type="button" onClick={() => setOpen(true)} className="shrink-0 text-sm font-semibold text-accent">
             Засах
@@ -208,7 +212,7 @@ export function CareCard({ trip, call }: { trip: Trip; call: Call }) {
             <button type="button" onClick={save} disabled={saving} className="h-11 rounded-2xl bg-accent px-6 text-sm font-semibold text-white disabled:opacity-60">
               {saving ? "Хадгалж байна…" : "Хадгалах"}
             </button>
-            {message ? <p className={`text-sm ${message.ok ? "text-accent" : "text-[#c2410c]"}`}>{message.text}</p> : null}
+            {message ? <p className={`text-sm ${message.ok ? "text-accent" : "text-[#c2410c] dark:text-[#ff8f66]"}`}>{message.text}</p> : null}
           </div>
         </div>
       )}
@@ -333,8 +337,8 @@ export function ContractCard({ trip, call }: { trip: Trip; call: Call }) {
   }
 
   return (
-    <Card title="Аяллын гэрээ" aside={<span className={`text-xs font-semibold ${c.state === "signed" ? "text-accent" : "text-[#c2410c]"}`}>{c.state === "signed" ? "✓ Гарын үсэг зурсан" : "Гарын үсэг хүлээж байна"}</span>}>
-      <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-2xl bg-bg p-3 font-sans text-xs leading-relaxed text-ink">{c.body}</pre>
+    <Card title="Аяллын гэрээ" aside={<span className={`text-xs font-semibold ${c.state === "signed" ? "text-accent" : "text-[#c2410c] dark:text-[#ff8f66]"}`}>{c.state === "signed" ? "✓ Гарын үсэг зурсан" : "Гарын үсэг хүлээж байна"}</span>}>
+      <pre className="max-h-64 overflow-y-auto whitespace-pre-wrap rounded-2xl bg-bg p-3 font-sans text-xs leading-relaxed text-foam">{c.body}</pre>
       {c.state === "signed" ? (
         <div className="mt-3 flex flex-wrap items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -350,7 +354,7 @@ export function ContractCard({ trip, call }: { trip: Trip; call: Call }) {
         </div>
       ) : (
         <div className="mt-3 space-y-3">
-          <label className="flex items-start gap-2.5 text-xs leading-relaxed text-ink">
+          <label className="flex items-start gap-2.5 text-xs leading-relaxed text-foam">
             <input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} className="mt-0.5 size-4 shrink-0 accent-[#0d8f84]" />
             Гэрээг бүрэн уншиж танилцсан бөгөөд нөхцөлийг хүлээн зөвшөөрч байна.
           </label>
@@ -359,7 +363,7 @@ export function ContractCard({ trip, call }: { trip: Trip; call: Call }) {
           <button type="button" onClick={sign} disabled={saving || !accept || name.trim().length < 2 || !signature} className="h-12 w-full rounded-2xl bg-accent text-sm font-semibold text-white disabled:opacity-50">
             {saving ? "Хадгалж байна…" : "Гарын үсэг зурж баталгаажуулах"}
           </button>
-          {error ? <p className="text-sm text-[#c2410c]">{error}</p> : null}
+          {error ? <p className="text-sm text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
         </div>
       )}
     </Card>

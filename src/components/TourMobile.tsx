@@ -1,9 +1,10 @@
 "use client";
 
 import { BookingPlanner } from "@/components/BookingPlanner";
+import { Sheet } from "@/components/Sheet";
 import type { Tour } from "@/data/tours";
 import { scrollToY } from "@/lib/scroll";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 export const tourSections = [
@@ -59,52 +60,13 @@ export function TourTabs({ onPrice }: { onPrice: () => void }) {
   );
 }
 
-/** Bottom sheet holding the two-step booking flow; drag down or tap outside to close. */
+/** Bottom sheet holding the stepped booking flow; drag down or tap outside to close. */
 export function BookingSheet({ tour, open, onClose }: { tour: Tour; open: boolean; onClose: () => void }) {
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
-
   return (
-    <AnimatePresence>
-      {open ? (
-        <motion.div className="fixed inset-0 z-[80] flex items-end sm:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <button type="button" aria-label="Хаах" onClick={onClose} className="absolute inset-0 bg-ink/45 backdrop-blur-[2px]" />
-          <motion.div
-            role="dialog"
-            aria-label="Захиалга"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 320, damping: 34 }}
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 0 }}
-            dragElastic={{ top: 0, bottom: 0.5 }}
-            onDragEnd={(_, info) => (info.offset.y > 120 || info.velocity.y > 600) && onClose()}
-            data-lenis-prevent
-            className="relative max-h-[90svh] w-full overflow-y-auto overscroll-contain rounded-t-[1.75rem] bg-bg-elevated px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
-          >
-            <div className="sticky top-0 z-10 -mx-5 bg-bg-elevated px-5 pb-3 pt-3">
-              <div className="mx-auto h-1.5 w-10 rounded-full bg-[var(--line)]" />
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="truncate font-display text-xl font-semibold">{tour.title}</p>
-                <button type="button" onClick={onClose} aria-label="Хаах" className="grid size-8 shrink-0 place-items-center rounded-full bg-bg text-lg">
-                  ×
-                </button>
-              </div>
-            </div>
-            <BookingPlanner tour={tour} variant="sheet" />
-          </motion.div>
-        </motion.div>
-      ) : null}
-    </AnimatePresence>
+    <Sheet open={open} onClose={onClose} title={<span className="block truncate">{tour.title}</span>} label="Захиалга">
+      <div className="pt-2">
+        <BookingPlanner tour={tour} variant="sheet" />
+      </div>
+    </Sheet>
   );
 }

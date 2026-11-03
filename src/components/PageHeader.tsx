@@ -31,7 +31,7 @@ export function PageHeader({ eyebrow, title, description }: PageHeaderProps) {
     <div ref={root} className="max-w-3xl">
       <div className="flex items-center gap-3">
         <span className="ph-rule epic-rule" />
-        <p className="ph-eyebrow text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-accent">{eyebrow}</p>
+        <p className="ph-eyebrow type-eyebrow text-accent">{eyebrow}</p>
       </div>
       <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,5rem)] font-semibold leading-[0.95] tracking-[-0.045em]">
         {title.split(" ").map((w, i) => (

@@ -3,7 +3,7 @@
 import { adminDeletePassengers, getThread, recordPayment, sendStaffMessage, updateBooking, viewPassengers } from "@/app/admin/(panel)/actions";
 import { DocsPanel } from "@/app/admin/(panel)/DocsPanel";
 import { InstallmentActions } from "@/app/admin/(panel)/payments/InstallmentActions";
-import { Sheet } from "@/app/admin/(panel)/Sheet";
+import { Sheet } from "@/components/Sheet";
 import { formatPrice } from "@/data/tours";
 import { passengerIssue, type InstallmentRequest, type Passenger, type TripMessage, type TripStatus } from "@/lib/trips";
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";

@@ -75,7 +75,7 @@ export function FeaturedBanner() {
             </AnimatePresence>
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
             <div className="absolute left-3 top-3 flex gap-1.5">
-              <span className="rounded-full bg-white px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.06em] text-ink">{slide.destination}</span>
+              <span className="rounded-full bg-white px-3 py-1 type-label text-ink">{slide.destination}</span>
               {slide.discount ? (
                 <span className="rounded-full bg-accent px-3 py-1 text-[0.68rem] font-bold text-white">{slide.discount}</span>
               ) : null}
@@ -84,7 +84,7 @@ export function FeaturedBanner() {
           </div>
 
           <div className="px-2 pb-1 pt-4">
-            <p className="text-[0.62rem] font-bold uppercase tracking-[0.25em] text-[#7ef0e0]">Онцлох аялал</p>
+            <p className="type-eyebrow text-[#7ef0e0]">Онцлох аялал</p>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={slide.id}

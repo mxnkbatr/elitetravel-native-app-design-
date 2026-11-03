@@ -2,7 +2,7 @@
 
 import { approveProposal, cancelProposal, removeConversation } from "@/app/admin/(panel)/agent/actions";
 import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
-import { Sheet } from "@/app/admin/(panel)/Sheet";
+import { Sheet } from "@/components/Sheet";
 import { formatPrice } from "@/data/tours";
 import { FIELD_LABEL, isProposalTool, KIND_LABEL, PROPOSAL_PERMISSION, TOOL_LABEL, type DiffRow, type ProposalStatus, type ProposalView } from "@/lib/agent";
 import { can, type Role } from "@/lib/permissions";

@@ -8,6 +8,7 @@ import { IntroCurtain } from "@/components/IntroCurtain";
 import { MobileDock } from "@/components/MobileDock";
 import { NativeReady } from "@/components/NativeReady";
 import { Navbar } from "@/components/Navbar";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { PageTracker } from "@/components/PageTracker";
 import { PageTransition } from "@/components/PageTransition";
 import { PushBridge } from "@/components/PushBridge";
@@ -46,6 +47,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
       <Footer />
       <MobileDock />
       <SearchOverlay />
+      <OfflineBanner />
       {assistant ? <AiHelper /> : null}
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon, type IconName } from "@/components/Icon";
 import { SaveButton } from "@/components/SaveButton";
 import { formatPrice, isBookable, type Tour } from "@/data/tours";
 import { withTransforms } from "@/lib/cloudinary";
@@ -51,6 +52,38 @@ function ShareButton({ tour, className = "" }: { tour: Tour; className?: string 
 }
 
 /**
+ * The poster on phones swipes through the gallery with native scroll-snap (dots below);
+ * larger screens keep the single poster that tilts toward the cursor.
+ */
+function PhotoSwiper({ images, alt }: { images: string[]; alt: string }) {
+  const [index, setIndex] = useState(0);
+  return (
+    <>
+      <div
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          setIndex(Math.round(el.scrollLeft / el.clientWidth));
+        }}
+        className="hide-scrollbar absolute inset-0 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain sm:overflow-hidden"
+      >
+        {images.map((src, i) => (
+          <div key={src} className="relative h-full w-full shrink-0 snap-center">
+            <Image src={src} alt={i === 0 ? alt : ""} fill priority={i === 0} className="object-cover" sizes="(max-width:1024px) 100vw, 560px" />
+          </div>
+        ))}
+      </div>
+      {images.length > 1 ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center gap-1.5 sm:hidden" aria-hidden>
+          {images.map((src, i) => (
+            <span key={src} className={`h-1.5 rounded-full bg-white shadow transition-all duration-300 ${i === index ? "w-5" : "w-1.5 opacity-60"}`} />
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+/**
  * Tour page opener: details and price on the left, the full (uncropped) poster on the
  * right tilting toward the cursor, over a soft glow sampled from the poster itself.
  */
@@ -73,11 +106,11 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
   }
 
   const chips = [
-    tour.dates && { icon: "🗓", text: tour.dates },
-    { icon: "⏱", text: tour.duration },
-    tour.stay && { icon: "🏨", text: tour.stay },
-    { icon: "✈", text: `${tour.departure ?? "Улаанбаатар"}-аас` },
-  ].filter(Boolean) as { icon: string; text: string }[];
+    tour.dates && { icon: "calendar", text: tour.dates },
+    { icon: "clock", text: tour.duration },
+    tour.stay && { icon: "hotel", text: tour.stay },
+    { icon: "plane", text: `${tour.departure ?? "Улаанбаатар"}-аас` },
+  ].filter(Boolean) as { icon: IconName; text: string }[];
 
   return (
     <section className="relative isolate">
@@ -103,8 +136,8 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
             style={{ rotateX: rx, rotateY: ry }}
             className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-[1.75rem] shadow-[0_40px_90px_rgba(6,42,42,0.35)] sm:max-w-xl lg:aspect-[4/3.1]"
           >
-            <Image src={tour.image} alt={tour.title} fill priority className="object-cover" sizes="(max-width:1024px) 100vw, 560px" />
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/15" />
+            <PhotoSwiper images={[tour.image, ...tour.gallery].slice(0, 8)} alt={tour.title} />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/15" />
             <div className="absolute right-3 top-3 flex gap-2">
               <ShareButton tour={tour} className="grid size-10 place-items-center rounded-full bg-white/90 text-ink shadow-sm backdrop-blur-md" />
               <SaveButton tourId={tour.id} className="size-10" />
@@ -118,10 +151,10 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
         {/* Details */}
         <div className="order-2 lg:order-1">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }} className="flex flex-wrap items-center gap-2">
-            <Link href={`/tours?dest=${tour.destinationKey}`} className="rounded-full bg-accent/10 px-3 py-1 text-[0.7rem] font-bold uppercase tracking-[0.14em] text-accent">
+            <Link href={`/tours?dest=${tour.destinationKey}`} className="rounded-full bg-accent/10 px-3 py-1 type-label text-accent">
               {tour.destination}
             </Link>
-            {tour.tag === "hot" ? <span className="rounded-full bg-[#e8b86d]/25 px-3 py-1 text-[0.7rem] font-bold text-[#8a5a12]">🔥 Эрэлттэй</span> : null}
+            {tour.tag === "hot" ? <span className="inline-flex items-center gap-1 rounded-full bg-[#e8b86d]/25 px-3 py-1 text-[0.7rem] font-bold text-[#8a5a12] dark:text-[#f3d199]"><Icon name="fire" size={13} strokeWidth={2} /> Эрэлттэй</span> : null}
             {tour.status === "ended" ? <span className="rounded-full bg-ink px-3 py-1 text-[0.7rem] font-bold text-white">Дууссан аялал</span> : null}
             {tour.tag === "soon" ? <span className="rounded-full bg-ink px-3 py-1 text-[0.7rem] font-bold text-white">Тун удахгүй</span> : null}
           </motion.div>
@@ -144,7 +177,7 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
                 transition={{ delay: 0.4 + i * 0.06 }}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-bg-elevated/80 px-3 py-1.5 text-[0.8rem] backdrop-blur"
               >
-                <span aria-hidden>{c.icon}</span>
+                <Icon name={c.icon} size={15} className="text-accent" />
                 {c.text}
               </motion.li>
             ))}

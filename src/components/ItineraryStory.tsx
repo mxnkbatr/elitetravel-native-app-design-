@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import type { ItineraryDay, Tour } from "@/data/tours";
 import { cldImage } from "@/lib/cloudinary";
 import { AnimatePresence, motion, useScroll, useSpring, useTransform } from "framer-motion";
@@ -84,14 +85,14 @@ export function ItineraryStory({ tour, renderMeta }: { tour: Tour; renderMeta: (
         </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
-        <div className="absolute left-5 top-5 rounded-full bg-white/15 px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-white backdrop-blur-md">
+        <div className="absolute left-5 top-5 rounded-full bg-white/15 px-3 py-1.5 type-eyebrow text-white backdrop-blur-md">
           {String(active + 1).padStart(2, "0")} / {String(days.length).padStart(2, "0")}
         </div>
 
         <div className="absolute inset-x-0 bottom-0 p-6 text-white">
           <AnimatePresence mode="wait">
             <motion.div key={active} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.4 }}>
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-[#f3d199]">{day?.day}</p>
+              <p className="type-eyebrow text-[#f3d199]">{day?.day}</p>
               <p className="mt-1.5 font-display text-[1.9rem] font-semibold italic leading-[1.05] tracking-[-0.02em]">{day?.title}</p>
             </motion.div>
           </AnimatePresence>
@@ -114,7 +115,7 @@ export function ItineraryStory({ tour, renderMeta }: { tour: Tour; renderMeta: (
           style={{ top: planeTop }}
           aria-hidden
         >
-          ✈
+          <Icon name="plane" size={14} className="rotate-180" fill="currentColor" stroke="none" />
         </motion.span>
 
         {days.map((d, i) => (
@@ -133,7 +134,7 @@ export function ItineraryStory({ tour, renderMeta }: { tour: Tour; renderMeta: (
             >
               {i + 1}
             </span>
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-accent">{d.day}</p>
+            <p className="type-label text-accent">{d.day}</p>
             <p className="mt-1 font-display text-2xl font-semibold leading-tight text-foam">{d.title}</p>
             <p className="mt-2 text-[0.95rem] leading-relaxed text-muted">{d.detail}</p>
             {renderMeta(d)}

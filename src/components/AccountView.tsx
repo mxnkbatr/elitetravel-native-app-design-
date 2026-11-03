@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { EliteLogo } from "@/components/EliteLogo";
 import { deleteAccount, faceIdSignIn, logout, requestCode, updateProfile, useAccount, verifyCode } from "@/lib/account";
 import { biometricEnabled, biometryName, disableBiometric, enableBiometric } from "@/lib/biometric";
@@ -28,8 +29,8 @@ export function AccountView({ mode, linkExpired, welcome }: { mode: "login" | "s
         <Profile welcome={welcome} />
       ) : (
         <div className="mt-10 space-y-3">
-          <div className="h-10 w-2/3 animate-pulse rounded-xl bg-foam/10" />
-          <div className="h-32 animate-pulse rounded-3xl bg-foam/10" />
+          <div className="skeleton h-10 w-2/3 rounded-xl" />
+          <div className="skeleton h-32 rounded-3xl" />
         </div>
       )}
     </div>
@@ -310,7 +311,13 @@ function SignIn({ initialMode, linkExpired }: { initialMode: "login" | "signup";
       {step === "email" && faceId ? (
         <Rise className="mt-6">
           <motion.button type="button" disabled={busy} onClick={() => void viaFaceId()} whileTap={{ scale: 0.97 }} className={`${primary} h-14`}>
-            {busy ? "Шалгаж байна…" : `🔐 ${faceId}-аар нэвтрэх`}
+            {busy ? (
+              "Шалгаж байна…"
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                <Icon name="lock" size={18} /> {faceId}-аар нэвтрэх
+              </span>
+            )}
           </motion.button>
           <p className="mt-3 text-center text-xs text-muted">эсвэл имэйлээр код авах</p>
         </Rise>
@@ -419,7 +426,7 @@ function SignIn({ initialMode, linkExpired }: { initialMode: "login" | "signup";
             animate={{ opacity: 1, height: "auto", x: [0, -8, 8, -5, 5, 0] }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.4 }}
-            className="mt-4 overflow-hidden rounded-2xl bg-[#c2410c]/10 px-4 py-3 text-sm text-[#c2410c]"
+            className="mt-4 overflow-hidden rounded-2xl bg-[#c2410c]/10 px-4 py-3 text-sm text-[#c2410c] dark:text-[#ff8f66]"
           >
             {error}
           </motion.p>
@@ -478,7 +485,7 @@ function Profile({ welcome }: { welcome: boolean }) {
         </div>
       </div>
 
-      {note ? <p className={`mt-5 rounded-2xl px-4 py-3 text-sm ${note.ok ? "bg-accent/10 text-accent" : "bg-[#c2410c]/10 text-[#c2410c]"}`}>{note.text}</p> : null}
+      {note ? <p className={`mt-5 rounded-2xl px-4 py-3 text-sm ${note.ok ? "bg-accent/10 text-accent" : "bg-[#c2410c]/10 text-[#c2410c] dark:text-[#ff8f66]"}`}>{note.text}</p> : null}
 
       <div className="mt-6 grid grid-cols-2 gap-2">
         <Link href="/bookings" className="rounded-2xl border border-[var(--line)] bg-bg-elevated p-4">
@@ -512,7 +519,7 @@ function Profile({ welcome }: { welcome: boolean }) {
       </button>
 
       <div className="mt-8 rounded-3xl border border-[#c2410c]/25 p-4">
-        <p className="text-sm font-semibold text-[#c2410c]">Бүртгэл устгах</p>
+        <p className="text-sm font-semibold text-[#c2410c] dark:text-[#ff8f66]">Бүртгэл устгах</p>
         <p className="mt-1 text-xs leading-relaxed text-muted">
           Нэвтрэх эрх болон профайл тань бүрмөсөн устна. Хийсэн захиалга, төлбөр Elite Travel-д хадгалагдсаар байх ба энэ утсан дээрээ харагдсаар байна.
         </p>
@@ -537,7 +544,7 @@ function Profile({ welcome }: { welcome: boolean }) {
             </button>
           </div>
         ) : (
-          <button type="button" onClick={() => setConfirmDelete(true)} className="mt-3 text-sm font-semibold text-[#c2410c]">
+          <button type="button" onClick={() => setConfirmDelete(true)} className="mt-3 text-sm font-semibold text-[#c2410c] dark:text-[#ff8f66]">
             Бүртгэлээ устгах…
           </button>
         )}
@@ -564,8 +571,8 @@ function FaceIdCard({ highlight }: { highlight: boolean }) {
   return (
     <div className={`mt-4 rounded-3xl border p-4 ${highlight && !on ? "border-accent bg-accent/[0.06]" : "border-[var(--line)] bg-bg-elevated"}`}>
       <div className="flex items-center gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent/10 text-xl" aria-hidden>
-          🔐
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-accent/10 text-accent" aria-hidden>
+          <Icon name="lock" size={20} />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{name}-аар нэвтрэх</p>
@@ -592,7 +599,7 @@ function FaceIdCard({ highlight }: { highlight: boolean }) {
           <span className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition-all ${on ? "left-[1.375rem]" : "left-0.5"}`} />
         </button>
       </div>
-      {error ? <p className="mt-2 text-xs text-[#c2410c]">{error}</p> : null}
+      {error ? <p className="mt-2 text-xs text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
     </div>
   );
 }

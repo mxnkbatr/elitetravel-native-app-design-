@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import type { NewsItem } from "@/data/news";
 import { destinations, formatPrice, type TourSummary } from "@/data/tours";
 import { useNews, useTours } from "@/lib/content";
@@ -148,7 +149,7 @@ export function SearchOverlay() {
             <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:max-h-[56vh]">
               {!q.trim() ? (
                 <div>
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted">Түгээмэл хайлт</p>
+                  <p className="type-label text-muted">Түгээмэл хайлт</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {suggestions.map((s, i) => (
                       <motion.button
@@ -171,7 +172,7 @@ export function SearchOverlay() {
               ) : groups.length ? (
                 groups.map((g) => (
                   <section key={g.kind} className="mb-5">
-                    <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted">{g.kind}</p>
+                    <p className="mb-2 type-label text-muted">{g.kind}</p>
                     <ul className="space-y-1">
                       {g.items.map((h, i) => (
                         <motion.li key={h.key} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}>
@@ -192,7 +193,9 @@ export function SearchOverlay() {
                 ))
               ) : (
                 <div className="py-10 text-center">
-                  <p className="text-3xl" aria-hidden>🧭</p>
+                  <span className="mx-auto grid size-14 place-items-center rounded-[1.2rem] bg-accent-mist text-accent" aria-hidden>
+                  <Icon name="compass" size={26} />
+                </span>
                   <p className="mt-3 font-semibold">“{q}” олдсонгүй</p>
                   <p className="mt-1 text-sm text-muted">Өөр үгээр хайгаад үзээрэй, эсвэл бидэнтэй холбогдоорой.</p>
                 </div>

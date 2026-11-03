@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { MobileTitle } from "@/components/MobileTitle";
 import { useStays } from "@/components/ResortsPage";
 import { formatPrice } from "@/data/tours";
@@ -27,7 +28,7 @@ export function MobileResorts() {
             <div className="relative aspect-[4/3.4]">
               <Image src={s.image} alt={s.place} fill className="object-cover" sizes="100vw" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent" />
-              <span className="absolute left-3.5 top-3.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-semibold text-ink">📍 {s.place}</span>
+              <span className="absolute left-3.5 top-3.5 rounded-full bg-white/95 px-3 py-1 text-[0.68rem] font-semibold text-ink"><Icon name="pin" size={12} strokeWidth={2} className="inline -mt-0.5 mr-1" />{s.place}</span>
               <div className="absolute inset-x-0 bottom-0 p-4 text-white">
                 <h2 className="font-display text-[2rem] font-semibold leading-none tracking-[-0.02em]">{s.name}</h2>
                 {s.from ? (
@@ -43,7 +44,7 @@ export function MobileResorts() {
 
               {s.linked.length ? (
                 <>
-                  <p className="mt-4 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-muted">Энд байрлах аяллууд</p>
+                  <p className="mt-4 type-label text-muted">Энд байрлах аяллууд</p>
                   <div className="hide-scrollbar -mx-4 mt-2 flex snap-x gap-2 overflow-x-auto px-4">
                     {s.linked.map((t) => (
                       <Link

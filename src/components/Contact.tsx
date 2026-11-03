@@ -31,7 +31,7 @@ export function Contact() {
           className="group flex items-center justify-between gap-4 rounded-[1.25rem] border border-[var(--line)] bg-bg-elevated p-5 transition duration-500 hover:-translate-y-1 hover:border-transparent hover:bg-[#062a2a] hover:text-white sm:flex-col sm:items-start sm:p-7"
         >
           <div>
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-accent group-hover:text-[#7ef0e0]">
+            <p className="type-eyebrow text-accent group-hover:text-[#7ef0e0]">
               {c.label}
             </p>
             <p className="mt-2 font-display text-2xl font-semibold tracking-[-0.02em]">{c.value}</p>

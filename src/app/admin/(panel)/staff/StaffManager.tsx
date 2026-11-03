@@ -1,7 +1,7 @@
 "use client";
 
 import { addStaff, removeStaff, setStaffRole } from "@/app/admin/(panel)/actions";
-import { Sheet } from "@/app/admin/(panel)/Sheet";
+import { Sheet } from "@/components/Sheet";
 import { titleActionClass } from "@/app/admin/(panel)/AdminTitle";
 import { ROLE_HINT, ROLE_LABEL, ROLES, type Role } from "@/lib/permissions";
 import { useState, useTransition } from "react";

@@ -4,22 +4,25 @@ import { ContentProvider } from "@/lib/content";
 import { introBootScript } from "@/lib/intro";
 import { chatModel } from "@/lib/server/ai";
 import { jsonLd, siteUrl } from "@/lib/site";
+import { themeBootScript } from "@/lib/theme";
 import { getNews, getTours } from "@/lib/server/content";
 import { getSeats } from "@/lib/server/seats";
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, DM_Sans } from "next/font/google";
+import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
 
 const display = Cormorant_Garamond({
   variable: "--font-display",
-  subsets: ["latin", "cyrillic"],
+  // cyrillic-ext carries the Mongolian letters ү and ө
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
   weight: ["500", "600", "700"],
   style: ["normal", "italic"],
 });
 
-const body = DM_Sans({
+// Body text needs full Mongolian Cyrillic (ү, ө); DM Sans had none, so letters fell back to mixed system fonts
+const body = Manrope({
   variable: "--font-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
   weight: ["400", "500", "600", "700"],
 });
 
@@ -74,6 +77,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="mn" className={`${display.variable} ${body.variable} h-full`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: introBootScript }} />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
       <body className="min-h-full bg-bg font-sans text-foam antialiased">

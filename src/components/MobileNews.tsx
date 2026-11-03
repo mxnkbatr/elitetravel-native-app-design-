@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon, type IconName } from "@/components/Icon";
 import { MobileTitle } from "@/components/MobileTitle";
 import { NewsReader, tone } from "@/components/NewsPage";
 import type { NewsCategory, NewsItem } from "@/data/news";
@@ -9,7 +10,7 @@ import Image from "next/image";
 import { useState } from "react";
 
 const categories: ("Бүгд" | NewsCategory)[] = ["Бүгд", "Мэдээ", "Урамшуулал", "Зөвлөгөө"];
-const icon: Record<NewsCategory, string> = { Мэдээ: "📰", Урамшуулал: "🏷", Зөвлөгөө: "💡" };
+const icon: Record<NewsCategory, IconName> = { Мэдээ: "news", Урамшуулал: "tag", Зөвлөгөө: "bulb" };
 
 /** Phone news: swipeable top stories, sticky category chips, compact rows, sheet reader. */
 export function MobileNews() {
@@ -82,8 +83,9 @@ export function MobileNews() {
                   <Image src={n.image} alt="" fill className="object-cover" sizes="88px" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col py-0.5">
-                  <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-accent">
-                    {icon[n.category]} {n.category}
+                  <p className="type-label text-accent">
+                    <Icon name={icon[n.category]} size={12} strokeWidth={2} className="inline -mt-0.5 mr-1" />
+                    {n.category}
                   </p>
                   <p className="mt-1 line-clamp-2 font-semibold leading-snug">{n.title}</p>
                   <p className="mt-auto pt-1 text-xs text-muted">{n.readMin} мин унших</p>

@@ -52,7 +52,7 @@ export function ScrubStatement() {
 
   return (
     <section ref={root} className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32">
-      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-accent">Why Elite</p>
+      <p className="type-eyebrow text-accent">Why Elite</p>
       <p className="scrub-text mt-6 font-display text-[clamp(1.9rem,4.4vw,3.6rem)] font-semibold leading-[1.12] tracking-[-0.03em] text-foam">
         {statement.split(" ").map((w, i) => (
           <span

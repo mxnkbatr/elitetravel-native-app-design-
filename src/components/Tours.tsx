@@ -61,7 +61,7 @@ export function Tours({
           >
             <div className="max-w-xl">
               <div className="epic-rule mb-4" />
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-accent">
+              <p className="type-eyebrow text-accent">
                 Tours
               </p>
               <h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
@@ -119,7 +119,7 @@ export function Tours({
                   </div>
                   <div className="space-y-3 p-4 sm:p-5">
                     <div>
-                      <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent">
+                      <p className="type-label text-accent">
                         {tour.destination}
                       </p>
                       <h3 className="mt-1 font-display text-xl font-semibold leading-snug tracking-[-0.02em]">

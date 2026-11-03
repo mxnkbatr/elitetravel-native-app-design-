@@ -1,6 +1,7 @@
 "use client";
 
 import { bookingMessage } from "@/components/BookingPlanner";
+import { EmptyState } from "@/components/EmptyState";
 import { TourCard } from "@/components/TourCard";
 import { formatPrice, getTour, isBookable } from "@/data/tours";
 import { useTours } from "@/lib/content";
@@ -30,7 +31,7 @@ function Countdown({ date }: { date?: string }) {
   const days = Math.ceil((dep.getTime() - now) / 86400000);
   if (days < 0) return <span className="text-xs text-muted">Хөдөлсөн</span>;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8b86d]/20 px-2.5 py-1 text-xs font-semibold text-[#8a5a12]">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8b86d]/20 px-2.5 py-1 text-xs font-semibold text-[#8a5a12] dark:text-[#f3d199]">
       <span className="size-1.5 animate-pulse rounded-full bg-[#e8b86d]" />
       {days === 0 ? "Өнөөдөр хөдөлнө" : `Хөдлөхөд ${days} хоног`}
     </span>
@@ -77,7 +78,7 @@ function BookingCard({ b, summary }: { b: BookingRequest; summary?: TripSummary 
       <div className="p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-accent">{tour.destination}</p>
+            <p className="type-eyebrow text-accent">{tour.destination}</p>
             <h3 className="mt-1 font-display text-2xl font-semibold leading-tight">{tour.title}</h3>
             <p className="mt-1 text-sm text-muted">
               {[b.date, party, tour.duration].filter(Boolean).join(" · ")}
@@ -117,7 +118,7 @@ function BookingCard({ b, summary }: { b: BookingRequest; summary?: TripSummary 
                 onClick={copy}
                 className="inline-flex h-10 items-center rounded-full bg-accent px-4 text-sm font-semibold text-white"
               >
-                {copied ? "Хуулсан ✓ Instagram" : "Instagram-аар илгээх"}
+                {copied ? "Хуулсан — Instagram" : "Instagram-аар илгээх"}
               </a>
             )}
             <a href="tel:+97690031771" className="inline-flex h-10 items-center rounded-full border border-[var(--line)] px-4 text-sm font-medium">
@@ -126,7 +127,7 @@ function BookingCard({ b, summary }: { b: BookingRequest; summary?: TripSummary 
             <button
               type="button"
               onClick={() => removeBooking(b.id)}
-              className="inline-flex h-10 items-center rounded-full px-3 text-sm text-muted transition hover:text-[#c2410c]"
+              className="inline-flex h-10 items-center rounded-full px-3 text-sm text-muted transition hover:text-[#c2410c] dark:text-[#ff8f66]"
             >
               Устгах
             </button>
@@ -185,10 +186,12 @@ export function BookingsPage() {
                 </p>
               </>
             ) : (
-              <Empty
-                title="Одоогоор захиалгын хүсэлт алга"
-                body="Аяллаа сонгоод үнийн тооцоолуураар хүн, өрөөгөө тохируулж хүсэлт үүсгээрэй."
-                cta={{ href: "/tours", label: "Аялал сонгох" }}
+              <EmptyState
+                icon="ticket"
+                title="Анхны аяллаа сонгох уу?"
+                body="Аяллаа сонгоод хүн, өрөөгөө тохируулахад нийт дүн шууд гарна. Хэдхэн алхмаар хүсэлтээ илгээнэ."
+                href="/tours"
+                cta="Аялал сонгох"
               />
             )}
           </motion.div>
@@ -201,10 +204,12 @@ export function BookingsPage() {
                 ))}
               </div>
             ) : (
-              <Empty
-                title="Хадгалсан аялал алга"
-                body="Аяллын карт дээрх ♡ дээр дарж таалагдсан аяллаа хадгалаарай."
-                cta={{ href: "/tours", label: "Аяллууд үзэх" }}
+              <EmptyState
+                icon="heart"
+                title="Мөрөөдлийн жагсаалтаа эхлүүлээрэй"
+                body="Аяллын карт дээрх зүрхийг дарж хадгалаад, дараа нь эндээс харьцуулаарай."
+                href="/tours"
+                cta="Аяллууд үзэх"
               />
             )}
           </motion.div>
@@ -225,22 +230,3 @@ export function BookingsPage() {
   );
 }
 
-function Empty({ title, body, cta }: { title: string; body: string; cta: { href: string; label: string } }) {
-  return (
-    <div className="grid place-items-center rounded-[1.5rem] border border-dashed border-[var(--line)] bg-bg-elevated px-6 py-14 text-center">
-      <motion.div
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        className="grid size-16 place-items-center rounded-full bg-accent-mist text-2xl"
-        aria-hidden
-      >
-        ✈
-      </motion.div>
-      <h3 className="mt-5 font-display text-2xl font-semibold">{title}</h3>
-      <p className="mt-2 max-w-sm text-sm text-muted">{body}</p>
-      <Link href={cta.href} className="btn-shine mt-6 inline-flex h-11 items-center rounded-full bg-accent px-6 text-sm font-semibold text-white">
-        {cta.label} →
-      </Link>
-    </div>
-  );
-}
