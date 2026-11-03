@@ -1,6 +1,6 @@
 "use server";
 
-import { saveDeparture, saveNews, saveTour, sendStaffMessage } from "@/app/admin/(panel)/actions";
+import { saveDeparture, saveNews, saveTour, sendStaffMessage, updateBooking } from "@/app/admin/(panel)/actions";
 import { PROPOSAL_PERMISSION, type ProposalKind, type ProposalStatus } from "@/lib/agent";
 import { can } from "@/lib/permissions";
 import { deleteConversation } from "@/lib/server/agent/conversations";
@@ -44,6 +44,11 @@ async function staleReason(p: Proposal): Promise<string | null> {
     const { data: b } = await client.from("booking_requests").select("status").eq("id", p.target_id).maybeSingle();
     if (!b || b.status === "cancelled") return "Захиалга устсан эсвэл цуцлагдсан байна.";
   }
+  if (p.kind === "booking.status") {
+    const { data: b } = await client.from("booking_requests").select("status").eq("id", p.target_id).maybeSingle();
+    if (!b) return "Захиалга устсан байна.";
+    if (b.status !== p.payload.base) return "Санал бэлдсэнээс хойш захиалгын төлөвийг өөр хүн сольсон тул хүчингүй.";
+  }
   return null;
 }
 
@@ -61,6 +66,8 @@ function apply(p: Proposal) {
       return sendStaffMessage(String(x.bookingId), String(x.text));
     case "news.create":
       return saveNews(x, null);
+    case "booking.status":
+      return updateBooking(String(x.bookingId), { status: String(x.status) });
   }
 }
 
@@ -98,7 +105,7 @@ export async function approveProposal(id: string): Promise<DecideResult> {
     return { ok: false, status: "failed", error: saved.error };
   }
   await audit(admin.email, "agent.proposal.approve", { type: p.kind.split(".")[0], id: p.target_id }, { proposal: id, kind: p.kind });
-  revalidatePath("/admin/agent");
+  revalidatePath("/admin/agent", "layout");
   return { ok: true, status: "applied" };
 }
 
@@ -124,5 +131,5 @@ export async function removeConversation(id: string) {
   const admin = await requireAdmin("agent.use");
   if (!UUID.test(id)) return;
   await deleteConversation(id, admin.email);
-  revalidatePath("/admin/agent");
+  revalidatePath("/admin/agent", "layout");
 }

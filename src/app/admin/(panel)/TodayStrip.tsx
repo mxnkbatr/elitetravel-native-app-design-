@@ -14,7 +14,7 @@ export function TodayStrip() {
     { n: pulse.stale.length, label: "2+ цаг хүлээсэн шинэ хүсэлт", href: "/admin?f=new", tone: "text-amber-700" },
     { n: pulse.documents.length, label: "захиалгад шалгах баримт", href: "/admin?f=docs", tone: "text-sky-800" },
     { n: pulse.installments, label: "хуваан төлөх хүсэлт", href: "/admin/payments", tone: "text-violet-700" },
-    { n: pulse.proposals, label: "AI санал зөвшөөрөл хүлээж байна", href: "/admin/agent", tone: "text-emerald-700" },
+    { n: pulse.proposals, label: "AI санал зөвшөөрөл хүлээж байна", href: "/admin/agent/site", tone: "text-emerald-700" },
     { n: pulse.errors, label: "сайтын алдаа (24 цаг)", href: "/admin/errors", tone: "text-red-600" },
   ].filter((i) => i.n > 0);
 

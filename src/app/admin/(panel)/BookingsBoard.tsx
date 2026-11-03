@@ -43,8 +43,9 @@ const STATUSES: { key: TripStatus; label: string; tone: string; hint: string }[]
   { key: "cancelled", label: "Цуцалсан", tone: "bg-zinc-200 text-zinc-600", hint: "Суудал чөлөөлөгдөнө" },
 ];
 
-const when = (iso: string) =>
-  new Intl.DateTimeFormat("mn-MN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+// Fixed zone and digits: the server's and the browser's mn-MN data differ (XI/03 vs 11/03), which broke hydration
+const WHEN = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Ulaanbaatar", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+const when = (iso: string) => WHEN.format(new Date(iso)).replace(",", "");
 
 type Filter = TripStatus | "all" | "unread" | "docs";
 

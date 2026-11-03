@@ -129,9 +129,13 @@ export const TOOL_LABEL: Record<string, string> = {
   proposeDepartureUpdate: "Суудал өөрчлөх санал",
   proposeMessage: "Мессежийн санал",
   proposeNews: "Мэдээний санал",
+  proposeBookingStatus: "Төлөв солих санал",
+  listChats: "Ирсэн чатууд",
+  getChat: "Чат унших",
+  siteChatQuestions: "Сайтын чатын асуултууд",
 };
 
-export type ProposalKind = "tour.create" | "tour.update" | "departure.update" | "message.send" | "news.create";
+export type ProposalKind = "tour.create" | "tour.update" | "departure.update" | "message.send" | "news.create" | "booking.status";
 
 /** Who may approve each kind of proposal (the same permission the matching admin screen needs). */
 export const PROPOSAL_PERMISSION: Record<ProposalKind, Permission> = {
@@ -140,6 +144,7 @@ export const PROPOSAL_PERMISSION: Record<ProposalKind, Permission> = {
   "departure.update": "departures.manage",
   "message.send": "bookings.manage",
   "news.create": "content.manage",
+  "booking.status": "bookings.manage",
 };
 
 export const KIND_LABEL: Record<ProposalKind, string> = {
@@ -148,6 +153,7 @@ export const KIND_LABEL: Record<ProposalKind, string> = {
   "departure.update": "Суудал, огноо",
   "message.send": "Аялагчид мессеж",
   "news.create": "Шинэ мэдээ",
+  "booking.status": "Захиалгын төлөв",
 };
 
 export const isProposalTool = (name: string) => name.startsWith("propose");

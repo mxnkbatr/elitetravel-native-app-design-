@@ -6,6 +6,8 @@ import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import { Sheet } from "@/components/Sheet";
 import { formatPrice } from "@/data/tours";
 import { FIELD_LABEL, isProposalTool, KIND_LABEL, PROPOSAL_PERMISSION, TOOL_LABEL, type DiffRow, type ProposalStatus, type ProposalView } from "@/lib/agent";
+import { DeskIntro, type DeskContext } from "@/app/admin/(panel)/agent/DeskIntro";
+import { DESK_INFO, deskHref, deskSuggestions, type Desk } from "@/lib/agent-desks";
 import { can, type Role } from "@/lib/permissions";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, getToolName, isToolUIPart, type UIMessage } from "ai";
@@ -15,6 +17,8 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } 
 type Conversation = { id: string; title: string; updatedAt: string };
 
 type Props = {
+  desk: Desk;
+  context: DeskContext;
   conversations: Conversation[];
   initial: { id: string; messages: UIMessage[] } | null;
   statuses: Record<string, ProposalStatus>;
@@ -24,26 +28,29 @@ type Props = {
   ask?: string;
 };
 
-/** Admin AI agent: saved chats on the side, the conversation with live tool steps and approval cards. */
-export function AgentChat({ conversations: initialList, initial, statuses, role, configured, ask }: Props) {
+/** Admin AI agent on one desk: saved chats on the side, the conversation with live tool steps and approval cards. */
+export function AgentChat({ desk, context, conversations: initialList, initial, statuses, role, configured, ask }: Props) {
   const [chat, setChat] = useState(() => ({ id: initial?.id ?? crypto.randomUUID(), messages: initial?.messages ?? [] }));
   const [list, setList] = useState(initialList);
   const [history, setHistory] = useState(false);
+  const home = deskHref(desk);
+  const info = DESK_INFO[desk];
 
   const startNew = () => {
     setChat({ id: crypto.randomUUID(), messages: [] });
-    window.history.replaceState(null, "", "/admin/agent");
+    window.history.replaceState(null, "", home);
     setHistory(false);
   };
   const remember = (id: string, title: string) => {
     if (!list.some((c) => c.id === id)) {
       setList((all) => [{ id, title: title.slice(0, 60), updatedAt: new Date().toISOString() }, ...all]);
-      window.history.replaceState(null, "", `/admin/agent?c=${id}`);
+      window.history.replaceState(null, "", `${home}?c=${id}`);
     }
   };
 
   const historyList = (
     <History
+      home={home}
       list={list}
       active={chat.id}
       onNew={startNew}
@@ -63,8 +70,8 @@ export function AgentChat({ conversations: initialList, initial, statuses, role,
 
       <div className="min-w-0">
         <AdminTitle
-          title="AI туслах"
-          sub="Grok · аялал, захиалга, борлуулалтын бодит өгөгдөл дээр ажиллана. Аялал засах, нэмэх саналыг та зөвшөөрсний дараа л хадгална."
+          title={info.title}
+          sub={info.sub}
           action={
             <div className="flex gap-2 lg:hidden">
               <button type="button" onClick={() => setHistory(true)} className="h-10 rounded-full border border-[var(--line)] bg-white px-4 text-sm font-semibold">
@@ -77,7 +84,17 @@ export function AgentChat({ conversations: initialList, initial, statuses, role,
           }
         />
         {configured ? (
-          <ChatPane key={chat.id} id={chat.id} initialMessages={chat.messages} statuses={statuses} role={role} onSaved={remember} ask={chat.messages.length ? undefined : ask} />
+          <ChatPane
+            key={chat.id}
+            id={chat.id}
+            desk={desk}
+            context={context}
+            initialMessages={chat.messages}
+            statuses={statuses}
+            role={role}
+            onSaved={remember}
+            ask={chat.messages.length ? undefined : ask}
+          />
         ) : (
           <p className="mt-6 rounded-2xl bg-[#fff4e8] p-4 text-sm text-[#b45309]">AI тохируулаагүй байна. Сервер дээр XAI_API_KEY нэмнэ үү.</p>
         )}
@@ -90,7 +107,7 @@ export function AgentChat({ conversations: initialList, initial, statuses, role,
   );
 }
 
-function History({ list, active, onNew, onDelete }: { list: Conversation[]; active: string; onNew: () => void; onDelete: (id: string) => void }) {
+function History({ home, list, active, onNew, onDelete }: { home: string; list: Conversation[]; active: string; onNew: () => void; onDelete: (id: string) => void }) {
   return (
     <div>
       <button type="button" onClick={onNew} className="flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl bg-accent text-sm font-semibold text-white">
@@ -102,7 +119,7 @@ function History({ list, active, onNew, onDelete }: { list: Conversation[]; acti
         {list.map((c) => (
           <li key={c.id} className="group flex items-center gap-1">
             <Link
-              href={`/admin/agent?c=${c.id}`}
+              href={`${home}?c=${c.id}`}
               className={`min-w-0 flex-1 truncate rounded-xl px-3 py-2 text-sm ${c.id === active ? "bg-accent/10 font-semibold text-accent" : "text-ink hover:bg-black/[0.04]"}`}
             >
               {c.title}
@@ -124,15 +141,6 @@ function History({ list, active, onNew, onDelete }: { list: Conversation[]; acti
   );
 }
 
-function suggestionsFor(role: Role) {
-  const s: string[] = [];
-  if (can(role, "bookings.view")) s.push("Хариулаагүй мессежтэй захиалгууд байна уу?", "Энэ долоо хоногт ирсэн захиалгуудыг харуул");
-  if (can(role, "reports.view")) s.push("Сүүлийн 30 хоногт сайтад хэдэн хүн орж, хаанаас ирсэн бэ?", "Энэ сарын борлуулалтыг аяллаар нь задлаад өмнөх сартай харьцуул");
-  if (can(role, "departures.manage")) s.push("Аль огноонуудад суудал дуусах гэж байна?");
-  if (can(role, "content.manage")) s.push("Бали аяллын товч тайлбарыг илүү сонирхолтой болгох санал бэлд", "Ямар аяллууд дууссан, ямар нь захиалга авч байна?");
-  return s.slice(0, 4);
-}
-
 /** Server errors arrive as JSON text ({ error }); show just the message. */
 function errorText(e: Error) {
   try {
@@ -148,6 +156,8 @@ const plain = (s: string) => s.replace(/\*\*|__|^#+\s*/gm, "").replace(/^[-*] /g
 
 function ChatPane({
   id,
+  desk,
+  context,
   initialMessages,
   statuses,
   role,
@@ -155,6 +165,8 @@ function ChatPane({
   ask,
 }: {
   id: string;
+  desk: Desk;
+  context: DeskContext;
   initialMessages: UIMessage[];
   statuses: Record<string, ProposalStatus>;
   role: Role;
@@ -168,9 +180,9 @@ function ChatPane({
       new DefaultChatTransport({
         api: "/api/admin/agent",
         // Only the new message goes up; the server keeps the history
-        prepareSendMessagesRequest: ({ id: chatId, messages }) => ({ body: { id: chatId, message: messages[messages.length - 1] } }),
+        prepareSendMessagesRequest: ({ id: chatId, messages }) => ({ body: { id: chatId, desk, message: messages[messages.length - 1] } }),
       }),
-    [],
+    [desk],
   );
   const { messages, sendMessage, status, error, stop, clearError } = useChat({
     id,
@@ -210,11 +222,12 @@ function ChatPane({
   return (
     <div className="mt-5 flex min-h-[calc(100dvh-13rem)] flex-col">
       <div className="flex-1 space-y-4 pb-4">
+        {messages.length === 0 ? <DeskIntro context={context} send={send} /> : null}
         {messages.length === 0 ? (
           <div className="rounded-[1.4rem] border border-[var(--line)] bg-white p-5">
             <p className="text-sm text-muted">Асуух эсвэл даалгавар өгөх. Жишээ нь:</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {suggestionsFor(role).map((s) => (
+              {deskSuggestions(desk, role).map((s) => (
                 <button key={s} type="button" onClick={() => send(s)} className="rounded-full border border-accent/30 bg-bg px-3.5 py-2 text-left text-sm text-accent hover:bg-accent hover:text-white">
                   {s}
                 </button>
@@ -267,7 +280,11 @@ function ChatPane({
         <div ref={bottom} />
       </div>
 
-      <form onSubmit={onSubmit} className="sticky bottom-0 -mx-4 border-t border-[var(--line)] bg-[var(--bg)]/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:mx-0 sm:rounded-t-2xl sm:px-0">
+      {/* Phones: rides just above the tab bar */}
+      <form
+        onSubmit={onSubmit}
+        className="sticky bottom-[calc(4.6rem+max(0.65rem,env(safe-area-inset-bottom)))] -mx-4 border-t border-[var(--line)] bg-[var(--bg)]/95 px-4 pb-2 pt-3 backdrop-blur-xl sm:mx-0 sm:rounded-t-2xl sm:px-0 lg:bottom-0 lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      >
         <div className="flex items-end gap-2 rounded-2xl border border-[var(--line)] bg-white p-2 focus-within:border-accent">
           <textarea
             value={input}
@@ -280,7 +297,7 @@ function ChatPane({
             }}
             rows={Math.min(6, Math.max(1, input.split("\n").length))}
             maxLength={4000}
-            placeholder="Асуулт эсвэл даалгавар…"
+            placeholder={DESK_INFO[desk].placeholder}
             className="max-h-40 min-h-[2.5rem] flex-1 resize-none bg-transparent px-2 py-2 text-base outline-none sm:text-sm"
           />
           {busy ? (
@@ -417,6 +434,8 @@ function appliedLinks(view: ProposalView): { href: string; label: string; extern
     }
     case "message.send":
       return [{ href: `/admin?q=${view.targetId}`, label: "Захиалгын чат руу" }];
+    case "booking.status":
+      return [{ href: `/admin?q=${view.targetId}`, label: "Захиалга руу" }];
     case "news.create":
       return [
         { href: "/news", label: "Сайт дээр харах", external: true },

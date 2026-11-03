@@ -15,7 +15,9 @@ import { invalidMessage, parseTour } from "@/lib/server/content-validate";
 import { getSeats } from "@/lib/server/seats";
 import { tripView } from "@/lib/server/trip-view";
 import { BOOKING_COLUMNS, db, type BookingRow } from "@/lib/server/trips";
-import { STATUS_LABEL } from "@/lib/trips";
+import { STATUS_LABEL, type TripStatus } from "@/lib/trips";
+import type { Desk } from "@/lib/agent-desks";
+import { chatThreads } from "@/lib/server/agent/chats";
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
 
@@ -391,6 +393,76 @@ function definitions(ctx: Ctx): Record<string, Def> {
         },
       }),
     },
+    proposeBookingStatus: {
+      permission: "bookings.manage",
+      tool: tool({
+        description:
+          "Захиалгын төлөвийг солих САНАЛ (ажилтан зөвшөөрнө; дараа нь аялагчид аппаар автоматаар мэдэгдэнэ, цуцлахад хүлээлгийн жагсаалтаас суудал шилжинэ). Эхлээд getBooking-оор одоогийн төлөв, төлбөрийг шалга. paid = бүрэн төлөгдсөн үед л.",
+        inputSchema: z.object({
+          bookingId: z.string().regex(/^ET-[A-Z0-9]{4,20}$/),
+          status: z.enum(STATUSES),
+          summary: z.string().min(5).max(300).describe("Яагаад солих вэ, 1 өгүүлбэр"),
+        }),
+        execute: async ({ bookingId, status, summary }) => {
+          const { data: b } = await db().from("booking_requests").select("id, name, status").eq("id", bookingId).maybeSingle();
+          if (!b) return { error: "Ийм кодтой захиалга алга." };
+          if (b.status === status) return { error: `Төлөв аль хэдийн «${STATUS_LABEL[status]}» байна.` };
+          return saveProposal(ctx, {
+            kind: "booking.status",
+            targetId: bookingId,
+            baseUpdatedAt: null,
+            payload: { bookingId, status, base: b.status },
+            summary: `${bookingId} (${firstName(b.name as string)}): ${summary}`,
+            diff: [{ field: "status", before: STATUS_LABEL[b.status as TripStatus], after: STATUS_LABEL[status] }],
+          });
+        },
+      }),
+    },
+    listChats: {
+      permission: "bookings.view",
+      tool: tool({
+        description:
+          "Аялагчдаас захиалгын чатаар ирсэн яриануудын жагсаалт (шинэ нь эхэнд): захиалгын код, эхний нэр, аялал, сүүлийн мессеж хэнээс, юу гэж, хариулаагүй/уншаагүй эсэх.",
+        inputSchema: z.object({
+          onlyUnanswered: z.boolean().default(false),
+          days: z.number().int().min(1).max(120).default(30),
+          limit: z.number().int().min(1).max(40).default(20),
+        }),
+        execute: async (input) => {
+          const threads = await chatThreads(input);
+          return { count: threads.length, threads };
+        },
+      }),
+    },
+    getChat: {
+      permission: "bookings.view",
+      tool: tool({
+        description: "Нэг захиалгын чатын сүүлийн мессежүүд (аялагч, ажилтан, системийн мэдэгдэл). Хариу бэлдэхээс өмнө уншина. Уншсан гэж тэмдэглэхгүй.",
+        inputSchema: z.object({ bookingId: z.string().regex(/^ET-[A-Z0-9]{4,20}$/), limit: z.number().int().min(1).max(60).default(30) }),
+        execute: async ({ bookingId, limit }) => {
+          const { data } = await db().from("booking_messages").select("created_at, sender, body").eq("booking_id", bookingId).order("created_at", { ascending: false }).limit(limit);
+          if (!data?.length) return { error: "Энэ захиалгад чат алга." };
+          return { bookingId, messages: data.reverse().map((m) => ({ at: m.created_at, from: m.sender, text: m.body })) };
+        },
+      }),
+    },
+    siteChatQuestions: {
+      permission: "chatlogs.view",
+      tool: tool({
+        description: "Сайтын AI туслахаас зочид сүүлийн N хоногт юу асуусан (асуулт, хариулт товч). Аль мэдээлэл дутуу, юу сонирхож байгааг олоход.",
+        inputSchema: z.object({ days: z.number().int().min(1).max(90).default(14), limit: z.number().int().min(1).max(100).default(60) }),
+        execute: async ({ days, limit }) => {
+          if (process.env.CHAT_LOGS !== "on") return { error: "Сайтын чат хадгалалт унтраалттай (CHAT_LOGS=on биш)." };
+          const { data } = await db()
+            .from("chat_logs")
+            .select("created_at, question, answer")
+            .gt("created_at", new Date(Date.now() - days * 86400_000).toISOString())
+            .order("created_at", { ascending: false })
+            .limit(limit);
+          return { count: data?.length ?? 0, chats: (data ?? []).map((c) => ({ at: c.created_at, question: c.question, answer: String(c.answer).slice(0, 300) })) };
+        },
+      }),
+    },
     proposeNews: {
       permission: "content.manage",
       tool: tool({
@@ -514,13 +586,25 @@ function definitions(ctx: Ctx): Record<string, Def> {
   };
 }
 
+const TOURS_READ = ["listTours", "searchTours", "getTour"];
+
+/** Which tools each desk hands to the model; the site desk is the general agent and gets them all. */
+const DESK_TOOLS: Record<Desk, string[] | "all"> = {
+  bookings: ["searchBookings", "getBooking", "proposeBookingStatus", "proposeMessage", "listChats", "getChat", "listDepartures", "proposeDepartureUpdate", "analyzeSales", ...TOURS_READ],
+  chats: ["listChats", "getChat", "getBooking", "searchBookings", "proposeMessage", "siteChatQuestions", "listDepartures", ...TOURS_READ],
+  site: "all",
+  boost: ["analyzeTraffic", "analyzeSales", "listDepartures", "siteChatQuestions", ...TOURS_READ],
+};
+
 /**
- * The tools this admin may use, each wrapped so every call lands in the audit log
+ * The tools this admin may use on this desk, each wrapped so every call lands in the audit log
  * (tool name and arguments; results stay out of the log).
  */
-export function agentTools(ctx: Ctx): ToolSet {
+export function agentTools(ctx: Ctx, desk: Desk): ToolSet {
   const out: ToolSet = {};
+  const allowed = DESK_TOOLS[desk];
   for (const [name, def] of Object.entries(definitions(ctx))) {
+    if (allowed !== "all" && !allowed.includes(name)) continue;
     const needs = Array.isArray(def.permission) ? def.permission : [def.permission];
     if (!needs.some((p) => can(ctx.admin.role, p))) continue;
     const original = def.tool;

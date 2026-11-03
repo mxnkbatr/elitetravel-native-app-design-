@@ -1,3 +1,4 @@
+import { DESK_PERMISSION, isDesk } from "@/lib/agent-desks";
 import { can } from "@/lib/permissions";
 import { agentTools } from "@/lib/server/agent/tools";
 import { openConversation, saveConversation } from "@/lib/server/agent/conversations";
@@ -31,13 +32,14 @@ export async function POST(request: Request) {
   const model = chatModel();
   if (!model) return fail(503, "AI тохируулаагүй байна (XAI_API_KEY).");
 
-  let body: { id?: unknown; message?: unknown };
+  let body: { id?: unknown; message?: unknown; desk?: unknown };
   try {
     body = await request.json();
   } catch {
     return fail(400, "Хүсэлт буруу байна.");
   }
   const id = typeof body.id === "string" && UUID.test(body.id) ? body.id : null;
+  const requestedDesk = isDesk(body.desk) ? body.desk : "site";
   const message = body.message as UIMessage | undefined;
   const text =
     message?.role === "user" && Array.isArray(message.parts)
@@ -50,17 +52,20 @@ export async function POST(request: Request) {
   if (!id || !text) return fail(400, "Хүсэлт буруу байна.");
   if (text.length > 4000) return fail(413, "Мессеж хэт урт байна (4000 тэмдэгт хүртэл).");
 
-  const conversation = await openConversation(id, admin.email, text);
+  const conversation = await openConversation(id, admin.email, text, requestedDesk);
   if (!conversation) return fail(404, "Яриа олдсонгүй.");
+  // A saved chat keeps the desk it was started on
+  const desk = conversation.desk;
+  if (!can(admin.role, DESK_PERMISSION[desk])) return fail(403, "Танд энэ AI хэсгийг ашиглах эрх алга.");
 
   const userMessage: UIMessage = { id: typeof message?.id === "string" ? message.id.slice(0, 64) : crypto.randomUUID(), role: "user", parts: [{ type: "text", text }] };
   const messages = [...conversation.messages, userMessage];
-  const tools = agentTools({ admin, conversationId: id });
+  const tools = agentTools({ admin, conversationId: id }, desk);
 
   const result = streamText({
     model,
     providerOptions: { xai: { reasoningEffort: "medium" } },
-    system: agentSystemPrompt(admin, Object.keys(tools)),
+    system: agentSystemPrompt(admin, Object.keys(tools), desk),
     messages: await convertToModelMessages(messages.slice(-CONTEXT_MESSAGES), { tools, ignoreIncompleteToolCalls: true }),
     tools,
     stopWhen: isStepCount(8),
