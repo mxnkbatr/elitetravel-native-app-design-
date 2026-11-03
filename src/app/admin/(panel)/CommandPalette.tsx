@@ -102,7 +102,7 @@ export function CommandPalette({ role }: { role: Role }) {
         ? hits.map((h) => ({ key: `h:${h.kind}:${h.id}`, section: "Хайлтын үр дүн", title: h.title, sub: h.sub, href: h.href, mark: h.kind === "booking" ? "#" : h.kind === "tour" ? "✈" : "¶" }))
         : [];
     const ai: Entry[] =
-      term && can(role, "agent.use") ? [{ key: "ai", section: "AI туслах", title: `AI-аас асуух: «${q.trim()}»`, sub: "Grok бодит өгөгдлөөр хариулна", href: `/admin/agent/site?ask=${encodeURIComponent(q.trim())}`, mark: "✦" }] : [];
+      term && can(role, "agent.use") ? [{ key: "ai", section: "AI туслах", title: `AI-аас асуух: «${q.trim()}»`, sub: "Grok бодит өгөгдлөөр хариулна", href: `/admin/agent?ask=${encodeURIComponent(q.trim())}`, mark: "✦" }] : [];
     return [...found, ...pages, ...filteredActions, ...ai];
   }, [q, hits, role]);
 

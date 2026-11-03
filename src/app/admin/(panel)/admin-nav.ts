@@ -6,7 +6,6 @@ import {
   CompassIcon,
   ImageIcon,
   ListIcon,
-  MegaphoneIcon,
   NewsIcon,
   PlaneIcon,
   SparkIcon,
@@ -22,20 +21,18 @@ export type NavItem = { href: string; label: string; hint: string; icon: Compone
 
 export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
-    title: "AI туслахууд",
-    items: [
-      { href: "/admin/agent/bookings", label: "Бүртгэл", hint: "Бүртгэлийн AI: хүсэлт, төлөв, суудал, дутуу баримт", icon: TicketIcon, keywords: "ai burtgel booking zahialga status" },
-      { href: "/admin/agent/chats", label: "Чат", hint: "Чатын AI: аялагчдаас ирсэн чат, хариу бэлдэх", icon: ChatIcon, keywords: "ai chat message hariu" },
-      { href: "/admin/agent/site", label: "Сайт", hint: "Сайтын AI: аялал, мэдээ, хандалт, борлуулалт", icon: SparkIcon, keywords: "ai grok agent tuslah site" },
-      { href: "/admin/agent/boost", label: "Boost", hint: "Boost AI: Instagram, Facebook сурталчилгаа", icon: MegaphoneIcon, keywords: "ai boost instagram facebook ads meta" },
-    ],
-  },
-  {
     title: "Өдөр тутам",
     items: [
       { href: "/admin", label: "Захиалга", hint: "Хүсэлт, чат, төлөв, баримт", icon: TicketIcon, keywords: "booking zahialga chat" },
       { href: "/admin/payments", label: "Төлбөр", hint: "QPay, хуваан төлөх, И-баримт", icon: CardIcon, keywords: "qpay pocket toki ebarimt tulbur" },
       { href: "/admin/departures", label: "Огноо, суудал", hint: "Суудал, хүлээлэг, нислэгийн жагсаалт", icon: PlaneIcon, keywords: "seats suudal ognoo manifest" },
+      {
+        href: "/admin/agent",
+        label: "Elite AI",
+        hint: "Elite Travel Agentic AI: асуух, даалгавар өгөх",
+        icon: SparkIcon,
+        keywords: "ai grok agent tuslah agentic chat boost",
+      },
     ],
   },
   {
@@ -66,7 +63,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
 ];
 
 /** Bottom tabs on phones; the rest is in the «Цэс» sheet. */
-export const PHONE_TABS = ["/admin/agent/bookings", "/admin/agent/chats", "/admin/agent/site", "/admin/agent/boost"];
+export const PHONE_TABS = ["/admin", "/admin/payments", "/admin/agent", "/admin/tours"];
 
 export const navAllowed = (role: Role, item: NavItem) => can(role, routePermission(item.href));
 

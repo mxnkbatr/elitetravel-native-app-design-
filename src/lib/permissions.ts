@@ -61,9 +61,6 @@ const ROUTES: [string, Permission][] = [
   ["/admin/poster", "content.manage"],
   ["/admin/assistant", "content.manage"],
   ["/admin/chat-logs", "chatlogs.view"],
-  ["/admin/agent/bookings", "bookings.view"],
-  ["/admin/agent/chats", "bookings.view"],
-  ["/admin/agent/boost", "content.manage"],
   ["/admin/agent", "agent.use"],
 ];
 

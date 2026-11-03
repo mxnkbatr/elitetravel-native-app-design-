@@ -66,13 +66,6 @@ export const SparkIcon = ({ active }: IconProps) => (
   </Icon>
 );
 
-export const MegaphoneIcon = ({ active }: IconProps) => (
-  <Icon active={active}>
-    <path d="M4 10.5v3a1.5 1.5 0 0 0 1.5 1.5H8l7 4V5L8 9H5.5A1.5 1.5 0 0 0 4 10.5Z" {...soft(active)} />
-    <path d="M8 15l1.2 4.2M18.5 9.5a3.5 3.5 0 0 1 0 5" />
-  </Icon>
-);
-
 export const ChartIcon = ({ active }: IconProps) => (
   <Icon active={active}>
     <path d="M4 20h16" />

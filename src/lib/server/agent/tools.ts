@@ -16,7 +16,6 @@ import { getSeats } from "@/lib/server/seats";
 import { tripView } from "@/lib/server/trip-view";
 import { BOOKING_COLUMNS, db, type BookingRow } from "@/lib/server/trips";
 import { STATUS_LABEL, type TripStatus } from "@/lib/trips";
-import type { Desk } from "@/lib/agent-desks";
 import { chatThreads } from "@/lib/server/agent/chats";
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
@@ -586,25 +585,13 @@ function definitions(ctx: Ctx): Record<string, Def> {
   };
 }
 
-const TOURS_READ = ["listTours", "searchTours", "getTour"];
-
-/** Which tools each desk hands to the model; the site desk is the general agent and gets them all. */
-const DESK_TOOLS: Record<Desk, string[] | "all"> = {
-  bookings: ["searchBookings", "getBooking", "proposeBookingStatus", "proposeMessage", "listChats", "getChat", "listDepartures", "proposeDepartureUpdate", "analyzeSales", ...TOURS_READ],
-  chats: ["listChats", "getChat", "getBooking", "searchBookings", "proposeMessage", "siteChatQuestions", "listDepartures", ...TOURS_READ],
-  site: "all",
-  boost: ["analyzeTraffic", "analyzeSales", "listDepartures", "siteChatQuestions", ...TOURS_READ],
-};
-
 /**
- * The tools this admin may use on this desk, each wrapped so every call lands in the audit log
+ * The tools this admin may use, each wrapped so every call lands in the audit log
  * (tool name and arguments; results stay out of the log).
  */
-export function agentTools(ctx: Ctx, desk: Desk): ToolSet {
+export function agentTools(ctx: Ctx): ToolSet {
   const out: ToolSet = {};
-  const allowed = DESK_TOOLS[desk];
   for (const [name, def] of Object.entries(definitions(ctx))) {
-    if (allowed !== "all" && !allowed.includes(name)) continue;
     const needs = Array.isArray(def.permission) ? def.permission : [def.permission];
     if (!needs.some((p) => can(ctx.admin.role, p))) continue;
     const original = def.tool;

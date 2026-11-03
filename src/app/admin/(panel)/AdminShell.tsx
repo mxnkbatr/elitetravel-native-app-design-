@@ -14,8 +14,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
-/** Editors are "pushed" screens with their own bottom bar (save bar). */
-const isEditor = (pathname: string) => /^\/admin\/(tours|news)\/[^/]+$/.test(pathname);
+/** Editors are "pushed" screens with their own bottom bar (save bar, the agent's message box). */
+const isEditor = (pathname: string) => /^\/admin\/(tours|news)\/[^/]+$/.test(pathname) || pathname === "/admin/agent";
 
 const noop = () => () => {};
 
@@ -56,9 +56,7 @@ function useBadges(): Record<string, number> {
     "/admin": (pulse?.newBookings ?? 0) + (pulse?.unread.length ?? 0),
     "/admin/payments": pulse?.installments ?? 0,
     "/admin/errors": pulse?.errors ?? 0,
-    "/admin/agent/bookings": pulse?.stale.length ?? 0,
-    "/admin/agent/chats": pulse?.unread.length ?? 0,
-    "/admin/agent/site": pulse?.proposals ?? 0,
+    "/admin/agent": pulse?.proposals ?? 0,
   };
 }
 
@@ -186,10 +184,7 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
   const restBadge = rest.reduce((n, i) => n + (badges[i.href] ?? 0), 0);
   const initial = email.slice(0, 1).toUpperCase();
   const group = groups.find((g) => g.items.some((i) => current && i.href === current.href));
-  // The bookings and chats desks repeat what the «Захиалга» badge already counts
-  const pendingTotal = Object.entries(badges)
-    .filter(([href]) => href !== "/admin/agent/bookings" && href !== "/admin/agent/chats")
-    .reduce((n, [, v]) => n + v, 0);
+  const pendingTotal = Object.values(badges).reduce((n, v) => n + v, 0);
   const scroll = useHeaderScroll();
 
   return (
