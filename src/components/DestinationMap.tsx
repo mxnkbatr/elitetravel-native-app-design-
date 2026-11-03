@@ -1,6 +1,6 @@
 "use client";
 
-import { destinations, formatPrice, isBookable, type Tour } from "@/data/tours";
+import { destinations, formatPrice, isBookable, type TourSummary } from "@/data/tours";
 import { withTransforms } from "@/lib/cloudinary";
 import { useTours } from "@/lib/content";
 import type { LngLatLike, Map as MapLibre, Marker } from "maplibre-gl";
@@ -19,7 +19,7 @@ const coords: Record<string, [number, number]> = {
   egypt: [31.2357, 30.0444],
 };
 
-const buildPins = (tours: Tour[]) =>
+const buildPins = (tours: TourSummary[]) =>
   destinations.map((d) => {
   const open = tours.filter((t) => isBookable(t) && t.destinationKey === d.key);
   const from = open.reduce<number | null>((m, t) => (t.price && (!m || t.price < m) ? t.price : m), null);

@@ -1,7 +1,7 @@
 "use client";
 
 import { PartnerLogo } from "@/components/PartnerLogo";
-import { formatPrice, tourDates, type Tour } from "@/data/tours";
+import { formatPrice, tourDates, type Tour, type TourSummary } from "@/data/tours";
 import { INSTALLMENT_PROVIDERS } from "@/lib/trips";
 import { useSeats } from "@/lib/content";
 import { addBooking, type BookingRequest } from "@/lib/traveller-store";
@@ -16,7 +16,7 @@ import { useMemo, useState, type FormEvent } from "react";
 const PHONE = "+97690031771";
 const INSTAGRAM_DM = "https://ig.me/m/elitetravelmn";
 
-export function bookingMessage(tour: Tour, b: Omit<BookingRequest, "id" | "createdAt"> & { id?: string }) {
+export function bookingMessage(tour: TourSummary, b: Omit<BookingRequest, "id" | "createdAt"> & { id?: string }) {
   const party = [
     `${b.adults} том хүн`,
     b.kidsOwnBed ? `${b.kidsOwnBed} хүүхэд (тусдаа ор)` : "",

@@ -1,5 +1,6 @@
 "use client";
 
+import { markNavigated } from "@/lib/ui";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, ViewTransition, type ReactNode } from "react";
 
@@ -25,6 +26,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
 
   const current = useRef(pathname);
   useEffect(() => {
+    if (current.current !== pathname) markNavigated();
     current.current = pathname;
     // Programmatic pushes (no link click) fall back to the crossfade
     const reset = window.setTimeout(() => {
@@ -40,11 +42,13 @@ export function PageTransition({ children }: { children: ReactNode }) {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const a = (e.target as Element | null)?.closest?.("a[href]");
       if (!(a instanceof HTMLAnchorElement) || a.target === "_blank" || a.origin !== location.origin) return;
+      if (a.pathname !== current.current) markNavigated();
       root.dataset.nav = navFor(current.current, a.pathname);
     };
     // Back/forward buttons restore the page from the router cache outside a transition, so no view
     // transition runs; data-pop turns the wrapper's CSS enter animation back on for that render
     const onPop = () => {
+      markNavigated();
       root.dataset.nav = navFor(current.current, location.pathname);
       root.dataset.pop = "1";
     };

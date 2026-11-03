@@ -49,7 +49,19 @@ export type Tour = {
   documents?: DocType[];
 };
 
-export function getTour(tours: Tour[], id: string) {
+/**
+ * What cards, menus and search need. Every page carries the whole catalogue, so the long
+ * day-by-day text stays out of it and ships only with the tour's own page.
+ */
+export type TourSummary = Omit<Tour, "itinerary" | "includes" | "excludes" | "notes" | "gallery">;
+
+export function toSummary(t: Tour): TourSummary {
+  const { itinerary, includes, excludes, notes, gallery, ...summary } = t;
+  void [itinerary, includes, excludes, notes, gallery];
+  return summary;
+}
+
+export function getTour<T extends TourSummary>(tours: T[], id: string) {
   return tours.find((t) => t.id === id);
 }
 
@@ -64,11 +76,11 @@ export function formatPrice(price: number | null) {
   return `₮${digits}`;
 }
 
-export function isBookable(t: Tour) {
+export function isBookable(t: Pick<Tour, "tag" | "status">) {
   return t.tag !== "soon" && t.status !== "ended";
 }
 
-export function relatedTours(tours: Tour[], tourId: string, limit = 3) {
+export function relatedTours<T extends TourSummary>(tours: T[], tourId: string, limit = 3) {
   const current = getTour(tours, tourId);
   const pool = tours.filter((t) => t.id !== tourId && t.status !== "ended");
   if (!current) return pool.slice(0, limit);

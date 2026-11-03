@@ -1,8 +1,7 @@
 "use client";
 
-import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { setLenis } from "@/lib/scroll";
-import Lenis from "lenis";
+import type Lenis from "lenis";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
@@ -12,23 +11,34 @@ export function SmoothScroll() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Touch devices already scroll natively and smoothly; Lenis there only adds per-frame work
+    // Touch devices already scroll natively and smoothly; Lenis there only adds per-frame work.
+    // Loaded on demand so phones never download Lenis or GSAP just for this component.
     if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
-    registerGsap();
+    let cleanup = () => {};
+    let disposed = false;
 
-    const lenis = new Lenis({ duration: 1.15, smoothWheel: true, anchors: { offset: -96 } });
-    lenisRef.current = lenis;
-    setLenis(lenis);
-    lenis.on("scroll", ScrollTrigger.update);
-    const tick = (time: number) => lenis.raf(time * 1000);
-    gsap.ticker.add(tick);
-    gsap.ticker.lagSmoothing(0);
+    void Promise.all([import("lenis"), import("@/lib/gsap")]).then(([{ default: LenisClass }, { gsap, registerGsap, ScrollTrigger }]) => {
+      if (disposed) return;
+      registerGsap();
+      const lenis = new LenisClass({ duration: 1.15, smoothWheel: true, anchors: { offset: -96 } });
+      lenisRef.current = lenis;
+      setLenis(lenis);
+      lenis.on("scroll", ScrollTrigger.update);
+      const tick = (time: number) => lenis.raf(time * 1000);
+      gsap.ticker.add(tick);
+      gsap.ticker.lagSmoothing(0);
+
+      cleanup = () => {
+        gsap.ticker.remove(tick);
+        lenis.destroy();
+        lenisRef.current = null;
+        setLenis(null);
+      };
+    });
 
     return () => {
-      gsap.ticker.remove(tick);
-      lenis.destroy();
-      lenisRef.current = null;
-      setLenis(null);
+      disposed = true;
+      cleanup();
     };
   }, []);
 

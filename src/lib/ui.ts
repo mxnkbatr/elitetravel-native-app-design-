@@ -19,3 +19,31 @@ const noop = () => () => {};
 export function useClientValue<T extends string | number | boolean | null>(read: () => T, fallback: T): T {
   return useSyncExternalStore(noop, read, () => fallback);
 }
+
+/** Whether a media query matches, kept live. `null` during the server render and hydration. */
+export function useMediaQuery(query: string): boolean | null {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(query).matches,
+    () => null,
+  );
+}
+
+let navigated = false;
+
+/** Called by PageTransition when the visitor moves to another page inside the site. */
+export function markNavigated() {
+  navigated = true;
+}
+
+/**
+ * True once the visitor has moved between pages in this tab. Pages reached that way are already
+ * brought in by the route transition, so they skip their own entrance reveal.
+ */
+export function hasNavigated() {
+  return navigated;
+}

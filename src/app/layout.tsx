@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { toSummary } from "@/data/tours";
 import { ContentProvider } from "@/lib/content";
 import { introBootScript } from "@/lib/intro";
 import { chatModel } from "@/lib/server/ai";
@@ -76,7 +77,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
       </head>
       <body className="min-h-full bg-bg font-sans text-foam antialiased">
-        <ContentProvider tours={tours} news={news} seats={seats}>
+        <ContentProvider tours={tours.map(toSummary)} news={news} seats={seats}>
           <AppShell assistant={chatModel() != null}>{children}</AppShell>
         </ContentProvider>
       </body>

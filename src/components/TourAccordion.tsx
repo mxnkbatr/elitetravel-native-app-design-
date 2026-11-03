@@ -1,14 +1,14 @@
 "use client";
 
 import { SaveButton } from "@/components/SaveButton";
-import { formatPrice, type Tour } from "@/data/tours";
+import { formatPrice, type TourSummary } from "@/data/tours";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
 /** Desktop tour picker: slim panels that widen on hover to reveal the full card. */
-export function TourAccordion({ tours }: { tours: Tour[] }) {
+export function TourAccordion({ tours }: { tours: TourSummary[] }) {
   const [open, setOpen] = useState(0);
 
   return (

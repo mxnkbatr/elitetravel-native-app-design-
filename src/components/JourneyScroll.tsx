@@ -1,6 +1,6 @@
 "use client";
 
-import { destinations, formatPrice, isBookable, type Tour } from "@/data/tours";
+import { destinations, formatPrice, isBookable, type TourSummary } from "@/data/tours";
 import { cldImage } from "@/lib/cloudinary";
 import { useTours } from "@/lib/content";
 import { AnimatePresence, motion } from "framer-motion";
@@ -17,7 +17,7 @@ const scenery: Record<string, { cover: string; flight: string; flightLabel: stri
   egypt: { cover: cldImage("elitetravel/tours/shakira-egypt"), flight: "—", flightLabel: "Нислэг", poster: true },
 };
 
-const buildItems = (tours: Tour[]) =>
+const buildItems = (tours: TourSummary[]) =>
   destinations.map((d) => {
   const list = tours.filter((t) => isBookable(t) && t.destinationKey === d.key);
   const from = list.reduce<number | null>((m, t) => (t.price && (!m || t.price < m) ? t.price : m), null);

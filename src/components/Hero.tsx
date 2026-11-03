@@ -6,6 +6,7 @@ import { useCanAutoplayVideo } from "@/hooks/useCanAutoplayVideo";
 import { media } from "@/lib/cloudinary";
 import { useTours } from "@/lib/content";
 import { gsap, registerGsap, useGSAP } from "@/lib/gsap";
+import { hasNavigated } from "@/lib/ui";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -45,6 +46,8 @@ export function Hero() {
     () => {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
+        // Coming from another page: the route transition brings the hero in already composed
+        if (hasNavigated()) return;
         const html = document.documentElement;
         // First visit: the intro curtain covers the page for ~2.1s — start as it lifts, not under it
         const underCurtain = html.dataset.intro === "1";
@@ -142,9 +145,15 @@ export function Hero() {
     return () => window.clearTimeout(id);
   }, [paused, index, slides.length]);
 
+  // The first slide arrives with the card itself; only later swaps animate
+  const swapped = useRef(false);
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
+    if (!swapped.current) {
+      swapped.current = true;
+      return;
+    }
     gsap.fromTo(
       el.querySelectorAll("[data-swap]"),
       { y: 18, opacity: 0 },

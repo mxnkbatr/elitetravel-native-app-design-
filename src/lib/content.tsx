@@ -1,11 +1,11 @@
 "use client";
 
 import type { NewsItem } from "@/data/news";
-import type { Tour } from "@/data/tours";
+import type { TourSummary } from "@/data/tours";
 import type { SeatMap } from "@/lib/trips";
 import { createContext, useContext, type ReactNode } from "react";
 
-type Content = { tours: Tour[]; news: NewsItem[]; seats: SeatMap };
+type Content = { tours: TourSummary[]; news: NewsItem[]; seats: SeatMap };
 
 const ContentContext = createContext<Content>({ tours: [], news: [], seats: {} });
 

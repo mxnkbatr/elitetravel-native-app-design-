@@ -1,4 +1,4 @@
-import { formatPrice, type Tour } from "@/data/tours";
+import { formatPrice, type TourSummary } from "@/data/tours";
 
 export type Party = {
   adults: number;
@@ -17,7 +17,7 @@ export type Quote = {
  * The operator's published pricing rules (tours.ts `pricing`). Used by the booking
  * planner for the live estimate and by the API so a posted total is never trusted.
  */
-export function quote(tour: Tour, party: Party): Quote {
+export function quote(tour: TourSummary, party: Party): Quote {
   const p = tour.pricing ?? {};
   const price = tour.price ?? 0;
   const kidsOwnBed = p.childOwnBed === false ? 0 : party.kidsOwnBed;

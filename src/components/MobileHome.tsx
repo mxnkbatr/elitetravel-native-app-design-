@@ -2,11 +2,11 @@
 
 import { FeaturedBanner } from "@/components/FeaturedBanner";
 import { SaveButton } from "@/components/SaveButton";
-import { formatPrice, getTour, isBookable, type Tour } from "@/data/tours";
+import { formatPrice, getTour, isBookable, type TourSummary } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { daysUntil } from "@/lib/dates";
 import { useTraveller } from "@/lib/traveller-store";
-import { useClientValue } from "@/lib/ui";
+import { hasNavigated, useClientValue } from "@/lib/ui";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,9 +14,9 @@ import { useMemo, useState } from "react";
 
 const categories = [
   { key: "all", label: "Бүгд", icon: "✦", match: () => true },
-  { key: "beach", label: "Далай", icon: "🏝", match: (t: Tour) => t.destinationKey === "hainan" || t.destinationKey === "bali" },
-  { key: "show", label: "Концерт · Шоу", icon: "🎤", match: (t: Tour) => t.id === "weeknd-world-tour" || t.id === "dately-show-hainan" },
-  { key: "city", label: "Хот", icon: "🌆", match: (t: Tour) => t.destinationKey === "hongkong" },
+  { key: "beach", label: "Далай", icon: "🏝", match: (t: TourSummary) => t.destinationKey === "hainan" || t.destinationKey === "bali" },
+  { key: "show", label: "Концерт · Шоу", icon: "🎤", match: (t: TourSummary) => t.id === "weeknd-world-tour" || t.id === "dately-show-hainan" },
+  { key: "city", label: "Хот", icon: "🌆", match: (t: TourSummary) => t.destinationKey === "hongkong" },
 ] as const;
 
 function greeting(h: number) {
@@ -26,13 +26,12 @@ function greeting(h: number) {
   return "Оройн мэнд";
 }
 
-const rise = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-};
-
 /** Phone home: an app-style start screen instead of the long desktop landing. */
 export function MobileHome() {
+  // The opening cascade is for the first screen of a visit; arriving from another page,
+  // the route transition slides the screen in with everything already in place
+  const [enter] = useState(() => !hasNavigated());
+  const rise = { initial: enter ? { opacity: 0, y: 20 } : false, animate: { opacity: 1, y: 0 } } as const;
   const tours = useTours();
   const open = useMemo(() => tours.filter(isBookable), [tours]);
   const { bookings } = useTraveller();
@@ -44,7 +43,7 @@ export function MobileHome() {
     () =>
       open
         .map((t) => ({ t, days: daysUntil(t.dates) }))
-        .filter((x): x is { t: Tour; days: number } => x.days != null && x.days >= 0)
+        .filter((x): x is { t: TourSummary; days: number } => x.days != null && x.days >= 0)
         .sort((a, b) => a.days - b.days),
     [open],
   );
@@ -88,7 +87,7 @@ export function MobileHome() {
         ) : null}
       </motion.div>
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={enter}>
         {query ? (
           <motion.ul key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-3 overflow-hidden rounded-2xl border border-[var(--line)] bg-bg-elevated">
             {results.length ? (
@@ -198,7 +197,7 @@ export function MobileHome() {
                 {cat === "all" ? "Бүх аялал" : categories.find((c) => c.key === cat)!.label}
               </h2>
               <motion.ul layout className="mt-3 space-y-2.5">
-                <AnimatePresence mode="popLayout">
+                <AnimatePresence mode="popLayout" initial={enter}>
                   {filtered.map((t) => (
                     <motion.li key={t.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}>
                       <Link href={`/tours/${t.id}`} className="flex gap-3 rounded-2xl border border-[var(--line)] bg-bg-elevated p-2.5 active:scale-[0.98] active:bg-bg">

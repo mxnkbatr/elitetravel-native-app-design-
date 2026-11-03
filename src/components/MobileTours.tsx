@@ -1,7 +1,7 @@
 "use client";
 
 import { SaveButton } from "@/components/SaveButton";
-import { formatPrice, type Tour } from "@/data/tours";
+import { formatPrice, type TourSummary } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { daysUntil } from "@/lib/dates";
 import { AnimatePresence, motion } from "framer-motion";
@@ -27,8 +27,8 @@ type Place = (typeof places)[number]["key"];
 type Sort = (typeof sorts)[number]["key"];
 
 
-function sortTours(list: Tour[], sort: Sort) {
-  const rank = (t: Tour) => daysUntil(t.dates) ?? 9999;
+function sortTours(list: TourSummary[], sort: Sort) {
+  const rank = (t: TourSummary) => daysUntil(t.dates) ?? 9999;
   return [...list].sort((a, b) => {
     if (a.tag === "soon" !== (b.tag === "soon")) return a.tag === "soon" ? 1 : -1;
     if (sort === "cheap") return (a.price ?? 0) - (b.price ?? 0);

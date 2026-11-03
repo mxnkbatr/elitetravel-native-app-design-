@@ -1,7 +1,7 @@
 "use client";
 
 import { SaveButton } from "@/components/SaveButton";
-import { formatPrice, type Tour } from "@/data/tours";
+import { formatPrice, type TourSummary } from "@/data/tours";
 import { useSeats } from "@/lib/content";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +10,7 @@ export function TourCard({
   tour,
   className = "",
 }: {
-  tour: Tour;
+  tour: TourSummary;
   className?: string;
 }) {
   const open = Object.values(useSeats(tour.id)).filter((s) => !s.closed);

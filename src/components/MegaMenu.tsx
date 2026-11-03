@@ -1,6 +1,6 @@
 "use client";
 
-import { destinations, formatPrice, getTour, isBookable, type Tour } from "@/data/tours";
+import { destinations, formatPrice, getTour, isBookable, type TourSummary } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { daysUntil } from "@/lib/dates";
 import { AnimatePresence, motion } from "framer-motion";
@@ -8,7 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-function buildMenu(tours: Tour[]) {
+function buildMenu(tours: TourSummary[]) {
   const groups = destinations.map((d) => ({
     ...d,
     tours: tours.filter((t) => t.destinationKey === d.key || (d.key === "egypt" && t.id === "shakira-egypt")).filter((t) => t.status !== "ended"),

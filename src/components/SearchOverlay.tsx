@@ -1,7 +1,7 @@
 "use client";
 
 import type { NewsItem } from "@/data/news";
-import { destinations, formatPrice, type Tour } from "@/data/tours";
+import { destinations, formatPrice, type TourSummary } from "@/data/tours";
 import { useNews, useTours } from "@/lib/content";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
@@ -24,7 +24,7 @@ function norm(s: string) {
 
 type Hit = { key: string; href: string; title: string; sub: string; image: string; kind: "Аялал" | "Чиглэл" | "Мэдээ"; price?: string };
 
-const buildIndex = (tours: Tour[], news: NewsItem[]): Hit[] => [
+const buildIndex = (tours: TourSummary[], news: NewsItem[]): Hit[] => [
   ...tours
     .filter((t) => t.status !== "ended")
     .map((t) => ({

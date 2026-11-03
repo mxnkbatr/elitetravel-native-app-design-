@@ -10,6 +10,7 @@ import { ScrubStatement } from "@/components/ScrubStatement";
 import { Section } from "@/components/Section";
 import { ToursCarousel } from "@/components/ToursCarousel";
 import { media } from "@/lib/cloudinary";
+import { useMediaQuery } from "@/lib/ui";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -58,24 +59,31 @@ function HomeCta() {
 }
 
 export default function HomePage() {
+  // Server render and hydration carry both versions (CSS shows the right one); in the browser only
+  // the one on screen is built, so arriving here doesn't mount a hidden landing with its video and scroll effects
+  const wide = useMediaQuery("(min-width: 640px)");
   return (
     <>
       {/* Phones get an app-style start screen; the cinematic landing is for larger screens */}
-      <div className="sm:hidden">
-        <MobileHome />
-      </div>
-      <div className="hidden sm:block">
-      <Hero />
-      <Marquee />
-      <Section className="py-14 sm:py-20">
-        <ToursCarousel />
-      </Section>
-      <JourneyScroll />
-      <ScrubStatement />
-      <Section className="pb-20 sm:pb-28">
-        <HomeCta />
-      </Section>
-      </div>
+      {wide !== true ? (
+        <div className="sm:hidden">
+          <MobileHome />
+        </div>
+      ) : null}
+      {wide !== false ? (
+        <div className="hidden sm:block">
+          <Hero />
+          <Marquee />
+          <Section className="py-14 sm:py-20">
+            <ToursCarousel />
+          </Section>
+          <JourneyScroll />
+          <ScrubStatement />
+          <Section className="pb-20 sm:pb-28">
+            <HomeCta />
+          </Section>
+        </div>
+      ) : null}
     </>
   );
 }

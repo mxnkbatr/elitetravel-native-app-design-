@@ -1,11 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, userAgent, type NextRequest } from "next/server";
 
 /**
- * Keeps the staff session fresh on /admin and sends signed-out visitors to the login page.
+ * Home: phones get /phone-home (the app-style start screen alone) while the address stays "/",
+ * so they never download or build the desktop landing with its video, GSAP and map code.
+ * Both pages stay static and CDN-cached; "/" itself still adapts if a phone slips through.
+ *
+ * Admin: keeps the staff session fresh and sends signed-out visitors to the login page.
  * This is only a convenience: admin pages and actions check the allowlist themselves.
  */
 export async function proxy(request: NextRequest) {
+  if (request.nextUrl.pathname === "/") {
+    if (userAgent(request).device.type !== "mobile") return NextResponse.next();
+    return NextResponse.rewrite(new URL(`/phone-home${request.nextUrl.search}`, request.url));
+  }
+
   let response = NextResponse.next({ request });
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY;
@@ -30,5 +39,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/", "/admin/:path*"],
 };
