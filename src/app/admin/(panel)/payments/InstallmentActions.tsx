@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmAction } from "@/app/admin/(panel)/feedback";
 import { installmentCancel, installmentPaid, installmentSent } from "@/app/admin/(panel)/actions";
 import { PartnerLogo } from "@/components/PartnerLogo";
 import { formatPrice } from "@/data/tours";
@@ -46,8 +47,8 @@ export function InstallmentActions({ r, onDone }: { r: InstallmentRequest; onDon
       <button
         type="button"
         disabled={pending}
-        onClick={() => {
-          if (!window.confirm(`${p?.name}-ээс ${formatPrice(r.amount)} орж ирсэн үү? Захиалгад төлбөр бүртгэгдэж, аялагчид мэдэгдэл очно.`)) return;
+        onClick={async () => {
+          if (!(await confirmAction({ title: `${p?.name}-ээс ${formatPrice(r.amount)} орж ирсэн үү?`, body: "Захиалгад төлбөр бүртгэгдэж, аялагчид мэдэгдэл очно.", confirm: "Орж ирсэн" }))) return;
           run(() => installmentPaid(r.id), () => {
             setClosed("paid");
             onDone?.(true);

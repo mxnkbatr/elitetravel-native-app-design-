@@ -1,3 +1,4 @@
+import { AdminEmpty } from "@/app/admin/(panel)/AdminEmpty";
 import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import { InstallmentActions } from "@/app/admin/(panel)/payments/InstallmentActions";
 import { ProviderSettings } from "@/app/admin/(panel)/payments/ProviderSettings";
@@ -51,7 +52,7 @@ export default async function AdminPaymentsPage() {
       <section className="mt-6">
         <h2 className="font-display text-xl font-semibold">Хүлээгдэж буй хүсэлт ({queue.length})</h2>
         <div className="mt-3 space-y-2">
-          {queue.length === 0 ? <p className="rounded-2xl bg-white p-6 text-center text-sm text-muted">Хүсэлт алга.</p> : null}
+          {queue.length === 0 ? <AdminEmpty compact good icon="badge-check" title="Хүлээгдэж буй хүсэлт алга" /> : null}
           {queue.map((q) => {
             const b = booking(q.booking_id);
             return (

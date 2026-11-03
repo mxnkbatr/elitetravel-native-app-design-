@@ -3,6 +3,7 @@ import { toSummary } from "@/data/tours";
 import { ContentProvider } from "@/lib/content";
 import { introBootScript } from "@/lib/intro";
 import { chatModel } from "@/lib/server/ai";
+import { getAssistantSettings } from "@/lib/server/assistant-settings";
 import { jsonLd, siteUrl } from "@/lib/site";
 import { themeBootScript } from "@/lib/theme";
 import { getNews, getTours } from "@/lib/server/content";
@@ -72,7 +73,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const [tours, news, seats] = await Promise.all([getTours(), getNews(), getSeats()]);
+  const [tours, news, seats, assistant] = await Promise.all([getTours(), getNews(), getSeats(), getAssistantSettings()]);
   return (
     <html lang="mn" className={`${display.variable} ${body.variable} h-full`} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
@@ -82,7 +83,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full bg-bg font-sans text-foam antialiased">
         <ContentProvider tours={tours.filter((t) => !t.unlisted).map(toSummary)} news={news} seats={seats}>
-          <AppShell assistant={chatModel() != null}>{children}</AppShell>
+          <AppShell assistant={chatModel() != null && assistant.enabled ? { greeting: assistant.greeting, suggestions: assistant.suggestions } : null}>{children}</AppShell>
         </ContentProvider>
       </body>
     </html>

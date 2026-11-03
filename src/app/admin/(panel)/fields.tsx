@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { signImageUpload } from "@/app/admin/(panel)/actions";
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
@@ -64,7 +65,11 @@ function UploadButton({ onUploaded, multiple }: { onUploaded: (urls: string[]) =
   return (
     <span className="inline-flex items-center gap-2">
       <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-white transition hover:bg-accent ${busy ? "pointer-events-none opacity-60" : ""}`}>
-        {busy ? "Хуулж байна…" : "⬆ Зураг оруулах"}
+        {busy ? "Хуулж байна…" : (
+          <>
+            <Icon name="upload" size={15} /> Зураг оруулах
+          </>
+        )}
         <input
           type="file"
           accept="image/*"

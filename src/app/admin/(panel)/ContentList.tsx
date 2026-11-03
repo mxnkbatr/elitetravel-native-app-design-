@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmAction, toast } from "@/app/admin/(panel)/feedback";
 import { deleteItem, reorder } from "@/app/admin/(panel)/actions";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,12 +27,13 @@ export function ContentList({ table, items: initial }: { table: "tours" | "news"
       if (!res.ok) {
         setItems(before);
         setError(res.error);
-      }
+        toast(res.error, "error");
+      } else toast("Дараалал хадгалагдлаа");
     });
   }
 
-  function remove(item: ListItem) {
-    if (!window.confirm(`«${item.title}» устгах уу? Буцаах боломжгүй.`)) return;
+  async function remove(item: ListItem) {
+    if (!(await confirmAction({ title: `«${item.title}» устгах уу?`, body: "Сайтаас шууд алга болно. Буцаах боломжгүй.", confirm: "Устгах", danger: true }))) return;
     const before = items;
     setItems(items.filter((i) => i.id !== item.id));
     start(async () => {
@@ -39,7 +41,8 @@ export function ContentList({ table, items: initial }: { table: "tours" | "news"
       if (!res.ok) {
         setItems(before);
         setError(res.error);
-      }
+        toast(res.error, "error");
+      } else toast(`«${item.title}» устгагдлаа`);
     });
   }
 

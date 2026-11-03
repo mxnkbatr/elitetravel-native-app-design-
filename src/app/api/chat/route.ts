@@ -2,6 +2,7 @@ import { formatPrice, getTour, isBookable, type Tour } from "@/data/tours";
 import { quote } from "@/lib/pricing";
 import { tripChecklist } from "@/lib/checklist";
 import { chatModel, chatProviderOptions, SITE_GUIDE } from "@/lib/server/ai";
+import { getAssistantSettings } from "@/lib/server/assistant-settings";
 import { clientIp, originAllowed, rateLimit } from "@/lib/server/chat-security";
 import { getTours } from "@/lib/server/content";
 import { reportError } from "@/lib/server/error-log";
@@ -42,7 +43,7 @@ function findTours(tours: Tour[], query?: string) {
   });
 }
 
-function systemPrompt(tours: Tour[], hasBookings: boolean) {
+function systemPrompt(tours: Tour[], hasBookings: boolean, teamNotes: string) {
   const open = tours.filter(isBookable);
   const soon = tours.filter((t) => t.tag === "soon" && t.status !== "ended").map((t) => t.title);
   return `Та бол Elite Travel Mongolia (elitetravel.mn) аялал жуулчлалын компанийн найрсаг, эелдэг туслах "Элит туслах".
@@ -67,7 +68,14 @@ ${
 ${soon.length ? `9. Удахгүй: ${soon.join(", ")} — дэлгэрэнгүй мэдээлэл хараахан гараагүй, захиалга нээгдээгүй.` : ""}
 
 Одоо захиалга авч буй аяллууд (id: нэр):
-${open.map((t) => `- ${t.id}: ${t.title}`).join("\n")}`;
+${open.map((t) => `- ${t.id}: ${t.title}`).join("\n")}${
+    teamNotes
+      ? `
+
+ELITE TRAVEL БАГИЙН НЭМЭЛТ ЗААВАР (admin-аас; дээрх дүрмүүдтэй зөрчилдвөл дүрэм давуу):
+${teamNotes}`
+      : ""
+  }`;
 }
 
 export async function POST(req: Request) {
@@ -90,7 +98,8 @@ export async function POST(req: Request) {
   const recent = messages.slice(-MAX_TURNS);
   if (recent.some((m) => textOf(m).length > MAX_CHARS)) return Response.json({ error: "too long" }, { status: 413 });
 
-  const [allTours, seats] = await Promise.all([getTours(), getSeats()]);
+  const [allTours, seats, assistant] = await Promise.all([getTours(), getSeats(), getAssistantSettings()]);
+  if (!assistant.enabled) return Response.json({ error: "unavailable" }, { status: 503 });
   // Test tours are reachable by link only; the assistant never offers them
   const tours = allTours.filter((t) => !t.unlisted);
   const live = tours.filter((t) => t.status !== "ended");
@@ -98,7 +107,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model,
     providerOptions: chatProviderOptions,
-    system: systemPrompt(live, tripTokens.length > 0),
+    system: systemPrompt(live, tripTokens.length > 0, assistant.instructions),
     messages: await convertToModelMessages(recent),
     maxOutputTokens: 900,
     stopWhen: isStepCount(4),

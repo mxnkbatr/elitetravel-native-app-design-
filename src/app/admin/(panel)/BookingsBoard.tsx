@@ -1,11 +1,14 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
+import { AdminEmpty } from "@/app/admin/(panel)/AdminEmpty";
+import { confirmAction, toast } from "@/app/admin/(panel)/feedback";
 import { adminDeletePassengers, getThread, recordPayment, sendStaffMessage, updateBooking, viewPassengers } from "@/app/admin/(panel)/actions";
 import { DocsPanel } from "@/app/admin/(panel)/DocsPanel";
 import { InstallmentActions } from "@/app/admin/(panel)/payments/InstallmentActions";
 import { Sheet } from "@/components/Sheet";
 import { formatPrice } from "@/data/tours";
-import { passengerIssue, type InstallmentRequest, type Passenger, type TripMessage, type TripStatus } from "@/lib/trips";
+import { passengerIssue, STATUS_LABEL, type InstallmentRequest, type Passenger, type TripMessage, type TripStatus } from "@/lib/trips";
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 export type AdminBooking = {
@@ -141,7 +144,7 @@ export function BookingsBoard({
       </div>
 
       <div className="mt-2 space-y-3">
-        {shown.length === 0 ? <p className="rounded-[1.4rem] bg-white p-10 text-center text-sm text-muted">Хүсэлт алга.</p> : null}
+        {shown.length === 0 ? <AdminEmpty icon="ticket" title="Энд хүсэлт алга" body="Шүүлтүүрээ «Бүгд» болгох эсвэл хайлтаа цэвэрлээд үзээрэй." /> : null}
         {shown.map((b) => (
           <BookingRow
             key={b.id}
@@ -195,7 +198,9 @@ function BookingRow({
       if (!res.ok) {
         onChange(before);
         setError(res.error);
-      }
+        toast(res.error, "error");
+      } else if (change.status) toast(`${b.id} · ${STATUS_LABEL[change.status]}`);
+      else toast("Тэмдэглэл хадгалагдлаа");
     });
   }
 
@@ -249,7 +254,7 @@ function BookingRow({
         </div>
       </div>
 
-      {b.note ? <p className="mt-3 rounded-xl bg-bg px-3 py-2 text-sm">💬 {b.note}</p> : null}
+      {b.note ? <p className="mt-3 rounded-xl bg-bg px-3 py-2 text-sm"><Icon name="chat" size={14} className="mr-1.5 inline -mt-0.5 text-muted" />{b.note}</p> : null}
 
       {installment ? (
         <div className="mt-3 rounded-xl border border-dashed border-[var(--line)] px-3 py-2">
@@ -286,7 +291,7 @@ function BookingRow({
           className="h-9 min-w-[12rem] flex-1 rounded-full border border-[var(--line)] px-3.5 text-sm outline-none focus:border-accent"
         />
       </div>
-      {b.staff_note ? <p className="mt-2 text-xs text-muted sm:hidden">📝 {b.staff_note}</p> : null}
+      {b.staff_note ? <p className="mt-2 text-xs text-muted sm:hidden"><Icon name="news" size={14} className="mr-1.5 inline -mt-0.5 text-muted" />{b.staff_note}</p> : null}
       {pending ? <p className="mt-2 text-xs text-muted">Хадгалж байна…</p> : null}
       {error ? <p className="mt-2 text-xs text-red-600">{error}</p> : null}
 
@@ -300,24 +305,24 @@ function BookingRow({
           </button>
         ) : null}
         <ActionButton href={`tel:${b.phone.replace(/\s/g, "")}`} label="Залгах" className="sm:hidden">
-          ☏
+          <Icon name="phone" size={18} />
         </ActionButton>
         <ActionButton onClick={() => open("chat")} label="Чат" alert={unread}>
-          💬
+          <Icon name="chat" size={18} />
         </ActionButton>
         {perms.money ? (
           <ActionButton onClick={() => open("money")} label="Төлбөр">
-            ₮
+            <Icon name="tag" size={18} />
           </ActionButton>
         ) : null}
         {perms.passports ? (
           <ActionButton onClick={() => open("people")} label={`Паспорт ${ready}/${people}`} alert={b.status === "confirmed" && ready < people}>
-            🛂
+            <Icon name="users" size={18} />
           </ActionButton>
         ) : null}
         {perms.passports ? (
           <ActionButton onClick={() => open("docs")} label="Баримт" className="col-span-4 flex-row gap-1.5 sm:col-span-1">
-            📄
+            <Icon name="ticket" size={18} />
           </ActionButton>
         ) : null}
       </div>
@@ -517,9 +522,9 @@ function MoneyPanel({ b, onChange }: { b: AdminBooking; onChange: (c: Partial<Ad
     });
   }
 
-  function addPayment() {
+  async function addPayment() {
     const value = digits(paid);
-    if (!value || !window.confirm(`${formatPrice(value)} төлбөр бүртгэх үү? Аялагчид мэдэгдэл очно.`)) return;
+    if (!value || !(await confirmAction({ title: `${formatPrice(value)} төлбөр бүртгэх үү?`, body: "Захиалгад төлбөр нэмэгдэж, аялагчид мэдэгдэл очно.", confirm: "Бүртгэх" }))) return;
     setMessage(null);
     start(async () => {
       const res = await recordPayment(b.id, value);
@@ -597,8 +602,8 @@ function PeoplePanel({ b, onChange }: { b: AdminBooking; onChange: (c: Partial<A
     };
   }, [b.id, b.passengers_count]);
 
-  function remove() {
-    if (!window.confirm("Энэ захиалгын паспортын мэдээллийг бүрмөсөн устгах уу? Аялагчид мэдэгдэл очно.")) return;
+  async function remove() {
+    if (!(await confirmAction({ title: "Паспортын мэдээллийг устгах уу?", body: "Энэ захиалгын паспортын мэдээлэл бүрмөсөн устна. Аялагчид мэдэгдэл очно.", confirm: "Устгах", danger: true }))) return;
     start(async () => {
       const res = await adminDeletePassengers(b.id);
       if (res.ok) {
@@ -613,7 +618,7 @@ function PeoplePanel({ b, onChange }: { b: AdminBooking; onChange: (c: Partial<A
   if (!passengers) return <p className="rounded-2xl bg-bg p-6 text-center text-sm text-muted">Шифрээс тайлж байна…</p>;
   return (
     <div className="space-y-2 pb-2">
-      <p className="text-[0.7rem] text-muted">🔒 Шифрлэгдсэн мэдээлэл. Энэ харалт бүртгэгдлээ.</p>
+      <p className="text-[0.7rem] text-muted"><Icon name="lock" size={14} className="mr-1.5 inline -mt-0.5 text-muted" />Шифрлэгдсэн мэдээлэл. Энэ харалт бүртгэгдлээ.</p>
       {passengers.map((p, i) => {
         const issue = passengerIssue(p, b.travel_date);
         return (

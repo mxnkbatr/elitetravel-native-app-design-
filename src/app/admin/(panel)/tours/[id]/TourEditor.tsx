@@ -20,6 +20,8 @@ const numOrNull = (v: string) => (v.trim() === "" ? null : Number(v.replace(/[^\
 
 export function TourEditor({ initial, originalId }: { initial: Tour; originalId: string | null }) {
   const [tour, setTour] = useState<Tour>(initial);
+  // What was last saved; anything different is an unsaved edit
+  const [saved, setSaved] = useState(() => JSON.stringify(initial));
   const set = <K extends keyof Tour>(key: K, value: Tour[K]) => setTour((t) => ({ ...t, [key]: value }));
   const setPricing = (key: keyof NonNullable<Tour["pricing"]>, value: unknown) => setTour((t) => ({ ...t, pricing: { ...t.pricing, [key]: value } }));
 
@@ -155,7 +157,12 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
         kind="tours"
         id={tour.id}
         originalId={originalId}
-        onSave={() => saveTour(tour, originalId)}
+        dirty={JSON.stringify(tour) !== saved}
+        onSave={async () => {
+          const res = await saveTour(tour, originalId);
+          if (res.ok) setSaved(JSON.stringify(tour));
+          return res;
+        }}
       />
     </div>
   );

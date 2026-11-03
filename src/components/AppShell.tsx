@@ -15,11 +15,12 @@ import { PushBridge } from "@/components/PushBridge";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { SearchOverlay } from "@/components/SearchOverlay";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import type { AssistantPublic } from "@/lib/assistant-settings";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-/** `assistant` is false when no AI model is configured on the server: the chat button stays hidden. */
-export function AppShell({ children, assistant }: { children: ReactNode; assistant: boolean }) {
+/** `assistant` is null when no AI model is configured or staff switched it off in /admin/assistant: no chat button. */
+export function AppShell({ children, assistant }: { children: ReactNode; assistant: AssistantPublic | null }) {
   // The staff panel has its own chrome and skips the intro, nav and chat
   if (usePathname().startsWith("/admin"))
     return (
@@ -48,7 +49,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
       <MobileDock />
       <SearchOverlay />
       <OfflineBanner />
-      {assistant ? <AiHelper /> : null}
+      {assistant ? <AiHelper settings={assistant} /> : null}
     </div>
   );
 }

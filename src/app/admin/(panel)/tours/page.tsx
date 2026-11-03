@@ -28,7 +28,7 @@ export default async function AdminToursPage() {
           title: t.title,
           sub: [t.destination, t.duration, formatPrice(t.price), t.dates].filter(Boolean).join(" · "),
           image: t.image,
-          badge: t.status === "ended" ? "Дууссан" : t.tag === "soon" ? "Удахгүй" : t.tag === "sale" ? "Хямдрал" : t.tag === "hot" ? "Эрэлттэй" : undefined,
+          badge: t.unlisted ? "Нууц · туршилт" : t.status === "ended" ? "Дууссан" : t.tag === "soon" ? "Удахгүй" : t.tag === "sale" ? "Хямдрал" : t.tag === "hot" ? "Эрэлттэй" : undefined,
           muted: t.status === "ended",
         }))}
       />

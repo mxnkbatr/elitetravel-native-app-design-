@@ -2,20 +2,13 @@
 
 import { useChat } from "@ai-sdk/react";
 import { Icon } from "@/components/Icon";
+import type { AssistantPublic } from "@/lib/assistant-settings";
 import { useTours } from "@/lib/content";
 import { bookingTokens, useTraveller } from "@/lib/traveller-store";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-
-const suggestions = [
-  "Хамгийн ойрын аялал?",
-  "Бали аяллын үнэ?",
-  "2 хүн Хайнань явахад урьдчилгаа хэд вэ?",
-  "Хайнань аялалд юу багтсан бэ?",
-  "Хуваан төлөх боломжтой юу?",
-];
 
 /** Plain text: the bubble does not render markdown, so stray **bold** / # headings are dropped. */
 function textOf(message: UIMessage) {
@@ -71,7 +64,8 @@ const cascade = (i: number) => ({
   transition: { delay: 0.18 + i * 0.07, duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
 });
 
-export default function AiChatPanel({ open, onStarted, onClose }: { open: boolean; onStarted: () => void; onClose: () => void }) {
+export default function AiChatPanel({ open, settings, onStarted, onClose }: { open: boolean; settings: AssistantPublic; onStarted: () => void; onClose: () => void }) {
+  const suggestions = settings.suggestions;
   const [input, setInput] = useState("");
   const bottom = useRef<HTMLDivElement>(null);
   // The device's booking tokens let the assistant read only this traveller's own bookings
@@ -151,7 +145,7 @@ export default function AiChatPanel({ open, onStarted, onClose }: { open: boolea
           </header>
 
           <div className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 text-[0.92rem]">
-            <Bubble delay={0.3}>Сайн байна уу! 👋 Аялал, үнэ, огнооны талаар асуугаарай — тохирох аяллыг санал болгоё.</Bubble>
+            <Bubble delay={0.3}>{settings.greeting}</Bubble>
 
             {messages.length === 0 ? (
               <div className="flex flex-wrap gap-2 pt-1">

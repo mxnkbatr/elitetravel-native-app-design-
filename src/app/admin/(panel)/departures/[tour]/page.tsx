@@ -1,3 +1,4 @@
+import { Icon } from "@/components/Icon";
 import { AdminTitle, titleActionClass } from "@/app/admin/(panel)/AdminTitle";
 import { Broadcast } from "@/app/admin/(panel)/departures/[tour]/Broadcast";
 import { formatPrice, type Tour } from "@/data/tours";
@@ -34,7 +35,7 @@ export default async function AdminDeparturePage({ params, searchParams }: PageP
         sub={`${label || "Огноогүй"} · ${live.length} захиалга · ${people} хүн`}
         action={
           <a href={`/admin/departures/${tourId}/export${query}`} className={titleActionClass}>
-            ⬇ Excel жагсаалт
+            <Icon name="upload" size={15} className="mr-1.5 inline -mt-0.5 rotate-180" />Excel жагсаалт
           </a>
         }
       />
@@ -63,7 +64,7 @@ export default async function AdminDeparturePage({ params, searchParams }: PageP
                 </span>
               </div>
               <p className={`mt-2 text-xs font-semibold ${b.passengers_ready >= size ? "text-emerald-700" : "text-red-600"}`}>
-                🛂 Паспорт бэлэн: {b.passengers_ready}/{size}
+                <Icon name="users" size={14} className="mr-1.5 inline -mt-0.5 text-muted" />Паспорт бэлэн: {b.passengers_ready}/{size}
                 {b.passengers_count === 0 ? " — мэдээлэл ирээгүй" : ""}
               </p>
             </article>

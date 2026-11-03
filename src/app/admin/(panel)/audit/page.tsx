@@ -1,3 +1,4 @@
+import { AdminEmpty } from "@/app/admin/(panel)/AdminEmpty";
 import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import { requireAdmin } from "@/lib/server/auth";
 import { db } from "@/lib/server/trips";
@@ -94,7 +95,7 @@ export default async function AdminAuditPage({ searchParams }: PageProps<"/admin
               </div>
             ))
           ) : (
-            <p className="rounded-[1.4rem] bg-white p-10 text-center text-sm text-muted">Бүртгэл алга.</p>
+            <AdminEmpty icon="clock" title="Бүртгэл алга" body="Сонгосон хугацаанд үйлдэл бүртгэгдээгүй байна." />
           )
         ) : rows.length ? (
           rows.map((r) => (
@@ -113,7 +114,7 @@ export default async function AdminAuditPage({ searchParams }: PageProps<"/admin
             </div>
           ))
         ) : (
-          <p className="rounded-[1.4rem] bg-white p-10 text-center text-sm text-muted">Бүртгэл алга.</p>
+          <AdminEmpty icon="clock" title="Бүртгэл алга" body="Сонгосон хугацаанд үйлдэл бүртгэгдээгүй байна." />
         )}
       </div>
     </>

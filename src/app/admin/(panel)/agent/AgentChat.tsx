@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmAction } from "@/app/admin/(panel)/feedback";
 import { approveProposal, cancelProposal, removeConversation } from "@/app/admin/(panel)/agent/actions";
 import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import { Sheet } from "@/components/Sheet";
@@ -109,8 +110,8 @@ function History({ list, active, onNew, onDelete }: { list: Conversation[]; acti
             <button
               type="button"
               aria-label="Устгах"
-              onClick={() => {
-                if (confirm("Энэ яриаг устгах уу?")) onDelete(c.id);
+              onClick={async () => {
+                if (await confirmAction({ title: "Энэ яриаг устгах уу?", body: "Ярианы түүх бүрмөсөн устна.", confirm: "Устгах", danger: true })) onDelete(c.id);
               }}
               className="grid size-8 shrink-0 place-items-center rounded-lg text-muted opacity-100 hover:bg-black/[0.05] lg:opacity-0 lg:group-hover:opacity-100"
             >

@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { adminDocuments, reviewDoc, type AdminDocs } from "@/app/admin/(panel)/actions";
 import { DOC_STATUS_LABEL, docInfo } from "@/lib/documents";
 import Link from "next/link";
@@ -138,7 +139,7 @@ export function DocsPanel({ bookingId }: { bookingId: string }) {
           </Link>
         ) : null}
       </section>
-      <p className="text-center text-[0.7rem] text-muted">🔒 Файл болон эрүүл мэндийн мэдээлэл нээх бүр бүртгэгдэнэ.</p>
+      <p className="text-center text-[0.7rem] text-muted"><Icon name="lock" size={14} className="mr-1.5 inline -mt-0.5 text-muted" />Файл болон эрүүл мэндийн мэдээлэл нээх бүр бүртгэгдэнэ.</p>
     </div>
   );
 }

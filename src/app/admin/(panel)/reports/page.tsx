@@ -107,7 +107,7 @@ export default async function AdminReportsPage() {
         titles={Object.fromEntries(tours.map((t) => [t.id, t.title]))}
       />
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Kpi label="Энэ сарын хүсэлт" value={String(requestsMonth)} sub={`Өмнөх сар: ${requestsLast}`} />
         <Kpi label="Хөрвөлт (хүсэлт → баталгаа)" value={pct(decided.filter(won).length, decided.length)} sub={`${decided.filter(won).length} / ${decided.length} хүсэлт`} />
         <Kpi label="Энэ сард төлөгдсөн" value={formatPrice(collectedMonth)} sub={`Нийт: ${formatPrice(collected)}`} />
@@ -170,9 +170,9 @@ export default async function AdminReportsPage() {
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-2xl border border-[var(--line)] bg-white p-5">
+    <div className="min-w-0 rounded-2xl border border-[var(--line)] bg-white p-4 sm:p-5">
       <p className="text-xs font-semibold text-muted">{label}</p>
-      <p className="mt-2 font-num text-3xl leading-none">{value}</p>
+      <p className="mt-2 truncate font-num text-2xl leading-none sm:text-3xl">{value}</p>
       <p className="mt-2 text-xs text-muted">{sub}</p>
     </div>
   );

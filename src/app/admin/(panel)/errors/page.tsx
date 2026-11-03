@@ -1,3 +1,4 @@
+import { AdminEmpty } from "@/app/admin/(panel)/AdminEmpty";
 import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import { ResolveError } from "@/app/admin/(panel)/errors/ResolveError";
 import { requireAdmin } from "@/lib/server/auth";
@@ -33,7 +34,7 @@ export default async function AdminErrorsPage() {
     <>
       <AdminTitle title="Алдаа" sub="Сүүлийн 14 хоногт сайт, аппад гарсан алдаанууд. Ижил алдааг нэгтгэж харуулна. Засагдсаныг «Шийдсэн» гэж тэмдэглээрэй." />
       <div className="mt-5 space-y-2">
-        {list.length === 0 ? <p className="rounded-[1.4rem] bg-white p-10 text-center text-sm text-muted">Алдаа алга 🎉</p> : null}
+        {list.length === 0 ? <AdminEmpty good icon="badge-check" title="Алдаа алга" body="Сайт, апп хэвийн ажиллаж байна." /> : null}
         {list.map((g) => (
           <details key={g.message} className="rounded-[1.25rem] border border-[var(--line)] bg-white p-4">
             <summary className="flex cursor-pointer list-none items-start gap-3">

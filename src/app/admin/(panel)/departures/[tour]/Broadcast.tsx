@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmAction } from "@/app/admin/(panel)/feedback";
 import { broadcast } from "@/app/admin/(panel)/actions";
 import { useState, useTransition } from "react";
 
@@ -15,8 +16,8 @@ export function Broadcast({ tourId, label, recipients }: { tourId: string; label
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
-  function send() {
-    if (!text.trim() || !window.confirm(`${recipients} захиалагчид илгээх үү?`)) return;
+  async function send() {
+    if (!text.trim() || !(await confirmAction({ title: `${recipients} захиалагчид илгээх үү?`, body: "Мессеж аялагч бүрийн аппад болон чатад очно.", confirm: "Илгээх" }))) return;
     setMessage(null);
     start(async () => {
       const res = await broadcast(tourId, label, text);

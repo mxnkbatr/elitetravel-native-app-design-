@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { login, type LoginState } from "@/app/admin/login/actions";
 import { biometricEnabled, biometricSignIn, biometryName } from "@/lib/biometric";
 import { useRouter } from "next/navigation";
@@ -41,7 +42,13 @@ export function LoginForm() {
             }}
             className="h-14 w-full rounded-xl bg-accent text-sm font-semibold text-white transition disabled:opacity-60"
           >
-            {busy ? "Шалгаж байна…" : `🔐 ${faceId}-аар нэвтрэх`}
+            {busy ? (
+              "Шалгаж байна…"
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                <Icon name="lock" size={18} /> {faceId}-аар нэвтрэх
+              </span>
+            )}
           </button>
           {error ? <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
           <p className="pt-1 text-center text-xs text-muted">эсвэл имэйл, нууц үгээр</p>

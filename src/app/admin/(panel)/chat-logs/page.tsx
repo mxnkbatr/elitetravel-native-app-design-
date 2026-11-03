@@ -1,3 +1,4 @@
+import { AdminEmpty } from "@/app/admin/(panel)/AdminEmpty";
 import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import { requireAdmin } from "@/lib/server/auth";
 import { db } from "@/lib/server/trips";
@@ -22,7 +23,7 @@ export default async function AdminChatLogsPage() {
         </p>
       ) : null}
       <div className="mt-5 space-y-3">
-        {logs.length === 0 ? <p className="rounded-2xl bg-white p-8 text-center text-sm text-muted">Яриа алга.</p> : null}
+        {logs.length === 0 ? <AdminEmpty icon="chat" title="Яриа алга" body="Аялагчид AI туслахтай ярилцмагц энд харагдана." /> : null}
         {logs.map((l) => (
           <details key={l.id} className="rounded-2xl border border-[var(--line)] bg-white p-4">
             <summary className="cursor-pointer list-none">

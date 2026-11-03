@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { biometricEnabled, biometryName, disableBiometric, enableBiometric } from "@/lib/biometric";
 import { useEffect, useState } from "react";
 
@@ -33,7 +34,7 @@ export function StaffFaceId() {
         }}
         className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm font-semibold text-ink disabled:opacity-60"
       >
-        <span aria-hidden>🔐</span>
+        <Icon name="lock" size={18} />
         <span className="flex-1">{name}-аар нэвтрэх</span>
         <span className={`rounded-full px-2.5 py-0.5 text-[0.7rem] font-bold ${on ? "bg-accent/15 text-accent" : "bg-black/[0.06] text-muted"}`}>{busy ? "…" : on ? "Асаалттай" : "Унтраалттай"}</span>
       </button>

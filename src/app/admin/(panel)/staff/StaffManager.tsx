@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmAction } from "@/app/admin/(panel)/feedback";
 import { addStaff, removeStaff, setStaffRole } from "@/app/admin/(panel)/actions";
 import { Sheet } from "@/components/Sheet";
 import { titleActionClass } from "@/app/admin/(panel)/AdminTitle";
@@ -68,8 +69,8 @@ export function StaffManager({ staff, me }: { staff: StaffRow[]; me: string }) {
     });
   }
 
-  function remove(row: StaffRow) {
-    if (!window.confirm(`${row.email}-ийг админ эрхээс хасах уу?`)) return;
+  async function remove(row: StaffRow) {
+    if (!(await confirmAction({ title: "Админ эрхээс хасах уу?", body: `${row.email} admin panel руу нэвтэрч чадахаа болино.`, confirm: "Хасах", danger: true }))) return;
     setMessage(null);
     start(async () => {
       const res = await removeStaff(row.email);

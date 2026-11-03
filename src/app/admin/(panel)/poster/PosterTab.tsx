@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { inputClass } from "@/app/admin/(panel)/fields";
 import type { Tour } from "@/data/tours";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
@@ -144,7 +145,7 @@ export function PosterTab({ tours }: { tours: Tour[] }) {
           Зураг
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <label className="cursor-pointer rounded-lg bg-ink px-3 py-2 text-xs font-semibold text-white hover:bg-accent">
-              ⬆ Upload
+              <Icon name="upload" size={15} className="mr-1.5 inline -mt-0.5" />Upload
               <input type="file" accept="image/*" className="sr-only" onChange={(e) => onFile(e.target.files?.[0])} />
             </label>
             <button

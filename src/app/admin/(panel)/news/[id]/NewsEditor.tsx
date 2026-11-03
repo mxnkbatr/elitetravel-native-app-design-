@@ -12,6 +12,8 @@ const CATEGORIES: NewsCategory[] = ["Мэдээ", "Урамшуулал", "Зө�
 
 export function NewsEditor({ initial, originalId, tours }: { initial: NewsItem; originalId: string | null; tours: { id: string; title: string }[] }) {
   const [item, setItem] = useState<NewsItem>(initial);
+  // What was last saved; anything different is an unsaved edit
+  const [saved, setSaved] = useState(() => JSON.stringify([initial, initial.body.join("\n\n")]));
   // Paragraphs are edited as one text, separated by a blank line
   const [bodyText, setBodyText] = useState(initial.body.join("\n\n"));
   const set = <K extends keyof NewsItem>(key: K, value: NewsItem[K]) => setItem((n) => ({ ...n, [key]: value }));
@@ -60,7 +62,17 @@ export function NewsEditor({ initial, originalId, tours }: { initial: NewsItem; 
         </Field>
       </Section>
 
-      <SaveBar kind="news" id={item.id} originalId={originalId} onSave={() => saveNews({ ...item, body: paragraphs() }, originalId)} />
+      <SaveBar
+        kind="news"
+        id={item.id}
+        originalId={originalId}
+        dirty={JSON.stringify([item, bodyText]) !== saved}
+        onSave={async () => {
+          const res = await saveNews({ ...item, body: paragraphs() }, originalId);
+          if (res.ok) setSaved(JSON.stringify([item, bodyText]));
+          return res;
+        }}
+      />
     </div>
   );
 }

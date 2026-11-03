@@ -2,6 +2,7 @@
 
 import { isActive, NAV_GROUPS, navFor, PHONE_TABS, type NavItem } from "@/app/admin/(panel)/admin-nav";
 import { CommandPalette, openPalette } from "@/app/admin/(panel)/CommandPalette";
+import { FeedbackHost } from "@/app/admin/(panel)/feedback";
 import { BellIcon, ExternalIcon, GridIcon, LogoutIcon } from "@/app/admin/(panel)/icons";
 import { PulseProvider, usePulse } from "@/app/admin/(panel)/pulse-context";
 import { Sheet } from "@/components/Sheet";
@@ -101,6 +102,44 @@ function SearchButton({ wide }: { wide?: boolean }) {
   );
 }
 
+/** Phone header: hides while scrolling down through a list, returns on the first scroll up. */
+function useHeaderScroll() {
+  const [state, setState] = useState({ scrolled: false, hidden: false });
+  useEffect(() => {
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - last;
+      if (Math.abs(delta) < 6 && y > 0) return;
+      setState({ scrolled: y > 56, hidden: y > 140 && delta > 0 });
+      last = y;
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return state;
+}
+
+/** Everything waiting on staff, one tap from the list that needs it (or asks to turn on alerts first). */
+function PendingBell({ total, permission, ask }: { total: number; permission: string; ask: () => void }) {
+  const cls = "relative grid size-10 shrink-0 place-items-center rounded-xl border border-[var(--line)] bg-white text-ink transition hover:border-accent/50";
+  if (permission === "default") {
+    return (
+      <button type="button" onClick={ask} aria-label="Мэдэгдэл асаах" title="Шинэ захиалга, чатын мэдэгдэл асаах" className={`${cls} border-[#e8b86d]/60 bg-[#fff8ec] text-[#8a5a12]`}>
+        <BellIcon />
+        <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full bg-[#e8b86d] ring-2 ring-white" />
+      </button>
+    );
+  }
+  return (
+    <Link href="/admin" aria-label={total ? `${total} хүлээгдэж буй ажил` : "Хүлээгдэж буй ажил алга"} title="Одоо хийх" className={cls}>
+      <BellIcon />
+      <Badge n={total} className="absolute -right-1.5 -top-1.5 ring-2 ring-[var(--bg)]" />
+    </Link>
+  );
+}
+
 function SideLink({ item, active, badge }: { item: NavItem; active: boolean; badge: number }) {
   return (
     <Link
@@ -144,6 +183,9 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
   const restActive = rest.some((i) => isActive(pathname, i.href));
   const restBadge = rest.reduce((n, i) => n + (badges[i.href] ?? 0), 0);
   const initial = email.slice(0, 1).toUpperCase();
+  const group = groups.find((g) => g.items.some((i) => current && i.href === current.href));
+  const pendingTotal = Object.values(badges).reduce((n, v) => n + v, 0);
+  const scroll = useHeaderScroll();
 
   return (
     <div className="min-h-dvh bg-bg text-ink lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
@@ -193,29 +235,58 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
       </aside>
 
       <div className="min-w-0">
-        {/* Top bar: where you are, search, live status */}
-        <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-[var(--line)] bg-[var(--bg)]/85 px-4 pb-2.5 pt-[calc(0.6rem+env(safe-area-inset-top))] backdrop-blur-xl sm:px-6 lg:px-10 lg:py-3">
-          <Link href="/admin" className="flex items-center gap-2.5 lg:hidden">
-            <Image src="/admin-icon-192.png" alt="" width={30} height={30} className="rounded-[0.6rem]" />
-          </Link>
-          <p className="min-w-0 flex-1 truncate font-mono text-xs text-muted">
-            <span className="text-accent">elite</span>
-            <span className="mx-1.5">›</span>
-            <span className="text-ink">{current?.label ?? "Админ"}</span>
-          </p>
-          <div className="hidden flex-1 justify-center md:flex">
-            <SearchButton wide />
-          </div>
-          <div className="flex items-center gap-2">
-            <LiveStatus />
-            <span className="md:hidden">
-              <SearchButton />
-            </span>
-            {permission === "default" ? (
-              <button type="button" onClick={ask} aria-label="Мэдэгдэл асаах" className="grid size-10 place-items-center rounded-xl bg-[#062a2a] text-[#f3e0c2] lg:hidden">
-                <BellIcon />
+        {/* Top bar: where you are, search, what's waiting. On phones it gets out of the way while scrolling. */}
+        <header
+          className={`sticky top-0 z-40 border-b pt-[env(safe-area-inset-top)] transition-[translate,background-color,border-color] duration-300 lg:translate-y-0 ${
+            scroll.scrolled ? "border-[var(--line)] bg-[var(--bg)]/85 backdrop-blur-xl" : "border-transparent bg-[var(--bg)] lg:border-[var(--line)]"
+          } ${scroll.hidden && !menu ? "max-lg:-translate-y-full" : ""}`}
+        >
+          <div className="flex h-14 items-center gap-2 px-3 sm:px-6 lg:h-16 lg:gap-4 lg:px-10">
+            <Link href="/admin" aria-label="Elite Admin нүүр" className="shrink-0 lg:hidden">
+              <Image src="/admin-icon-192.png" alt="" width={34} height={34} className="rounded-[0.7rem]" />
+            </Link>
+
+            <div className="min-w-0 flex-1">
+              {/* Phone: the page's large title scrolls away, then its name settles here */}
+              <p
+                className={`truncate pl-1 font-display text-lg font-semibold leading-tight transition duration-300 lg:hidden ${
+                  scroll.scrolled ? "translate-y-0 opacity-100" : "translate-y-1.5 opacity-0"
+                }`}
+              >
+                {current?.label ?? "Админ"}
+              </p>
+              <div className="hidden min-w-0 items-center gap-2.5 lg:flex">
+                {current ? <current.icon active /> : null}
+                <span className="min-w-0">
+                  <span className="block truncate text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted">{group?.title ?? "Админ"}</span>
+                  <span className="block truncate text-[0.95rem] font-semibold leading-tight text-ink">{current?.label ?? "Админ"}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="hidden w-full max-w-sm md:block">
+              <SearchButton wide />
+            </div>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="hidden lg:inline-flex">
+                <LiveStatus />
+              </span>
+              <span className="md:hidden">
+                <SearchButton />
+              </span>
+              <PendingBell total={pendingTotal} permission={permission} ask={ask} />
+              <button
+                type="button"
+                onClick={() => setMenu(true)}
+                aria-label="Цэс, профайл"
+                className="relative grid size-10 shrink-0 place-items-center rounded-full bg-[#062a2a] text-sm font-semibold text-[#f3e0c2] lg:hidden"
+              >
+                {initial}
+                <span className="absolute -bottom-0.5 -right-0.5">
+                  <LiveStatus compact />
+                </span>
               </button>
-            ) : null}
+            </div>
           </div>
         </header>
 
@@ -306,6 +377,7 @@ function Shell({ email, role, logout, children }: { email: string; role: Role; l
       </Sheet>
 
       <CommandPalette role={role} />
+      <FeedbackHost />
     </div>
   );
 }

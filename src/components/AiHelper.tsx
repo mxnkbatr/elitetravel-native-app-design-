@@ -2,6 +2,7 @@
 
 import { Icon } from "@/components/Icon";
 import { INTRO_HOLD_MS } from "@/components/IntroCurtain";
+import type { AssistantPublic } from "@/lib/assistant-settings";
 import { trackOnce } from "@/lib/track";
 import { AnimatePresence, motion } from "framer-motion";
 import dynamic from "next/dynamic";
@@ -14,7 +15,7 @@ const loadPanel = () => import("@/components/AiChatPanel");
 const AiChatPanel = dynamic(loadPanel, { ssr: false });
 
 /** Floating travel assistant: answers from the live tour catalogue via /api/chat. */
-export function AiHelper() {
+export function AiHelper({ settings }: { settings: AssistantPublic }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -113,7 +114,7 @@ export function AiHelper() {
         ) : null}
       </AnimatePresence>
 
-      {mounted ? <AiChatPanel open={open} onStarted={() => setStarted(true)} onClose={() => setOpen(false)} /> : null}
+      {mounted ? <AiChatPanel open={open} settings={settings} onStarted={() => setStarted(true)} onClose={() => setOpen(false)} /> : null}
     </>
   );
 }

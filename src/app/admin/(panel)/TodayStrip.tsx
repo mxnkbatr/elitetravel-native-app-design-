@@ -1,12 +1,13 @@
 "use client";
 
 import { usePulse } from "@/app/admin/(panel)/pulse-context";
+import { Icon } from "@/components/Icon";
 import Link from "next/link";
 
 /** «Одоо хийх»: everything waiting on staff, each a tap away from the right list. */
 export function TodayStrip() {
   const { pulse } = usePulse();
-  if (!pulse) return <div className="mt-5 h-[4.25rem] animate-pulse rounded-2xl border border-[var(--line)] bg-white" />;
+  if (!pulse) return <div className="skeleton mt-5 h-[4.25rem] rounded-2xl" />;
 
   const items = [
     { n: pulse.unread.length, label: "хариулаагүй чат", href: "/admin?f=unread", tone: "text-red-600" },
@@ -21,7 +22,9 @@ export function TodayStrip() {
     <section className="mt-5 rounded-2xl border border-[var(--line)] bg-white p-3 sm:p-4" aria-label="Одоо хийх">
       <p className="mb-2 px-1 font-mono text-[0.68rem] uppercase tracking-[0.22em] text-muted">› Одоо хийх</p>
       {items.length === 0 ? (
-        <p className="px-1 pb-1 text-sm text-emerald-700">✓ Хүлээгдэж буй ажил алга. Бүх зүйл цэгцтэй.</p>
+        <p className="flex items-center gap-1.5 px-1 pb-1 text-sm text-emerald-700">
+          <Icon name="badge-check" size={17} /> Хүлээгдэж буй ажил алга. Бүх зүйл цэгцтэй.
+        </p>
       ) : (
         <div className="hide-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap">
           {items.map((i) => (

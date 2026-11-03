@@ -35,6 +35,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/admin/tours", label: "Аялал", hint: "Аялал нэмэх, засах, дараалал", icon: CompassIcon, keywords: "tour ayalal" },
       { href: "/admin/news", label: "Мэдээ", hint: "Нийтлэл, урамшуулал", icon: NewsIcon, keywords: "news medee" },
       { href: "/admin/poster", label: "Постер", hint: "Instagram-д тавих зураг үүсгэх", icon: ImageIcon, keywords: "poster instagram" },
+      { href: "/admin/assistant", label: "Сайтын чат", hint: "Сайтын AI туслахын мэндчилгээ, асуулт, заавар", icon: ChatIcon, keywords: "chat tuslah assistant site greeting" },
     ],
   },
   {

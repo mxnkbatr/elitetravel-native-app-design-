@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { saveDeparture } from "@/app/admin/(panel)/actions";
 import Link from "next/link";
 import { useState, useTransition } from "react";
@@ -46,15 +47,18 @@ export function DepartureRow({ s }: { s: DepartureStats }) {
       <Link href={detail} className="font-semibold hover:text-accent">
         {s.label || "Огноогүй"}
       </Link>
+      <label className="flex items-center gap-2">
+        <span className="text-xs text-muted lg:hidden">Нийт суудал</span>
       <input
         inputMode="numeric"
         value={capacity}
         onChange={(e) => setCapacity(e.target.value)}
         onBlur={() => cap !== s.capacity && save()}
-        placeholder="—"
+        placeholder="Тоо"
         aria-label="Суудлын тоо"
-        className="h-9 w-24 rounded-lg border border-[var(--line)] bg-white px-3 text-sm outline-none focus:border-accent"
+        className="h-11 w-24 rounded-lg border border-[var(--line)] bg-white px-3 text-sm outline-none focus:border-accent lg:h-9"
       />
+      </label>
       <div>
         <div className="flex justify-between text-xs">
           <span className={over ? "font-semibold text-red-600" : "text-muted"}>
@@ -87,14 +91,15 @@ export function DepartureRow({ s }: { s: DepartureStats }) {
             setClosed(!closed);
             save(!closed);
           }}
-          className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold ${closed ? "bg-ink text-white" : "bg-white text-muted hover:text-ink"}`}
+          title={closed ? "Энэ огноонд дахин захиалга авах" : "Энэ огноонд шинэ захиалга авахаа болих"}
+          className={`min-h-10 rounded-lg px-3 py-1.5 text-xs font-semibold lg:min-h-0 ${closed ? "bg-ink text-white" : "bg-white text-muted hover:text-ink"}`}
         >
-          {closed ? "Нээх" : "Хаах"}
+          {closed ? "Захиалга нээх" : "Захиалга хаах"}
         </button>
-        <Link href={detail} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-accent hover:bg-accent/10">
+        <Link href={detail} className="inline-flex min-h-10 items-center rounded-lg px-3 py-1.5 text-xs font-semibold text-accent hover:bg-accent/10 lg:min-h-0">
           Жагсаалт →
         </Link>
-        {pending ? <span className="text-[0.7rem] text-muted">…</span> : saved ? <span className="text-[0.7rem] text-emerald-700">✓</span> : null}
+        {pending ? <span className="text-[0.7rem] text-muted">…</span> : saved ? <Icon name="check" size={14} strokeWidth={2.4} className="text-emerald-700" /> : null}
         {error ? <span className="text-[0.7rem] text-red-600">{error}</span> : null}
       </div>
     </div>
