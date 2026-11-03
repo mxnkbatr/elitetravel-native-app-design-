@@ -15,6 +15,7 @@ import { PushBridge } from "@/components/PushBridge";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { SearchOverlay } from "@/components/SearchOverlay";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { TourPreload } from "@/components/TourPreload";
 import type { AssistantPublic } from "@/lib/assistant-settings";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -37,6 +38,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
       <AppOnboarding />
       <PushBridge />
       <PageTracker />
+      <TourPreload />
       <IntroCurtain />
       <SmoothScroll />
       <ImageLoadMarker />

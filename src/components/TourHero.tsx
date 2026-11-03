@@ -3,8 +3,9 @@
 import { Icon, type IconName } from "@/components/Icon";
 import { SaveButton } from "@/components/SaveButton";
 import { formatPrice, isBookable, type Tour } from "@/data/tours";
-import { withTransforms } from "@/lib/cloudinary";
 import { scrollToY } from "@/lib/scroll";
+import { POSTER_SIZES, posterGlow } from "@/lib/tour-poster";
+import { hasNavigated } from "@/lib/ui";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -68,7 +69,7 @@ function PhotoSwiper({ images, alt }: { images: string[]; alt: string }) {
       >
         {images.map((src, i) => (
           <div key={src} className="relative h-full w-full shrink-0 snap-center">
-            <Image src={src} alt={i === 0 ? alt : ""} fill priority={i === 0} className="object-cover" sizes="(max-width:1024px) 100vw, 560px" />
+            <Image src={src} alt={i === 0 ? alt : ""} fill priority={i === 0} className="object-cover" sizes={POSTER_SIZES} />
           </div>
         ))}
       </div>
@@ -91,6 +92,10 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
   const rx = useSpring(useMotionValue(0), { stiffness: 160, damping: 18 });
   const ry = useSpring(useMotionValue(0), { stiffness: 160, damping: 18 });
   const bookable = isBookable(tour);
+  // Opened from a link on the site, the page slides in like an iOS push, already composed;
+  // the staged reveal is for arriving here directly
+  const [enter] = useState(() => !hasNavigated());
+  const from = <T,>(v: T) => (enter ? v : false);
 
   function tilt(e: MouseEvent<HTMLDivElement>) {
     const r = e.currentTarget.getBoundingClientRect();
@@ -116,13 +121,13 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
     <section className="relative isolate">
       {/* Ambient glow from the poster */}
       <div className="pointer-events-none absolute -inset-x-10 -top-24 bottom-0 -z-10 overflow-hidden opacity-40 [mask-image:linear-gradient(180deg,#000_30%,transparent)]">
-        <Image src={withTransforms(tour.image, "w_48,q_40,e_blur:800,e_saturation:50")} alt="" fill unoptimized className="scale-125 object-cover" />
+        <Image src={posterGlow(tour.image)} alt="" fill unoptimized className="scale-125 object-cover" />
       </div>
 
       <div className="grid items-center gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
         {/* Poster */}
         <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.96 }}
+          initial={from({ opacity: 0, y: 30, scale: 0.96 })}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.9, ease }}
           onMouseMove={tilt}
@@ -134,8 +139,9 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
         >
           <motion.div
             style={{ rotateX: rx, rotateY: ry }}
-            className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-[1.75rem] shadow-[0_40px_90px_rgba(6,42,42,0.35)] sm:max-w-xl lg:aspect-[4/3.1]"
+            className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-[1.75rem] bg-[#cfe0db] shadow-[0_40px_90px_rgba(6,42,42,0.35)] sm:max-w-xl lg:aspect-[4/3.1]"
           >
+            <Image src={posterGlow(tour.image)} alt="" fill unoptimized className="scale-110 object-cover" />
             <PhotoSwiper images={[tour.image, ...tour.gallery].slice(0, 8)} alt={tour.title} />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/15" />
             <div className="absolute right-3 top-3 flex gap-2">
@@ -150,7 +156,7 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
 
         {/* Details */}
         <div className="order-2 lg:order-1">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }} className="flex flex-wrap items-center gap-2">
+          <motion.div initial={from({ opacity: 0, y: 16 })} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }} className="flex flex-wrap items-center gap-2">
             <Link href={`/tours?dest=${tour.destinationKey}`} className="rounded-full bg-accent/10 px-3 py-1 type-label text-accent">
               {tour.destination}
             </Link>
@@ -160,11 +166,11 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
           </motion.div>
 
           <h1 className="mt-4 overflow-hidden font-display text-[clamp(2.3rem,5vw,4.2rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
-            <motion.span className="block" initial={{ y: "100%" }} animate={{ y: 0 }} transition={{ duration: 0.9, delay: 0.1, ease }}>
+            <motion.span className="block" initial={from({ y: "100%" })} animate={{ y: 0 }} transition={{ duration: 0.9, delay: 0.1, ease }}>
               {tour.title}
             </motion.span>
           </h1>
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-3 max-w-lg text-[0.95rem] leading-relaxed text-muted">
+          <motion.p initial={from({ opacity: 0 })} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-3 max-w-lg text-[0.95rem] leading-relaxed text-muted">
             {tour.story}
           </motion.p>
 
@@ -172,7 +178,7 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
             {chips.map((c, i) => (
               <motion.li
                 key={c.text}
-                initial={{ opacity: 0, y: 10 }}
+                initial={from({ opacity: 0, y: 10 })}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 + i * 0.06 }}
                 className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-bg-elevated/80 px-3 py-1.5 text-[0.8rem] backdrop-blur"
@@ -184,7 +190,7 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
           </ul>
 
           <motion.div
-            initial={{ opacity: 0, y: 14 }}
+            initial={from({ opacity: 0, y: 14 })}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55, duration: 0.6, ease }}
             className="mt-6 flex flex-wrap items-end gap-x-6 gap-y-4"
