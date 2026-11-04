@@ -703,104 +703,111 @@ img[data-nimg]:not([data-loaded]) {
     opacity: 0;
   }
 }
-::view-transition-old(.page-exit) {
-  animation: vt-page-out 0.22s cubic-bezier(0.4, 0, 1, 1) both;
+/* The whole-page snapshot (background, footer) swaps instantly; only the page itself animates */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
 }
+/* Page snapshots are transparent images of the content: give the arriving one the page colour so
+   nothing shows through while it moves, and keep the leaving one fully visible underneath it.
+   Fading both at once is what used to flash the bare background ("white screen"). */
 ::view-transition-new(.page-enter) {
-  animation: vt-page-in 0.46s cubic-bezier(0.22, 1, 0.36, 1) 0.06s both;
+  background: var(--bg);
+  animation: vt-cover-in 0.2s ease-out both;
 }
-@keyframes vt-page-out {
-  to {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.99);
-  }
+::view-transition-old(.page-exit) {
+  animation: none;
 }
-@keyframes vt-page-in {
+::view-transition-group(.page-enter) {
+  z-index: 2;
+}
+@keyframes vt-cover-in {
   from {
     opacity: 0;
-    transform: translateY(16px);
   }
 }
+
+/* Phones and the app: iOS navigation. Deeper page (a tour, a booking) pushes in from the right edge
+   over the current one, which dims and drifts left; going back reverses it. Tabs at the same depth
+   keep the quick cover-fade above. */
 @media (max-width: 639px) {
-  /* The page that moves across the screen paints on top: the new one going forward, the old one going back */
-  html[data-nav="forward"]::view-transition-group(.page-enter),
-  html[data-nav="back"]::view-transition-group(.page-exit) {
-    z-index: 2;
+  html[data-nav="forward"]::view-transition-new(.page-enter) {
+    animation: vt-push-in 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
   }
   html[data-nav="forward"]::view-transition-old(.page-exit) {
-    animation: vt-push-out 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: vt-push-under 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
   }
-  html[data-nav="forward"]::view-transition-new(.page-enter) {
-    animation: vt-push-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  /* Back: the page on screen slides off to the right and reveals the one underneath */
+  html[data-nav="back"]::view-transition-group(.page-exit) {
+    z-index: 3;
   }
   html[data-nav="back"]::view-transition-old(.page-exit) {
-    animation: vt-pop-out 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+    background: var(--bg);
+    animation: vt-pop-off 0.45s cubic-bezier(0.32, 0.72, 0, 1) both;
   }
   html[data-nav="back"]::view-transition-new(.page-enter) {
-    animation: vt-pop-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
-  }
-}
-@keyframes vt-push-out {
-  to {
-    opacity: 0.4;
-    transform: translateX(-28%);
+    animation: vt-pop-under 0.45s cubic-bezier(0.32, 0.72, 0, 1) both;
   }
 }
 @keyframes vt-push-in {
   from {
     transform: translateX(100%);
-    box-shadow: -18px 0 40px rgba(6, 42, 42, 0.18);
+    box-shadow: -24px 0 48px rgba(6, 42, 42, 0.22);
   }
   to {
-    box-shadow: -18px 0 40px rgba(6, 42, 42, 0);
+    transform: translateX(0);
+    box-shadow: -24px 0 48px rgba(6, 42, 42, 0);
   }
 }
-@keyframes vt-pop-out {
+@keyframes vt-push-under {
+  to {
+    transform: translateX(-30%);
+    filter: brightness(0.82);
+  }
+}
+@keyframes vt-pop-off {
+  from {
+    box-shadow: -24px 0 48px rgba(6, 42, 42, 0.22);
+  }
   to {
     transform: translateX(100%);
+    box-shadow: -24px 0 48px rgba(6, 42, 42, 0);
   }
 }
-@keyframes vt-pop-in {
+@keyframes vt-pop-under {
   from {
-    opacity: 0.4;
-    transform: translateX(-28%);
+    transform: translateX(-30%);
+    filter: brightness(0.82);
   }
 }
 
-/* Without a view transition (old browsers, history back/forward) the new page animates itself in —
-   no fill-mode, so no transform lingers on the page wrapper */
-html[data-pop] .page-in {
-  animation: page-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+/* Without view transitions (older iOS in the app, history back/forward) the old page is already
+   gone, so the new one only settles in with a short move — never from transparent. */
+html[data-pop] .page-in-forward {
+  animation: page-settle-right 0.32s cubic-bezier(0.32, 0.72, 0, 1);
 }
-@media (max-width: 639px) {
-  html[data-pop] .page-in-forward {
-    animation: page-push-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-  html[data-pop] .page-in-back {
-    animation: page-pop-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
-  }
+html[data-pop] .page-in-back {
+  animation: page-settle-left 0.32s cubic-bezier(0.32, 0.72, 0, 1);
 }
 @supports not (view-transition-name: none) {
-  .page-in {
-    animation: page-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  }
   @media (max-width: 639px) {
     .page-in-forward {
-      animation: page-push-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+      animation: page-settle-right 0.32s cubic-bezier(0.32, 0.72, 0, 1);
     }
     .page-in-back {
-      animation: page-pop-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+      animation: page-settle-left 0.32s cubic-bezier(0.32, 0.72, 0, 1);
     }
   }
 }
-@keyframes page-fade-up {
-  from { opacity: 0; transform: translateY(14px); }
+@keyframes page-settle-right {
+  from {
+    transform: translateX(28px);
+  }
 }
-@keyframes page-push-in {
-  from { opacity: 0; transform: translateX(48px); }
-}
-@keyframes page-pop-in {
-  from { opacity: 0; transform: translateX(-48px); }
+@keyframes page-settle-left {
+  from {
+    transform: translateX(-28px);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .page-in,
