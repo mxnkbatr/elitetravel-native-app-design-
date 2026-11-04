@@ -1,6 +1,6 @@
 /** Shared rules for the site's own analytics (browser tracker, /api/track, reports). */
 
-export const EVENT_TYPES = ["page", "tour_view", "booking_open", "booking_submit", "pay_open", "chat_open"] as const;
+export const EVENT_TYPES = ["page", "tour_view", "booking_open", "booking_contact", "booking_submit", "booking_error", "pay_open", "chat_open"] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 export const DEVICES = ["phone", "tablet", "desktop", "app"] as const;
 export type Device = (typeof DEVICES)[number];

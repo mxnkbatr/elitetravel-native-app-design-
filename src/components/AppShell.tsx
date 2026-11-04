@@ -34,6 +34,13 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
 
   return (
     <div className="relative flex min-h-dvh flex-col">
+      {/* First Tab stop: jump past the navigation straight to the page */}
+      <a
+        href="#main"
+        className="fixed left-3 top-3 z-[200] -translate-y-24 rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white focus-visible:translate-y-0"
+      >
+        Үндсэн агуулга руу шилжих
+      </a>
       <NativeReady />
       <AppOnboarding />
       <PushBridge />
@@ -44,7 +51,7 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
       <ImageLoadMarker />
       <ScrollProgress />
       <Navbar />
-      <main className="app-main flex-1">
+      <main id="main" tabIndex={-1} className="app-main flex-1 outline-none">
         <PageTransition>{children}</PageTransition>
       </main>
       <Footer />

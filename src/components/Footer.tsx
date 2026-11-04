@@ -77,7 +77,7 @@ export function Footer() {
           </FooterCol>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Elite Travel Mongolia. Бүх эрх хуулиар хамгаалагдсан.</p>
           <div className="w-full sm:w-64">
             <ThemePicker onDark />

@@ -457,7 +457,7 @@ function Welcome({ role, send, composer }: { role: Role; send: (text: string) =>
         transition={{ delay: 0.08, duration: 0.5 }}
         className="mt-6 font-display text-[2.2rem] font-semibold leading-[1] tracking-[-0.035em] sm:text-[2.9rem]"
       >
-        Elite Travel <span className="bg-[linear-gradient(100deg,#0e8f84,#18a89b_45%,#e8b86d)] bg-clip-text text-transparent">Agentic AI</span>
+        Elite Travel <span className="bg-[linear-gradient(100deg,#0b7d73,#18a89b_45%,#e8b86d)] bg-clip-text text-transparent">Agentic AI</span>
       </motion.h1>
       <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14, duration: 0.5 }} className="mt-3 max-w-md text-[0.95rem] text-muted">
         {hello}! Захиалга, чат, аялал, борлуулалт, boost — юуг хамтдаа хийх вэ?

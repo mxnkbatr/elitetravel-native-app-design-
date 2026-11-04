@@ -70,7 +70,7 @@ export function FeaturedBanner() {
                 exit={{ x: `${dir * -30}%`, opacity: 0.4 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               >
-                <Image src={slide.image} alt={slide.title} fill className="object-cover" sizes="100vw" priority={index === 0} draggable={false} />
+                <Image src={slide.image} alt={slide.title} fill className="object-cover" sizes="calc(100vw - 52px)" preload={index === 0} fetchPriority={index === 0 ? "high" : undefined} draggable={false} />
               </motion.div>
             </AnimatePresence>
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
@@ -96,7 +96,7 @@ export function FeaturedBanner() {
                 <p className="mt-1.5 truncate font-display text-[1.6rem] font-semibold leading-tight">{slide.title}</p>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-num text-2xl text-[#f3d199]">{formatPrice(slide.price)}</span>
-                  {slide.oldPrice ? <span className="text-sm text-white/50 line-through">{formatPrice(slide.oldPrice)}</span> : null}
+                  {slide.oldPrice ? <span className="text-sm text-white/65 line-through">{formatPrice(slide.oldPrice)}</span> : null}
                 </div>
               </motion.div>
             </AnimatePresence>

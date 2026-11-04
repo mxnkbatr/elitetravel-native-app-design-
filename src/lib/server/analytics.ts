@@ -6,7 +6,17 @@ export type SiteStats = {
   visitors: number;
   sessions: number;
   pageviews: number;
-  funnel: { visitors: number; tour_viewers: number; booking_openers: number; booking_submitters: number; pay_openers: number };
+  funnel: {
+    visitors: number;
+    tour_viewers: number;
+    booking_openers: number;
+    /** Reached the name/phone part of the booking form */
+    contact_reachers: number;
+    /** Sent forms the server turned back (a count of attempts, not visitors) */
+    booking_errors: number;
+    booking_submitters: number;
+    pay_openers: number;
+  };
   daily: { day: string; visitors: number; views: number }[];
   tours: { tour_id: string; viewers: number; views: number; openers: number; submitters: number }[];
   sources: { source: string; visitors: number; submitters: number }[];
@@ -17,7 +27,7 @@ const EMPTY: SiteStats = {
   visitors: 0,
   sessions: 0,
   pageviews: 0,
-  funnel: { visitors: 0, tour_viewers: 0, booking_openers: 0, booking_submitters: 0, pay_openers: 0 },
+  funnel: { visitors: 0, tour_viewers: 0, booking_openers: 0, contact_reachers: 0, booking_errors: 0, booking_submitters: 0, pay_openers: 0 },
   daily: [],
   tours: [],
   sources: [],
@@ -31,7 +41,9 @@ export async function siteStats(from: Date, to: Date): Promise<SiteStats> {
     console.error("site_stats failed", error.code, error.message);
     return EMPTY;
   }
-  return { ...EMPTY, ...(data as SiteStats) };
+  const stats = data as SiteStats;
+  // Before 0018_funnel_steps.sql the database has no contact/error counts
+  return { ...EMPTY, ...stats, funnel: { ...EMPTY.funnel, ...stats?.funnel } };
 }
 
 /** Raw events are only kept long enough for year-on-year comparisons. */

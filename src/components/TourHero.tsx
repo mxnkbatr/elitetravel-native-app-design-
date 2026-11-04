@@ -69,7 +69,7 @@ function PhotoSwiper({ images, alt }: { images: string[]; alt: string }) {
       >
         {images.map((src, i) => (
           <div key={src} className="relative h-full w-full shrink-0 snap-center">
-            <Image src={src} alt={i === 0 ? alt : ""} fill priority={i === 0} className="object-cover" sizes={POSTER_SIZES} />
+            <Image src={src} alt={i === 0 ? alt : ""} fill preload={i === 0} fetchPriority={i === 0 ? "high" : undefined} className="object-cover" sizes={POSTER_SIZES} />
           </div>
         ))}
       </div>

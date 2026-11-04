@@ -32,7 +32,7 @@
 }
 /* Elite AI: the orb that stands for the agent, and the shimmer on "working" text */
 .ai-orb {
-  background: conic-gradient(from 210deg, #0e8f84, #18a89b, #7ef0e0, #e8b86d, #0e8f84);
+  background: conic-gradient(from 210deg, #0b7d73, #18a89b, #7ef0e0, #e8b86d, #0b7d73);
   box-shadow:
     0 8px 24px -8px rgba(14, 143, 132, 0.6),
     inset 0 0 0 1px rgba(255, 255, 255, 0.28);

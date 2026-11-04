@@ -26,9 +26,13 @@ export function Traffic({
     { label: "Сайтад орсон", n: f.visitors },
     { label: "Аялал үзсэн", n: f.tour_viewers },
     { label: "Захиалгын маягт нээсэн", n: f.booking_openers },
+    { label: "Нэр, утсаа бөглөх хэсэгт хүрсэн", n: f.contact_reachers },
     { label: "Захиалга илгээсэн", n: f.booking_submitters },
     { label: "Төлбөр эхлүүлсэн", n: f.pay_openers },
   ];
+  // The step that loses the most people from the one before it gets called out (once there is enough traffic)
+  const drops = steps.map((s, i) => (i && steps[i - 1].n ? 1 - s.n / steps[i - 1].n : 0));
+  const worst = f.visitors >= 20 ? drops.indexOf(Math.max(...drops)) : -1;
   const deviceTotal = Object.values(stats.devices).reduce((s, n) => s + n, 0);
   const devices = Object.entries(stats.devices).sort((a, b) => b[1] - a[1]);
 
@@ -65,8 +69,13 @@ export function Traffic({
         <div className="rounded-2xl border border-[var(--line)] bg-white p-5">
           <h2 className="font-display text-xl font-semibold">Захиалгын зам</h2>
           <div className="mt-4 space-y-2.5">
-            {steps.map((s) => (
+            {steps.map((s, i) => (
               <div key={s.label}>
+                {i ? (
+                  <p className={`mb-1 text-[0.65rem] ${i === worst ? "font-semibold text-[#c2410c]" : "text-muted"}`}>
+                    ↓ {pct(steps[i - 1].n - s.n, steps[i - 1].n)} энд гарсан{i === worst ? " · хамгийн их уналт" : ""}
+                  </p>
+                ) : null}
                 <div className="flex justify-between text-xs">
                   <span className="font-semibold">{s.label}</span>
                   <span className="text-muted">
@@ -74,11 +83,19 @@ export function Traffic({
                   </span>
                 </div>
                 <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-black/[0.05]">
-                  <div className="h-full rounded-full bg-accent" style={{ width: `${f.visitors ? Math.max(1, (s.n / f.visitors) * 100) : 0}%` }} />
+                  <div
+                    className={`h-full rounded-full ${i === worst ? "bg-[#c2410c]" : "bg-accent"}`}
+                    style={{ width: `${f.visitors ? Math.max(1, (s.n / f.visitors) * 100) : 0}%` }}
+                  />
                 </div>
               </div>
             ))}
           </div>
+          {f.booking_errors ? (
+            <p className="mt-3 text-xs text-muted">
+              Илгээх үед {f.booking_errors} удаа буцаагдсан (утас, нэр буруу гэх мэт). Олон бол маягтын тайлбарыг тодруулах хэрэгтэй.
+            </p>
+          ) : null}
         </div>
       </div>
 

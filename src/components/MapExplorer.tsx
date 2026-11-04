@@ -119,7 +119,7 @@ export function MapExplorer() {
                         exit={{ x: dir * -60, opacity: 0 }}
                         transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                       >
-                        <p className="type-label text-[#0e8f84]">
+                        <p className="type-label text-[#0b7d73]">
                           {index + 1}/{destinations.length} · {dest.en}
                         </p>
                         <h2 className="mt-0.5 truncate font-display text-2xl font-semibold leading-tight">{dest.name}</h2>

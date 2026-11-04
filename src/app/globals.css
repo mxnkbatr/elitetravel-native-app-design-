@@ -6,9 +6,9 @@
   --bg-soft: #f7fbf9;
   --ink: #0a2a26;
   --ink-soft: #355952;
-  --muted: #5a7a73;
+  --muted: #527169;
   --line: rgba(10, 42, 38, 0.1);
-  --accent: #0e8f84;
+  --accent: #0b7d73;
   --accent-soft: #18a89b;
   --accent-mist: #d4f3ee;
   --gold: #e8b86d;
@@ -224,6 +224,11 @@ body {
 /* ── Touch: every tappable thing reacts, and small icons get a 44px hit area ── */
 /* In the base layer so Tailwind utilities (fixed, absolute, transition-*) always win over these defaults */
 @layer base {
+  /* Keyboard users see where they are; mouse and touch never get the ring */
+  :where(a, button, [role="button"], summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
   :where(button, [role="button"], a[class*="rounded"]):not(:disabled):not([data-no-press]) {
     transition-property: scale, color, background-color, border-color, opacity, box-shadow;
     transition-duration: 0.18s;
@@ -809,10 +814,21 @@ html[data-pop] .page-in-back {
     transform: translateX(-28px);
   }
 }
+/* Phone home's opening cascade: CSS, so it runs from the first paint instead of after hydration */
+.home-rise {
+  animation: home-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes home-rise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .page-in,
   .page-in-forward,
-  .page-in-back {
+  .page-in-back,
+  .home-rise {
     animation: none;
   }
   ::view-transition-old(*),
@@ -873,7 +889,7 @@ html[data-pop] .page-in-back {
   width: 46px;
   height: 46px;
   border-radius: 999px;
-  border: 2px solid #0e8f84;
+  border: 2px solid #0b7d73;
   opacity: 0;
   pointer-events: none;
 }
@@ -899,7 +915,7 @@ html[data-pop] .page-in-back {
   font-style: normal;
   font-size: 10px;
   font-weight: 600;
-  color: #0e8f84;
+  color: #0b7d73;
   font-variant-numeric: lining-nums tabular-nums;
 }
 .map-pin:hover .map-pin-photo {

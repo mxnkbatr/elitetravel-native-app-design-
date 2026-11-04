@@ -30,9 +30,12 @@ function greeting(h: number) {
 /** Phone home: an app-style start screen instead of the long desktop landing. */
 export function MobileHome() {
   // The opening cascade is for the first screen of a visit; arriving from another page,
-  // the route transition slides the screen in with everything already in place
+  // the route transition slides the screen in with everything already in place.
+  // It is plain CSS so it plays from the first paint: with framer-motion the server sent the
+  // screen at opacity 0 and the banner photo stayed invisible until the JavaScript had loaded.
   const [enter] = useState(() => !hasNavigated());
-  const rise = { initial: enter ? { opacity: 0, y: 20 } : false, animate: { opacity: 1, y: 0 } } as const;
+  const rise = (delay = 0, className = "") =>
+    enter ? { className: `${className} home-rise`, style: { animationDelay: `${delay}s` } } : { className };
   const tours = useTours();
   const open = useMemo(() => tours.filter(isBookable), [tours]);
   const { bookings } = useTraveller();
@@ -61,15 +64,15 @@ export function MobileHome() {
 
   return (
     <div className="px-4 pb-8 pt-[calc(5.4rem+env(safe-area-inset-top))]">
-      <motion.div {...rise} transition={{ duration: 0.5 }}>
+      <div {...rise()}>
         <p className="text-sm text-muted">{hello} 👋</p>
         <h1 className="mt-1 font-display text-[2.6rem] font-semibold leading-[0.95] tracking-[-0.04em]">
           Хаашаа <span className="italic text-accent">явах</span> вэ?
         </h1>
-      </motion.div>
+      </div>
 
       {/* Search */}
-      <motion.div {...rise} transition={{ delay: 0.06, duration: 0.5 }} className="relative mt-5">
+      <div {...rise(0.06, "relative mt-5")}>
         <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
           <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
           <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -86,9 +89,9 @@ export function MobileHome() {
             ×
           </button>
         ) : null}
-      </motion.div>
+      </div>
 
-      <AnimatePresence mode="wait" initial={enter}>
+      <AnimatePresence mode="wait" initial={false}>
         {query ? (
           <motion.ul key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-3 overflow-hidden rounded-2xl border border-[var(--line)] bg-bg-elevated">
             {results.length ? (
@@ -111,7 +114,7 @@ export function MobileHome() {
             )}
           </motion.ul>
         ) : (
-          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} {...rise(0.12)}>
             <FeaturedBanner />
             {/* Next trip */}
             {next && nextTour ? (

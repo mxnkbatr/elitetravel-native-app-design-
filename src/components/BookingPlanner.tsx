@@ -180,6 +180,7 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
       const data = (await res.json().catch(() => ({}))) as { id?: string; total?: number; deposit?: number; token?: string; status?: string; error?: string };
       if (res.status === 400) {
         setError(data.error ?? "Мэдээллээ шалгана уу.");
+        track("booking_error", { tour: tour.id });
         return;
       }
       if (res.ok && data.id) {
@@ -370,6 +371,7 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
                 onClick={() => {
                   haptic("tap");
                   setStep(1);
+                  trackOnce(`contact-${tour.id}`, "booking_contact", { tour: tour.id });
                 }}
                 className="btn-shine mt-4 flex h-13 w-full items-center justify-center gap-2 rounded-full bg-accent text-sm font-semibold text-white"
               >
@@ -388,9 +390,10 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
                 <span className="text-sm font-semibold text-accent">Засах</span>
               </button>
             ) : null}
-            <div className="mt-4 grid gap-2">
+            <div className="mt-4 grid gap-2" onFocusCapture={() => trackOnce(`contact-${tour.id}`, "booking_contact", { tour: tour.id })}>
               <input
                 required
+                aria-label="Таны нэр"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Таны нэр"
@@ -399,6 +402,7 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
               />
               <input
                 required
+                aria-label="Утасны дугаар"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Утасны дугаар"
@@ -421,12 +425,13 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Нэмэлт хүсэлт (заавал биш)"
+                aria-label="Нэмэлт хүсэлт"
                 rows={2}
                 className="resize-none rounded-xl border border-[var(--line)] bg-bg px-3.5 py-2.5 text-sm outline-none transition focus:border-accent"
               />
             </div>
 
-            {error ? <p className="mt-3 rounded-xl bg-[#c2410c]/10 px-3 py-2 text-sm text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
+            {error ? <p role="alert" className="mt-3 rounded-xl bg-[#c2410c]/10 px-3 py-2 text-sm text-[#c2410c] dark:text-[#ff8f66]">{error}</p> : null}
             <button
               type="submit"
               disabled={sending}

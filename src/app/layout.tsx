@@ -16,8 +16,12 @@ const display = Cormorant_Garamond({
   variable: "--font-display",
   // cyrillic-ext carries the Mongolian letters ү and ө
   subsets: ["latin", "cyrillic", "cyrillic-ext"],
-  weight: ["500", "600", "700"],
+  // Every heading is font-semibold; 500/700 were never used but each was its own set of files
+  weight: ["600"],
   style: ["normal", "italic"],
+  // Not a variable font: every weight × style × subset is its own file. Preloading them all put
+  // a stack of font files ahead of the first photo on phones; headings swap in from a metric-matched fallback.
+  preload: false,
 });
 
 // Body text needs full Mongolian Cyrillic (ү, ө); DM Sans had none, so letters fell back to mixed system fonts

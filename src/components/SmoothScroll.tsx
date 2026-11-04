@@ -13,7 +13,7 @@ export function SmoothScroll() {
   useEffect(() => {
     // Touch devices already scroll natively and smoothly; Lenis there only adds per-frame work.
     // Loaded on demand so phones never download Lenis or GSAP just for this component.
-    if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse), (max-width: 639px)").matches) return;
     let cleanup = () => {};
     let disposed = false;
 

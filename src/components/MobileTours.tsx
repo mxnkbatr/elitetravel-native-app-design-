@@ -198,7 +198,7 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
                 step={100000}
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="mt-3 w-full accent-[#0e8f84]"
+                className="mt-3 w-full accent-[#0b7d73]"
                 aria-label="Дээд үнэ"
               />
               <div className="mt-1 flex justify-between text-[0.7rem] text-muted">

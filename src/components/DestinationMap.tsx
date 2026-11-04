@@ -135,7 +135,7 @@ export function DestinationMap({ active, onSelect, bottomInset = 0, fullscreen =
           source: "routes",
           layout: { "line-cap": "round" },
           // No line-dasharray: maplibre 6.16 throws in setConstantDashPositions with it
-          paint: { "line-color": "#0e8f84", "line-width": 1.4, "line-opacity": 0.3 },
+          paint: { "line-color": "#0b7d73", "line-width": 1.4, "line-opacity": 0.3 },
         });
         map.addLayer({
           id: "routes-active-glow",
@@ -151,7 +151,7 @@ export function DestinationMap({ active, onSelect, bottomInset = 0, fullscreen =
           source: "routes",
           filter: ["==", ["get", "key"], activeRef.current],
           layout: { "line-cap": "round" },
-          paint: { "line-color": "#0e8f84", "line-width": 2.6 },
+          paint: { "line-color": "#0b7d73", "line-width": 2.6 },
         });
 
         // Hub
