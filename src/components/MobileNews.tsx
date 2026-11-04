@@ -27,14 +27,12 @@ export function MobileNews() {
       {/* Top stories */}
       <div className="hide-scrollbar -mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
         {featured.map((n, i) => (
-          <motion.button
+          <button
             key={n.id}
             type="button"
             onClick={() => setOpen(n)}
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="relative aspect-[4/5] w-[78vw] shrink-0 snap-center overflow-hidden rounded-[1.6rem] text-left active:scale-[0.98]"
+            style={{ animationDelay: `${i * 0.06}s` }}
+            className="enter-from-right relative aspect-[4/5] w-[78vw] shrink-0 snap-center overflow-hidden rounded-[1.6rem] text-left active:scale-[0.98]"
           >
             <Image src={n.image} alt="" fill className="object-cover" sizes="78vw" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
@@ -44,7 +42,7 @@ export function MobileNews() {
               <p className="mt-2 line-clamp-2 text-xs text-white/75">{n.excerpt}</p>
               <p className="mt-2.5 text-[0.7rem] font-semibold text-[#7ef0e0]">{n.readMin} мин унших →</p>
             </div>
-          </motion.button>
+          </button>
         ))}
       </div>
 

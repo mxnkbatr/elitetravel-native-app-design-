@@ -7,5 +7,11 @@ export const metadata: Metadata = {
 };
 
 export default function MapRoute() {
-  return <MapExplorer />;
+  return (
+    <>
+      {/* The map is the page; screen readers still get a heading to land on */}
+      <h1 className="sr-only">Газрын зураг</h1>
+      <MapExplorer />
+    </>
+  );
 }

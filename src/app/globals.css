@@ -843,6 +843,20 @@ html[data-pop] .page-in-back {
     opacity: 0;
   }
 }
+/* Phone dock rising into place */
+.enter-dock {
+  animation: enter-rise 0.4s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+/* Cards in a row sliding in from the right (news carousel) */
+.enter-from-right {
+  animation: enter-from-right 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes enter-from-right {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
 /* A headline rising out of its line (the parent clips it) */
 .enter-slide-up {
   animation: enter-slide-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -857,6 +871,8 @@ html[data-pop] .page-in-back {
   .page-in-forward,
   .page-in-back,
   .enter-rise,
+  .enter-dock,
+  .enter-from-right,
   .enter-poster,
   .enter-fade,
   .enter-slide-up {

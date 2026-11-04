@@ -269,7 +269,8 @@ export function MobileBookings() {
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
+      {/* No entrance on first render: the server-sent page would sit invisible until hydration */}
+      <AnimatePresence mode="wait" initial={false}>
         {tab === "bookings" ? (
           <motion.div key="b" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
             {bookings.length ? (

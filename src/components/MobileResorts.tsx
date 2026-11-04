@@ -19,7 +19,8 @@ export function MobileResorts() {
         {stays.map((s, i) => (
           <motion.article
             key={s.name}
-            initial={{ opacity: 0, y: 30 }}
+            // The first card is on screen at load; only the ones below rise in as they scroll into view
+            initial={i === 0 ? false : { opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.6, delay: i * 0.05, ease: [0.22, 1, 0.36, 1] }}

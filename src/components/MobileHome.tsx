@@ -5,13 +5,13 @@ import { FeaturedBanner } from "@/components/FeaturedBanner";
 import { SaveButton } from "@/components/SaveButton";
 import { formatPrice, getTour, isBookable, type TourSummary } from "@/data/tours";
 import { useTours } from "@/lib/content";
-import { daysUntil } from "@/lib/dates";
+import { daysUntil, departureOf } from "@/lib/dates";
 import { useTraveller } from "@/lib/traveller-store";
 import { hasNavigated, useClientValue } from "@/lib/ui";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 
 const categories = [
   { key: "all", label: "Бүгд", icon: "sparkle" as IconName, match: () => true },
@@ -43,14 +43,14 @@ export function MobileHome() {
   const [cat, setCat] = useState<(typeof categories)[number]["key"]>("all");
   const [q, setQ] = useState("");
 
-  const upcoming = useMemo(
-    () =>
-      open
-        .map((t) => ({ t, days: daysUntil(t.dates) }))
-        .filter((x): x is { t: TourSummary; days: number } => x.days != null && x.days >= 0)
-        .sort((a, b) => a.days - b.days),
-    [open],
-  );
+  // Dated departures first (soonest leads), then open tours that go whenever the traveller picks
+  // (Bali "Хүссэн үедээ", specials "огноог лавлана"), so the row never shrinks to a single card
+  const upcoming = useMemo(() => {
+    const withDays = open.map((t) => ({ t, days: daysUntil(t.dates) }));
+    const dated = withDays.filter((x) => x.days != null && x.days >= 0).sort((a, b) => a.days! - b.days!);
+    const flexible = withDays.filter((x) => x.days == null);
+    return [...dated, ...flexible].slice(0, 4);
+  }, [open]);
 
   const query = q.trim().toLowerCase();
   const results = query
@@ -169,11 +169,19 @@ export function MobileHome() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
                         <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[0.7rem] font-semibold text-ink">
                           <span className="size-1.5 animate-pulse rounded-full bg-[#e8b86d]" />
-                          {days === 0 ? "Өнөөдөр" : `${days} хоногийн дараа`}
+                          {days == null ? (
+                            t.dates?.includes("Хүссэн") ? "Хүссэн үедээ" : "Огноо лавлах"
+                          ) : i === 0 && days > 0 ? (
+                            <Countdown date={t.dates} days={days} />
+                          ) : days === 0 ? (
+                            "Өнөөдөр"
+                          ) : (
+                            `${days} хоногийн дараа`
+                          )}
                         </span>
                         <SaveButton tourId={t.id} className="absolute right-3 top-3" />
                         <div className="absolute inset-x-0 bottom-0 p-4 text-white">
-                          <p className="type-eyebrow text-[#f3e0c2]">{t.destination} · {t.dates}</p>
+                          <p className="type-eyebrow truncate text-[#f3e0c2]">{days == null ? t.destination : `${t.destination} · ${t.dates}`}</p>
                           <p className="mt-1 font-display text-2xl font-semibold leading-tight">{t.title}</p>
                           <p className="mt-2 font-num text-lg text-[#f3d199]">{formatPrice(t.price)}</p>
                         </div>
@@ -240,5 +248,29 @@ export function MobileHome() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+const tickEverySecond = (onTick: () => void) => {
+  const id = window.setInterval(onTick, 1000);
+  return () => window.clearInterval(id);
+};
+
+/**
+ * Live "6 хоног 14:22:05" to the soonest departure. Server and first paint show the plain day
+ * count (no clock to disagree with); the seconds start once the page is running in the browser.
+ */
+function Countdown({ date, days }: { date?: string; days: number }) {
+  // Whole seconds from a 1s ticker; null while rendering on the server and hydrating
+  const now = useSyncExternalStore(tickEverySecond, () => Math.floor(Date.now() / 1000), () => null);
+
+  const dep = departureOf(date);
+  if (now == null || !dep) return <>{days} хоногийн дараа</>;
+  const left = Math.max(0, Math.floor(dep.getTime() / 1000) - now);
+  const two = (n: number) => String(n).padStart(2, "0");
+  return (
+    <span className="font-num tabular-nums" aria-label={`${Math.floor(left / 86400)} хоногийн дараа хөдөлнө`}>
+      {Math.floor(left / 86400)} хоног {two(Math.floor(left / 3600) % 24)}:{two(Math.floor(left / 60) % 60)}:{two(left % 60)}
+    </span>
   );
 }
