@@ -5,13 +5,13 @@ import { SaveButton } from "@/components/SaveButton";
 import { formatPrice, isBookable, type Tour } from "@/data/tours";
 import { scrollToY } from "@/lib/scroll";
 import { POSTER_SIZES, posterGlow } from "@/lib/tour-poster";
-import { hasNavigated } from "@/lib/ui";
+import { isUnderway } from "@/lib/dates";
+import { hasNavigated, useClientValue } from "@/lib/ui";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, type MouseEvent } from "react";
 
-const ease = [0.22, 1, 0.36, 1] as const;
 
 function ShareButton({ tour, className = "" }: { tour: Tour; className?: string }) {
   const [copied, setCopied] = useState(false);
@@ -92,10 +92,14 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
   const rx = useSpring(useMotionValue(0), { stiffness: 160, damping: 18 });
   const ry = useSpring(useMotionValue(0), { stiffness: 160, damping: 18 });
   const bookable = isBookable(tour);
+  // Closed for booking once the group has left, but "ended" only after it is back (the visitor's own date)
+  const underway = useClientValue(() => tour.status === "ended" && isUnderway(tour.dates), false);
   // Opened from a link on the site, the page slides in like an iOS push, already composed;
-  // the staged reveal is for arriving here directly
+  // the staged reveal is for arriving here directly. It is CSS so it plays from the first paint:
+  // a link from an ad lands here cold, and framer-motion kept the page blank until hydration.
   const [enter] = useState(() => !hasNavigated());
-  const from = <T,>(v: T) => (enter ? v : false);
+  const reveal = (delay: number, className = "", kind = "enter-rise") =>
+    enter ? { className: `${className} ${kind}`, style: { animationDelay: `${delay}s` } } : { className };
 
   function tilt(e: MouseEvent<HTMLDivElement>) {
     const r = e.currentTarget.getBoundingClientRect();
@@ -126,16 +130,13 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
 
       <div className="grid items-center gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
         {/* Poster */}
-        <motion.div
-          initial={from({ opacity: 0, y: 30, scale: 0.96 })}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.9, ease }}
+        <div
+          {...reveal(0, "order-1 [perspective:1200px] lg:order-2", "enter-poster")}
           onMouseMove={tilt}
           onMouseLeave={() => {
             rx.set(0);
             ry.set(0);
           }}
-          className="order-1 [perspective:1200px] lg:order-2"
         >
           <motion.div
             style={{ rotateX: rx, rotateY: ry }}
@@ -152,49 +153,42 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
               <span className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-white shadow">{tour.discount}</span>
             ) : null}
           </motion.div>
-        </motion.div>
+        </div>
 
         {/* Details */}
         <div className="order-2 lg:order-1">
-          <motion.div initial={from({ opacity: 0, y: 16 })} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease }} className="flex flex-wrap items-center gap-2">
+          <div {...reveal(0, "flex flex-wrap items-center gap-2")}>
             <Link href={`/tours?dest=${tour.destinationKey}`} className="rounded-full bg-accent/10 px-3 py-1 type-label text-accent">
               {tour.destination}
             </Link>
             {tour.tag === "hot" ? <span className="inline-flex items-center gap-1 rounded-full bg-[#e8b86d]/25 px-3 py-1 text-[0.7rem] font-bold text-[#8a5a12] dark:text-[#f3d199]"><Icon name="fire" size={13} strokeWidth={2} /> Эрэлттэй</span> : null}
-            {tour.status === "ended" ? <span className="rounded-full bg-ink px-3 py-1 text-[0.7rem] font-bold text-white">Дууссан аялал</span> : null}
+            {tour.status === "ended" ? (
+              <span className="rounded-full bg-ink px-3 py-1 text-[0.7rem] font-bold text-white">{underway ? "Аялал явагдаж байна" : "Дууссан аялал"}</span>
+            ) : null}
             {tour.tag === "soon" ? <span className="rounded-full bg-ink px-3 py-1 text-[0.7rem] font-bold text-white">Тун удахгүй</span> : null}
-          </motion.div>
+          </div>
 
           <h1 className="mt-4 overflow-hidden font-display text-[clamp(2.3rem,5vw,4.2rem)] font-semibold leading-[0.98] tracking-[-0.04em]">
-            <motion.span className="block" initial={from({ y: "100%" })} animate={{ y: 0 }} transition={{ duration: 0.9, delay: 0.1, ease }}>
-              {tour.title}
-            </motion.span>
+            <span {...reveal(0.1, "block", "enter-slide-up")}>{tour.title}</span>
           </h1>
-          <motion.p initial={from({ opacity: 0 })} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mt-3 max-w-lg text-[0.95rem] leading-relaxed text-muted">
-            {tour.story}
-          </motion.p>
+          <p {...reveal(0.35, "mt-3 max-w-lg text-[0.95rem] leading-relaxed text-muted", "enter-fade")}>{tour.story}</p>
 
           <ul className="mt-5 flex flex-wrap gap-2">
             {chips.map((c, i) => (
-              <motion.li
+              <li
                 key={c.text}
-                initial={from({ opacity: 0, y: 10 })}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + i * 0.06 }}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-bg-elevated/80 px-3 py-1.5 text-[0.8rem] backdrop-blur"
+                {...reveal(
+                  0.4 + i * 0.06,
+                  "inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-bg-elevated/80 px-3 py-1.5 text-[0.8rem] backdrop-blur",
+                )}
               >
                 <Icon name={c.icon} size={15} className="text-accent" />
                 {c.text}
-              </motion.li>
+              </li>
             ))}
           </ul>
 
-          <motion.div
-            initial={from({ opacity: 0, y: 14 })}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55, duration: 0.6, ease }}
-            className="mt-6 flex flex-wrap items-end gap-x-6 gap-y-4"
-          >
+          <div {...reveal(0.55, "mt-6 flex flex-wrap items-end gap-x-6 gap-y-4")}>
             <div>
               <p className="text-xs text-muted">Үнэ / хүн</p>
               <div className="flex items-baseline gap-2">
@@ -215,7 +209,7 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
                 Лавлах · +976 9003 1771
               </a>
             )}
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

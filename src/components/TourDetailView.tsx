@@ -10,6 +10,8 @@ import { ItineraryStory } from "@/components/ItineraryStory";
 import { BookingSheet, TourTabs } from "@/components/TourMobile";
 import { formatPrice, isBookable, relatedTours, type ItineraryDay, type Tour } from "@/data/tours";
 import { useTours } from "@/lib/content";
+import { isUnderway } from "@/lib/dates";
+import { useClientValue } from "@/lib/ui";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
@@ -18,6 +20,7 @@ export function TourDetailView({ tour }: { tour: Tour }) {
   const related = relatedTours(useTours(), tour.id, 3);
   const [sheetOpen, setSheetOpen] = useState(false);
   const bookable = isBookable(tour);
+  const underway = useClientValue(() => tour.status === "ended" && isUnderway(tour.dates), false);
 
   return (
     <div className="relative w-full max-w-[100vw] overflow-x-clip pb-16 sm:pb-20">
@@ -141,10 +144,12 @@ export function TourDetailView({ tour }: { tour: Tour }) {
             ) : (
               <div className="rounded-[1.5rem] border border-[var(--line)] bg-bg-elevated p-5 shadow-[var(--shadow)]">
                 <p className="font-display text-2xl font-semibold">
-                  {tour.status === "ended" ? "Энэ аялал дууссан" : "Тун удахгүй"}
+                  {underway ? "Аялал явагдаж байна" : tour.status === "ended" ? "Энэ аялал дууссан" : "Тун удахгүй"}
                 </p>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
-                  {tour.status === "ended"
+                  {underway
+                    ? "Энэ удаагийн бүлэг аялалдаа гарсан. Дараагийн огноог манай багаас лавлаарай."
+                    : tour.status === "ended"
                     ? "Дараагийн огноо болон ижил төстэй аяллын талаар манай багаас лавлаарай."
                     : "Мэдээлэл гармагц хамгийн түрүүнд мэдэх бол бидэнтэй холбогдоорой."}
                 </p>

@@ -35,7 +35,7 @@ export function MobileHome() {
   // screen at opacity 0 and the banner photo stayed invisible until the JavaScript had loaded.
   const [enter] = useState(() => !hasNavigated());
   const rise = (delay = 0, className = "") =>
-    enter ? { className: `${className} home-rise`, style: { animationDelay: `${delay}s` } } : { className };
+    enter ? { className: `${className} enter-rise`, style: { animationDelay: `${delay}s` } } : { className };
   const tours = useTours();
   const open = useMemo(() => tours.filter(isBookable), [tours]);
   const { bookings } = useTraveller();

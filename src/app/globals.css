@@ -814,21 +814,52 @@ html[data-pop] .page-in-back {
     transform: translateX(-28px);
   }
 }
-/* Phone home's opening cascade: CSS, so it runs from the first paint instead of after hydration */
-.home-rise {
-  animation: home-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+/* Opening reveals for pages reached directly (phone home, tour page): CSS, so they run from
+   the first paint instead of waiting for hydration with the content hidden */
+.enter-rise {
+  animation: enter-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-@keyframes home-rise {
+@keyframes enter-rise {
   from {
     opacity: 0;
     transform: translateY(20px);
+  }
+}
+/* The tour poster settles in: rises and grows to full size */
+.enter-poster {
+  animation: enter-poster 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes enter-poster {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+  }
+}
+.enter-fade {
+  animation: enter-fade 0.5s ease-out both;
+}
+@keyframes enter-fade {
+  from {
+    opacity: 0;
+  }
+}
+/* A headline rising out of its line (the parent clips it) */
+.enter-slide-up {
+  animation: enter-slide-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes enter-slide-up {
+  from {
+    transform: translateY(100%);
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .page-in,
   .page-in-forward,
   .page-in-back,
-  .home-rise {
+  .enter-rise,
+  .enter-poster,
+  .enter-fade,
+  .enter-slide-up {
     animation: none;
   }
   ::view-transition-old(*),
