@@ -69,8 +69,7 @@ export function TourAccordion({ tours }: { tours: TourSummary[] }) {
                     <div className="flex flex-wrap gap-2">
                       <span className="rounded-full bg-white px-3 py-1 type-label text-ink">{t.destination}</span>
                       {t.discount ? <span className="rounded-full bg-accent px-3 py-1 text-[0.68rem] font-bold">{t.discount}</span> : null}
-                      {t.tag === "hot" ? <span className="rounded-full bg-[#e8b86d] px-3 py-1 text-[0.68rem] font-bold text-ink">Эрэлттэй</span> : null}
-                    </div>
+                      {t.tag === "hot" ? <span className="rounded-full bg-[#e8b86d] px-3 py-1 text-[0.68rem] font-bold text-ink">Эрэлттэй</span> : null}                    </div>
                     <SaveButton tourId={t.id} className="pointer-events-auto" />
                   </div>
 
@@ -81,18 +80,23 @@ export function TourAccordion({ tours }: { tours: TourSummary[] }) {
                     <h3 className="mt-2 max-w-md font-display text-[2.6rem] font-semibold leading-[1] tracking-[-0.03em]">{t.title}</h3>
                     <p className="mt-3 max-w-md text-sm text-white/75">{t.highlights.slice(0, 3).join(" · ")}</p>
                     <div className="mt-5 flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-[0.62rem] uppercase tracking-[0.16em] text-white/60">Үнэ / хүн</p>
-                        <div className="flex items-baseline gap-2">
-                          <span className="font-num text-3xl text-[#f3d199]">{formatPrice(t.price)}</span>
-                          {t.oldPrice ? <span className="text-sm text-white/50 line-through">{formatPrice(t.oldPrice)}</span> : null}
+                      {t.price ? (
+                        <div>
+                          <p className="text-[0.62rem] uppercase tracking-[0.16em] text-white/60">Үнэ / хүн</p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-num text-3xl text-[#f3d199]">{formatPrice(t.price)}</span>
+                            {t.oldPrice ? <span className="text-sm text-white/50 line-through">{formatPrice(t.oldPrice)}</span> : null}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        // A coming-soon tour has no price yet
+                        <p className="font-display text-2xl font-semibold text-[#f3d199]">Үнэ удахгүй зарлагдана</p>
+                      )}
                       <Link
-                        href={`/tours/${t.id}#book`}
+                        href={t.price ? `/tours/${t.id}#book` : `/tours/${t.id}`}
                         className="pointer-events-auto inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-semibold text-ink transition hover:bg-[#e8b86d]"
                       >
-                        Захиалах <span aria-hidden>→</span>
+                        {t.price ? "Захиалах" : "Дэлгэрэнгүй"} <span aria-hidden>→</span>
                       </Link>
                     </div>
                   </div>

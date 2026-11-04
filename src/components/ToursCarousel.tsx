@@ -46,7 +46,10 @@ export function ToursCarousel() {
   );
   const [paused, setPaused] = useState(false);
   const tours = useTours();
-  const list = tours.filter(isBookable);
+  // Open tours, then the next coming-soon one so the strip has a fourth card to look forward to
+  const open = tours.filter(isBookable);
+  const soon = tours.find((t) => t.tag === "soon" && t.status !== "ended");
+  const list = soon ? [...open, soon] : open;
 
   const scrollBy = useCallback((dir: -1 | 1) => {
     const el = scroller.current;

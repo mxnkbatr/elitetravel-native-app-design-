@@ -15,7 +15,8 @@ export function TourCard({
 }) {
   const open = Object.values(useSeats(tour.id)).filter((s) => !s.closed);
   const seats = open.length ? Math.max(...open.map((s) => s.left)) : null;
-  const bookHref = `/tours/${tour.id}#book`;
+  // A coming-soon tour has nothing to book yet: the button opens its page instead
+  const bookHref = tour.price ? `/tours/${tour.id}#book` : `/tours/${tour.id}`;
 
   return (
     <article
@@ -80,7 +81,7 @@ export function TourCard({
             href={bookHref}
             className="inline-flex h-10 shrink-0 items-center rounded-full bg-accent px-4 text-sm font-semibold text-white transition hover:bg-accent-soft"
           >
-            Захиалах
+            {tour.price ? "Захиалах" : "Дэлгэрэнгүй"}
           </Link>
         </div>
       </div>
