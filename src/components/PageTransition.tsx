@@ -1,12 +1,44 @@
 "use client";
 
-import { markNavigated } from "@/lib/ui";
+import { markNavigated, setMorphTour, TOUR_PHOTO } from "@/lib/ui";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, ViewTransition, type ReactNode } from "react";
 
 const depth = (path: string) => path.split("/").filter(Boolean).length;
 type Nav = "forward" | "back" | "swap";
 const navFor = (from: string, to: string): Nav => (depth(to) > depth(from) ? "forward" : depth(to) < depth(from) ? "back" : "swap");
+
+/**
+ * Tapping a tour card: its photo becomes the shared element that grows into the tour page's
+ * poster (TourHero names the poster the same). Only one element may carry the name, so any
+ * earlier one — a previous tap, or the poster of the tour page being left — gives it up first.
+ */
+function morphFrom(a: HTMLAnchorElement, leaving: boolean) {
+  const root = document.documentElement;
+  const id = leaving ? a.pathname.match(/^\/tours\/([a-z0-9-]+)$/)?.[1] : undefined;
+  for (const el of document.querySelectorAll<HTMLElement>("[data-morph-src]")) {
+    el.style.viewTransitionName = "";
+    delete el.dataset.morphSrc;
+  }
+  delete root.dataset.morph;
+  setMorphTour(null);
+  if (!id || !("startViewTransition" in document)) return;
+  const img = [...a.querySelectorAll("img")].find((i) => i.getBoundingClientRect().width > 40);
+  if (!img) return;
+  // The rounded frame around the photo, so the corners stay round while it flies
+  let frame: HTMLElement = img;
+  for (let el = img.parentElement; el && a.contains(el); el = el.parentElement) {
+    if (getComputedStyle(el).overflow === "hidden") {
+      frame = el;
+      break;
+    }
+  }
+  for (const el of document.querySelectorAll<HTMLElement>("[data-tour-poster]")) el.style.viewTransitionName = "";
+  frame.style.viewTransitionName = TOUR_PHOTO;
+  frame.dataset.morphSrc = "";
+  root.dataset.morph = "";
+  setMorphTour(id);
+}
 
 /**
  * Route changes run as a view transition: the old page leaves while the new one arrives (classes
@@ -32,7 +64,9 @@ export function PageTransition({ children }: { children: ReactNode }) {
     const reset = window.setTimeout(() => {
       document.documentElement.dataset.nav = "swap";
       delete document.documentElement.dataset.pop;
-    }, 600);
+      delete document.documentElement.dataset.morph;
+      setMorphTour(null);
+    }, 700);
     return () => window.clearTimeout(reset);
   }, [pathname]);
 
@@ -44,6 +78,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
       if (!(a instanceof HTMLAnchorElement) || a.target === "_blank" || a.origin !== location.origin) return;
       if (a.pathname !== current.current) markNavigated();
       root.dataset.nav = navFor(current.current, a.pathname);
+      morphFrom(a, a.pathname !== current.current);
     };
     // Back/forward buttons restore the page from the router cache outside a transition, so no view
     // transition runs; data-pop turns the wrapper's CSS enter animation back on for that render

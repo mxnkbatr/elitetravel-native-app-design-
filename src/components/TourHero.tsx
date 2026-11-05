@@ -6,11 +6,11 @@ import { formatPrice, isBookable, type Tour } from "@/data/tours";
 import { scrollToY } from "@/lib/scroll";
 import { POSTER_SIZES, posterGlow } from "@/lib/tour-poster";
 import { isUnderway } from "@/lib/dates";
-import { hasNavigated, useClientValue } from "@/lib/ui";
+import { hasNavigated, morphTarget, TOUR_PHOTO, useClientValue } from "@/lib/ui";
 import { AnimatePresence, motion, useMotionValue, useSpring } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 
 
 function ShareButton({ tour, className = "" }: { tour: Tour; className?: string }) {
@@ -101,6 +101,15 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
   const reveal = (delay: number, className = "", kind = "enter-rise") =>
     enter ? { className: `${className} ${kind}`, style: { animationDelay: `${delay}s` } } : { className };
 
+  // Opened by tapping this tour's photo on a card: the poster takes the photo's view-transition name,
+  // so the photo grows into it. Dropped once it has landed, so going back slides as usual.
+  const [morph, setMorph] = useState(() => morphTarget() === tour.id);
+  useEffect(() => {
+    if (!morph) return;
+    const id = window.setTimeout(() => setMorph(false), 900);
+    return () => window.clearTimeout(id);
+  }, [morph]);
+
   function tilt(e: MouseEvent<HTMLDivElement>) {
     const r = e.currentTarget.getBoundingClientRect();
     ry.set(((e.clientX - r.left) / r.width - 0.5) * 12);
@@ -139,7 +148,8 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
           }}
         >
           <motion.div
-            style={{ rotateX: rx, rotateY: ry }}
+            data-tour-poster=""
+            style={{ rotateX: rx, rotateY: ry, viewTransitionName: morph ? TOUR_PHOTO : undefined }}
             className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-[1.75rem] bg-[#cfe0db] shadow-[0_40px_90px_rgba(6,42,42,0.35)] sm:max-w-xl lg:aspect-[4/3.1]"
           >
             <Image src={posterGlow(tour.image)} alt="" fill unoptimized className="scale-110 object-cover" />
