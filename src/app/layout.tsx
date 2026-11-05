@@ -35,6 +35,10 @@ const description =
   "Хайнань, Хонг Конг, Бали болон концерт аяллууд — халуун орны тансаг амралтыг Elite Travel Mongolia-тай.";
 
 export const metadata: Metadata = {
+  // Added to the home screen, the site opens full-screen with the app icon, like the native app
+  manifest: "/site.webmanifest",
+  appleWebApp: { capable: true, title: "Elite Travel", statusBarStyle: "default" },
+  icons: { apple: "/app-icon-180.png" },
   title: {
     default: "Elite Travel Mongolia | Explore. Dream. Discover.",
     template: "%s · Elite Travel",

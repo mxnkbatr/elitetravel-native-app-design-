@@ -1,6 +1,7 @@
 "use client";
 
 import { haptic } from "@/lib/native";
+import { scrollToY } from "@/lib/scroll";
 import { useTripSummaries } from "@/lib/trip-sync";
 import { useTraveller } from "@/lib/traveller-store";
 import { AnimatePresence, motion } from "framer-motion";
@@ -40,7 +41,14 @@ export function MobileDock() {
             <Link
               key={item.href}
               href={item.href}
-              onClick={() => haptic("tap")}
+              onClick={(e) => {
+                haptic("tap");
+                // Like a native tab bar: tapping the tab you are on takes you back to its top
+                if (pathname === item.href) {
+                  e.preventDefault();
+                  scrollToY(0);
+                }
+              }}
               className={`relative flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.15rem] text-[0.66rem] font-medium tracking-[0.02em] transition active:scale-95 ${
                 active ? "text-[#7ef0e0]" : "text-white/55"
               }`}

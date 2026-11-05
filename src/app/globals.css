@@ -674,6 +674,20 @@ img[data-nimg]:not([data-loaded]) {
   button {
     touch-action: manipulation;
   }
+  /* Controls and photos behave like an app's: a long press does not select their label or open
+     Safari's link/image menu. Body text stays selectable. */
+  button,
+  nav,
+  [role="tab"],
+  a[class*="rounded"],
+  img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  img {
+    -webkit-user-drag: none;
+  }
 }
 
 /* Route transitions (see PageTransition). With view transitions the browser animates snapshots,
