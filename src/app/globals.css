@@ -800,48 +800,6 @@ img[data-nimg]:not([data-loaded]) {
   }
 }
 
-/* Tapping a tour card: its photo flies and grows into the tour page's poster (shared element
-   "tour-photo", see PageTransition / TourHero) while the page fades up behind it instead of
-   sliding, so one picture travels the whole way — the App Store card-opening feel. */
-::view-transition-group(tour-photo) {
-  z-index: 4;
-  animation-duration: 0.55s;
-  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-}
-/* Both pictures fill the moving frame (card and poster have different shapes) */
-::view-transition-old(tour-photo),
-::view-transition-new(tour-photo) {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-/* The tapped photo stays fully visible; the sharp poster fades in over it as it lands */
-::view-transition-old(tour-photo) {
-  animation: none;
-}
-::view-transition-new(tour-photo) {
-  animation: vt-cover-in 0.3s 0.2s ease-out both;
-}
-html[data-morph]::view-transition-new(.page-enter) {
-  background: var(--bg);
-  animation: vt-morph-page 0.45s cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-html[data-morph]::view-transition-old(.page-exit) {
-  animation: vt-morph-under 0.45s cubic-bezier(0.32, 0.72, 0, 1) both;
-}
-@keyframes vt-morph-page {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-}
-@keyframes vt-morph-under {
-  to {
-    transform: scale(0.96);
-    filter: brightness(0.85);
-  }
-}
-
 /* Without view transitions (older iOS in the app, history back/forward) the old page is already
    gone, so the new one only settles in with a short move — never from transparent. */
 html[data-pop] .page-in-forward {

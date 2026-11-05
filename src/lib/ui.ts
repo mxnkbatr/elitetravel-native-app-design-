@@ -48,20 +48,6 @@ export function hasNavigated() {
   return navigated;
 }
 
-/** View-transition name shared by a tapped tour photo and the tour page's poster. */
-export const TOUR_PHOTO = "tour-photo";
-let morphTour: string | null = null;
-
-/** Set by PageTransition when a tap on a tour card's photo starts the "photo grows into the poster" transition. */
-export function setMorphTour(id: string | null) {
-  morphTour = id;
-}
-
-/** The tour whose page should receive the growing photo, if this navigation started from one. */
-export function morphTarget() {
-  return morphTour;
-}
-
 /**
  * True for a moment after `key` changes (a filter or sort), false otherwise. Lists pass it to
  * framer-motion's `layout`, so cards glide into their new order when filtered, but leaving the
