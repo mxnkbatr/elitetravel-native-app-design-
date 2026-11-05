@@ -49,6 +49,15 @@ export function hasNavigated() {
 }
 
 /**
+ * Today's date in the visitor's own time zone, or null on the server and during hydration.
+ * Anything that says "5 хоногийн дараа" waits for it: a cached page can be a day old and the
+ * server counts days in UTC, so rendering it there broke hydration (React #418).
+ */
+export function useToday() {
+  return useClientValue(() => new Date().toDateString(), null);
+}
+
+/**
  * True for a moment after `key` changes (a filter or sort), false otherwise. Lists pass it to
  * framer-motion's `layout`, so cards glide into their new order when filtered, but leaving the
  * page does not make framer measure every card first (that held tour pages back ~1s on phones).

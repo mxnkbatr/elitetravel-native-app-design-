@@ -22,20 +22,22 @@ const KEYCHAIN = { traveller: "mn.elitetravel.app.traveller", staff: "mn.elitetr
 /** Device key id, kept outside the Keychain so screens can tell Face ID is set up without a prompt */
 const flag = (purpose: DevicePurpose) => `elite-faceid-${purpose}`;
 
-let plugin: Promise<Biometric | null> | null = null;
-function biometric() {
+// Kept boxed ({ p }) all the way to the call: the plugin proxy throws on .then, so a promise must
+// never resolve to it directly
+let plugin: Promise<{ p: Biometric } | null> | null = null;
+function biometric(): Promise<{ p: Biometric } | null> {
   plugin ??= (async () => {
     if (typeof window === "undefined" || !("Capacitor" in window)) return null;
     const { Capacitor, registerPlugin } = await import("@capacitor/core");
     if (!Capacitor.isNativePlatform() || !Capacitor.isPluginAvailable("NativeBiometric")) return null;
-    return registerPlugin<Biometric>("NativeBiometric");
+    return { p: registerPlugin<Biometric>("NativeBiometric") };
   })().catch(() => null);
   return plugin;
 }
 
 /** "Face ID" / "Touch ID" when this phone can use it, else null. */
 export async function biometryName() {
-  const b = await biometric();
+  const b = (await biometric())?.p;
   if (!b) return null;
   const r = await b.isAvailable().catch(() => null);
   if (!r?.isAvailable) return null;
@@ -59,7 +61,7 @@ async function api<T>(path: string, method: string, body: unknown): Promise<T> {
 
 /** Signed in already: confirm with Face ID, then register this phone and store its key. */
 export async function enableBiometric(purpose: DevicePurpose) {
-  const b = await biometric();
+  const b = (await biometric())?.p;
   if (!b) throw new Error("Энэ төхөөрөмж дээр Face ID ашиглах боломжгүй.");
   await b.verifyIdentity({ reason: "Face ID-аар нэвтрэхийг идэвхжүүлэх", title: "Elite Travel" });
   const { id, secret } = await api<{ id: string; secret: string }>("/api/account/device", "POST", { purpose, label: navigator.userAgent.includes("iPhone") ? "iPhone" : "Утас" });
@@ -69,7 +71,7 @@ export async function enableBiometric(purpose: DevicePurpose) {
 
 /** Face ID prompt → server sign-in. Returns the server's JSON (traveller: account state). */
 export async function biometricSignIn<T extends { secret: string }>(purpose: DevicePurpose): Promise<T> {
-  const b = await biometric();
+  const b = (await biometric())?.p;
   if (!b) throw new Error("Энэ төхөөрөмж дээр Face ID ашиглах боломжгүй.");
   let creds: { username: string; password: string };
   try {
@@ -90,7 +92,7 @@ export async function biometricSignIn<T extends { secret: string }>(purpose: Dev
 
 async function forget(purpose: DevicePurpose) {
   localStorage.removeItem(flag(purpose));
-  await (await biometric())?.deleteCredentials({ server: KEYCHAIN[purpose] }).catch(() => {});
+  await (await biometric())?.p.deleteCredentials({ server: KEYCHAIN[purpose] }).catch(() => {});
 }
 
 /** Turns Face ID sign-in off on this phone and revokes its key on the server. */

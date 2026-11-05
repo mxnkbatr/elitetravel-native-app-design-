@@ -11,9 +11,11 @@ type Haptics = {
   notification(options: { type: "SUCCESS" | "WARNING" | "ERROR" }): Promise<void>;
 };
 
-const plugins = new Map<string, Promise<unknown>>();
+// Plugins stay boxed ({ p }) until called: a Capacitor plugin is a proxy that throws on .then, so
+// a promise resolving to it directly fails ("Haptics.then() is not implemented on ios") and the call is lost
+const plugins = new Map<string, Promise<{ p: unknown } | null>>();
 
-function plugin<T>(name: string): Promise<T | null> {
+function plugin<T>(name: string): Promise<{ p: T } | null> {
   if (!plugins.has(name)) {
     plugins.set(
       name,
@@ -22,20 +24,20 @@ function plugin<T>(name: string): Promise<T | null> {
         if (typeof window === "undefined" || !("Capacitor" in window)) return null;
         const { Capacitor, registerPlugin } = await import("@capacitor/core");
         if (!Capacitor.isNativePlatform() || !Capacitor.isPluginAvailable(name)) return null;
-        return registerPlugin<T>(name);
+        return { p: registerPlugin<T>(name) };
       })().catch(() => null),
     );
   }
-  return plugins.get(name) as Promise<T | null>;
+  return plugins.get(name) as Promise<{ p: T } | null>;
 }
 
 export async function hideSplash() {
-  const splash = await plugin<Splash>("SplashScreen");
+  const splash = (await plugin<Splash>("SplashScreen"))?.p;
   await splash?.hide({ fadeOutDuration: 300 }).catch(() => {});
 }
 
 export function haptic(kind: "tap" | "press" | "success") {
   void plugin<Haptics>("Haptics")
-    .then((h) => (kind === "success" ? h?.notification({ type: "SUCCESS" }) : h?.impact({ style: kind === "tap" ? "LIGHT" : "MEDIUM" })))
+    .then((box) => (kind === "success" ? box?.p.notification({ type: "SUCCESS" }) : box?.p.impact({ style: kind === "tap" ? "LIGHT" : "MEDIUM" })))
     .catch(() => {});
 }

@@ -7,7 +7,7 @@ import { formatPrice, getTour, isBookable, type TourSummary } from "@/data/tours
 import { useTours } from "@/lib/content";
 import { daysUntil, departureOf } from "@/lib/dates";
 import { useTraveller } from "@/lib/traveller-store";
-import { hasNavigated, useClientValue, useReflow } from "@/lib/ui";
+import { hasNavigated, useClientValue, useReflow, useToday } from "@/lib/ui";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -43,6 +43,7 @@ export function MobileHome() {
   const [cat, setCat] = useState<(typeof categories)[number]["key"]>("all");
   const [q, setQ] = useState("");
   const reflow = useReflow(cat);
+  const today = useToday();
 
   // Dated departures first (soonest leads), then open tours that go whenever the traveller picks
   // (Bali "Хүссэн үедээ", specials "огноог лавлана"), so the row never shrinks to a single card
@@ -156,7 +157,8 @@ export function MobileHome() {
             </div>
 
             {/* Upcoming departures */}
-            {cat === "all" && upcoming.length ? (
+            {/* Day counts are the visitor's own today, so the row joins once the page runs in the browser */}
+            {cat === "all" && today && upcoming.length ? (
               <section className="mt-7">
                 <div className="flex items-baseline justify-between">
                   <h2 className="font-display text-2xl font-semibold tracking-[-0.03em]">Удахгүй хөдлөх</h2>
