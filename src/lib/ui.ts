@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 export function filterChipClass(active: boolean) {
   return [
@@ -60,4 +60,24 @@ export function setMorphTour(id: string | null) {
 /** The tour whose page should receive the growing photo, if this navigation started from one. */
 export function morphTarget() {
   return morphTour;
+}
+
+/**
+ * True for a moment after `key` changes (a filter or sort), false otherwise. Lists pass it to
+ * framer-motion's `layout`, so cards glide into their new order when filtered, but leaving the
+ * page does not make framer measure every card first (that held tour pages back ~1s on phones).
+ */
+export function useReflow(key: unknown, ms = 700) {
+  const [last, setLast] = useState(key);
+  const [on, setOn] = useState(false);
+  if (key !== last) {
+    setLast(key);
+    setOn(true);
+  }
+  useEffect(() => {
+    if (!on) return;
+    const id = window.setTimeout(() => setOn(false), ms);
+    return () => window.clearTimeout(id);
+  }, [on, ms]);
+  return on;
 }

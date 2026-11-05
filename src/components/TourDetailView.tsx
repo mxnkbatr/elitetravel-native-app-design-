@@ -6,17 +6,22 @@ import { SaveButton } from "@/components/SaveButton";
 import { GalleryLightbox } from "@/components/GalleryLightbox";
 import { TourCard } from "@/components/TourCard";
 import { TourHero } from "@/components/TourHero";
-import { ItineraryStory } from "@/components/ItineraryStory";
 import { BookingSheet, TourTabs } from "@/components/TourMobile";
 import { formatPrice, isBookable, relatedTours, type ItineraryDay, type Tour } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { isUnderway } from "@/lib/dates";
-import { useClientValue } from "@/lib/ui";
+import { useClientValue, useMediaQuery } from "@/lib/ui";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState } from "react";
 
+// The scroll-driven day story is a large-screen layout; phones get the light list below and never
+// download or mount it (it used to mount hidden, scroll listeners and all)
+const ItineraryStory = dynamic(() => import("@/components/ItineraryStory").then((m) => m.ItineraryStory), { ssr: false });
+
 export function TourDetailView({ tour }: { tour: Tour }) {
+  const wide = useMediaQuery("(min-width: 1024px)");
   const related = relatedTours(useTours(), tour.id, 3);
   const [sheetOpen, setSheetOpen] = useState(false);
   const bookable = isBookable(tour);
@@ -72,7 +77,7 @@ export function TourDetailView({ tour }: { tour: Tour }) {
             <section id="itinerary">
               <h2 className="font-display text-2xl font-semibold tracking-[-0.02em]">Хөтөлбөр</h2>
               <div className="mt-6 hidden lg:block">
-                <ItineraryStory tour={tour} renderMeta={(d) => <DayMeta day={d} />} />
+                {wide ? <ItineraryStory tour={tour} renderMeta={(d) => <DayMeta day={d} />} /> : null}
               </div>
               <ol className="relative mt-6 space-y-6 border-l border-dashed border-accent/35 pl-7 lg:hidden">
                 {tour.itinerary.map((day, i) => (

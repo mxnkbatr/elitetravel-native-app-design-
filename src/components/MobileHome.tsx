@@ -7,7 +7,7 @@ import { formatPrice, getTour, isBookable, type TourSummary } from "@/data/tours
 import { useTours } from "@/lib/content";
 import { daysUntil, departureOf } from "@/lib/dates";
 import { useTraveller } from "@/lib/traveller-store";
-import { hasNavigated, useClientValue } from "@/lib/ui";
+import { hasNavigated, useClientValue, useReflow } from "@/lib/ui";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -42,6 +42,7 @@ export function MobileHome() {
   const hello = useClientValue(() => greeting(new Date().getHours()), "Сайн байна уу");
   const [cat, setCat] = useState<(typeof categories)[number]["key"]>("all");
   const [q, setQ] = useState("");
+  const reflow = useReflow(cat);
 
   // Dated departures first (soonest leads), then open tours that go whenever the traveller picks
   // (Bali "Хүссэн үедээ", specials "огноог лавлана"), so the row never shrinks to a single card
@@ -208,10 +209,10 @@ export function MobileHome() {
               <h2 className="font-display text-2xl font-semibold tracking-[-0.03em]">
                 {cat === "all" ? "Бүх аялал" : categories.find((c) => c.key === cat)!.label}
               </h2>
-              <motion.ul layout className="mt-3 space-y-2.5">
+              <motion.ul layout={reflow} className="mt-3 space-y-2.5">
                 <AnimatePresence mode="popLayout" initial={enter}>
                   {filtered.map((t) => (
-                    <motion.li key={t.id} layout initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}>
+                    <motion.li key={t.id} layout={reflow} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}>
                       <Link href={`/tours/${t.id}`} className="flex gap-3 rounded-2xl border border-[var(--line)] bg-bg-elevated p-2.5 active:scale-[0.98] active:bg-bg">
                         <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl">
                           <Image src={t.image} alt="" fill className="object-cover" sizes="96px" />

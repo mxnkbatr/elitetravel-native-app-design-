@@ -4,7 +4,7 @@ import { SaveButton } from "@/components/SaveButton";
 import { formatPrice } from "@/data/tours";
 import { useTours } from "@/lib/content";
 
-import { filterChipClass } from "@/lib/ui";
+import { filterChipClass, useReflow } from "@/lib/ui";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -34,6 +34,8 @@ export function Tours({
   const [filter, setFilter] = useState<(typeof filters)[number]["key"]>(
     start as (typeof filters)[number]["key"],
   );
+
+  const reflow = useReflow(filter);
 
   // A new ?dest= in the URL resets the chip
   const [filterFrom, setFilterFrom] = useState(initialFilter);
@@ -87,11 +89,11 @@ export function Tours({
           ))}
         </div>
 
-        <motion.div layout className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div layout={reflow} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {visible.map((tour, i) => (
               <motion.article
-                layout
+                layout={reflow}
                 key={tour.id}
                 initial={{ opacity: 0, y: 22 }}
                 animate={{ opacity: 1, y: 0 }}

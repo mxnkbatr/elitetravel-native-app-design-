@@ -5,6 +5,7 @@ import { SaveButton } from "@/components/SaveButton";
 import { Sheet } from "@/components/Sheet";
 import { formatPrice, type TourSummary } from "@/data/tours";
 import { useTours } from "@/lib/content";
+import { useReflow } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
@@ -51,6 +52,7 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
   const [sort, setSort] = useState<Sort>("soonest");
   const [maxPrice, setMaxPrice] = useState(priceMax);
   const [sheet, setSheet] = useState(false);
+  const reflow = useReflow(`${place}|${sort}|${maxPrice}`);
 
   const result = useMemo(() => {
     const byPlace = listed.filter((t) => place === "all" || t.destinationKey === place);
@@ -100,12 +102,12 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
         </p>
       </div>
 
-      <motion.ul layout className="space-y-2.5">
+      <motion.ul layout={reflow} className="space-y-2.5">
         <AnimatePresence mode="popLayout" initial={false}>
           {result.map((t) => {
             const days = daysUntil(t.dates);
             return (
-              <motion.li key={t.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }}>
+              <motion.li key={t.id} layout={reflow} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }}>
                 <Link href={`/tours/${t.id}`} className="relative flex gap-3 rounded-2xl border border-[var(--line)] bg-bg-elevated p-2.5 active:scale-[0.98] active:bg-bg">
                   <div className="relative aspect-[4/5] w-28 shrink-0 overflow-hidden rounded-xl bg-accent-mist">
                     <Image src={t.image} alt="" fill className="object-cover" sizes="112px" />

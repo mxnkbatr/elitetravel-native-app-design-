@@ -7,6 +7,7 @@ import type { NewsCategory, NewsItem } from "@/data/news";
 import { useNews } from "@/lib/content";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
+import { useReflow } from "@/lib/ui";
 import { useState } from "react";
 
 const categories: ("Бүгд" | NewsCategory)[] = ["Бүгд", "Мэдээ", "Урамшуулал", "Зөвлөгөө"];
@@ -17,6 +18,7 @@ export function MobileNews() {
   const news = useNews();
   const [cat, setCat] = useState<(typeof categories)[number]>("Бүгд");
   const [open, setOpen] = useState<NewsItem | null>(null);
+  const reflow = useReflow(cat);
   const featured = news.slice(0, 3);
   const list = cat === "Бүгд" ? news : news.filter((n) => n.category === cat);
 
@@ -68,10 +70,10 @@ export function MobileNews() {
       </div>
 
       {/* Rows */}
-      <motion.ul layout className="space-y-2.5">
+      <motion.ul layout={reflow} className="space-y-2.5">
         <AnimatePresence mode="popLayout" initial={false}>
           {list.map((n) => (
-            <motion.li key={n.id} layout initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}>
+            <motion.li key={n.id} layout={reflow} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}>
               <button
                 type="button"
                 onClick={() => setOpen(n)}
