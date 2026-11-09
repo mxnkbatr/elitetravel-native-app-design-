@@ -1,7 +1,7 @@
 import { formatPrice, getTour, isBookable, type Tour } from "@/data/tours";
 import { quote } from "@/lib/pricing";
 import { tripChecklist } from "@/lib/checklist";
-import { chatModel, chatProviderOptions, SITE_GUIDE } from "@/lib/server/ai";
+import { chatProviderOptions, siteModel, SITE_GUIDE } from "@/lib/server/ai";
 import { getAssistantSettings } from "@/lib/server/assistant-settings";
 import { clientIp, originAllowed, rateLimit } from "@/lib/server/chat-security";
 import { getTours } from "@/lib/server/content";
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   if (!originAllowed(req)) return Response.json({ error: "origin_not_allowed" }, { status: 403 });
   if (!rateLimit(clientIp(req))) return Response.json({ error: "rate_limited", message: "Түр хүлээгээд дахин оролдоно уу." }, { status: 429 });
 
-  const model = chatModel();
+  const model = siteModel();
   if (!model) return Response.json({ error: "unavailable" }, { status: 503 });
 
   let messages: UIMessage[];

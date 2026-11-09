@@ -2,7 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { toSummary } from "@/data/tours";
 import { ContentProvider } from "@/lib/content";
 import { introBootScript } from "@/lib/intro";
-import { chatModel } from "@/lib/server/ai";
+import { siteModel } from "@/lib/server/ai";
 import { getAssistantSettings } from "@/lib/server/assistant-settings";
 import { jsonLd, siteUrl } from "@/lib/site";
 import { themeBootScript } from "@/lib/theme";
@@ -91,7 +91,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full bg-bg font-sans text-foam antialiased">
         <ContentProvider tours={tours.filter((t) => !t.unlisted).map(toSummary)} news={news} seats={seats}>
-          <AppShell assistant={chatModel() != null && assistant.enabled ? { greeting: assistant.greeting, suggestions: assistant.suggestions } : null}>{children}</AppShell>
+          <AppShell assistant={siteModel() != null && assistant.enabled ? { greeting: assistant.greeting, suggestions: assistant.suggestions } : null}>{children}</AppShell>
         </ContentProvider>
       </body>
     </html>

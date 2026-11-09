@@ -24,13 +24,16 @@ export function NewsEditor({ initial, originalId, tours }: { initial: NewsItem; 
       <Link href="/admin/news" className="inline-flex text-sm font-semibold text-accent">
         ‹ Мэдээ
       </Link>
-      <AdminTitle title={originalId ? item.title || "Мэдээ" : "Шинэ мэдээ"} />
+      <AdminTitle
+        title={originalId ? item.title || "Мэдээ засах" : "Мэдээ бичих"}
+        sub="Гарчиг, зураг, текстийг бөглөөд доор хадгална."
+      />
 
-      <Section title="Мэдээ">
+      <Section title="1. Толгой" hint="Гарчиг, ангилал, холбоос.">
         <Field label="Гарчиг" wide>
-          <input value={item.title} onChange={(e) => set("title", e.target.value)} className={inputClass} />
+          <input value={item.title} onChange={(e) => set("title", e.target.value)} placeholder="Мэдээний гарчиг" className={inputClass} />
         </Field>
-        <Field label="ID" hint="Жижиг латин үсэг, тоо, зураас — жишээ: bali-december">
+        <Field label="Холбоос (ID)" hint="Жишээ: bali-december">
           <input value={item.id} onChange={(e) => set("id", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} className={inputClass} />
         </Field>
         <Field label="Ангилал">
@@ -53,12 +56,18 @@ export function NewsEditor({ initial, originalId, tours }: { initial: NewsItem; 
         <Field label="Унших хугацаа (мин)">
           <input inputMode="numeric" value={item.readMin} onChange={(e) => set("readMin", Number(e.target.value.replace(/\D/g, "")) || 1)} className={inputClass} />
         </Field>
+      </Section>
+
+      <Section title="2. Зураг" hint="Жагсаалт болон нүүр дээр харагдана.">
         <ImageField label="Зураг" value={item.image} onChange={(v) => set("image", v)} />
-        <Field label="Товч" hint="Жагсаалт, хайлтад гарна" wide>
+      </Section>
+
+      <Section title="3. Текст" hint="Товч нь жагсаалтад, агуулга нь дэлгэрэнгүй хуудсанд.">
+        <Field label="Товч" hint="1–2 өгүүлбэр" wide>
           <textarea rows={2} value={item.excerpt} onChange={(e) => set("excerpt", e.target.value)} className={inputClass} />
         </Field>
         <Field label="Агуулга" hint="Догол мөрүүдийг хоосон мөрөөр тусгаарла" wide>
-          <textarea rows={10} value={bodyText} onChange={(e) => setBodyText(e.target.value)} className={inputClass} />
+          <textarea rows={12} value={bodyText} onChange={(e) => setBodyText(e.target.value)} placeholder="Энд мэдээгээ бичнэ…" className={`${inputClass} min-h-[16rem]`} />
         </Field>
       </Section>
 

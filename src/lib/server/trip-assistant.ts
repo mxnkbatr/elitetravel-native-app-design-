@@ -3,7 +3,7 @@ import "server-only";
 import { formatPrice, getTour, type Tour } from "@/data/tours";
 import { checklistText, tripChecklist, type ChecklistItem } from "@/lib/checklist";
 import { daysUntil } from "@/lib/dates";
-import { chatModel, chatProviderOptions, PHONE, SITE_GUIDE } from "@/lib/server/ai";
+import { chatProviderOptions, PHONE, siteModel, SITE_GUIDE } from "@/lib/server/ai";
 import { getTours } from "@/lib/server/content";
 import { tripView } from "@/lib/server/trip-view";
 import { BOOKING_COLUMNS, db, postMessage, type BookingRow } from "@/lib/server/trips";
@@ -20,7 +20,7 @@ export const AI_MARK = "🤖";
 /** Staff who replied this recently are mid-conversation: the assistant stays out. */
 const STAFF_ACTIVE_MS = 15 * 60_000;
 
-export const tripRepliesEnabled = () => process.env.AI_TRIP_REPLIES !== "off" && chatModel() != null;
+export const tripRepliesEnabled = () => process.env.AI_TRIP_REPLIES !== "off" && siteModel() != null;
 
 const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? "";
 
@@ -67,7 +67,7 @@ const RULES = `ДҮРЭМ:
  * already talking to them or a newer message arrived meanwhile.
  */
 export async function assistantReply(bookingId: string) {
-  const model = chatModel();
+  const model = siteModel();
   if (!model || !tripRepliesEnabled()) return;
   const client = db();
   const [{ data: booking }, { data: recent }] = await Promise.all([
@@ -108,7 +108,7 @@ export async function assistantReply(bookingId: string) {
 /** A short personal opening for a reminder; the list itself is always the exact checklist. */
 export async function reminderIntro(name: string, trip: Trip, days: number) {
   const fallback = `Сайн байна уу, ${firstName(name)}! «${trip.tourTitle}» аялалд ${days} хоног үлдлээ. Аялалд бэлтгэхэд дараах зүйлс дутуу байна:`;
-  const model = chatModel();
+  const model = siteModel();
   if (!model) return fallback;
   try {
     const { text } = await generateText({

@@ -60,7 +60,10 @@ function useBadges(): Record<string, number> {
   };
 }
 
-/** "● LIVE" with how long ago the panel last synced. */
+/**
+ * Says nothing while the panel keeps itself up to date; only when syncing has stopped for a
+ * while does a plain warning appear (it replaced a technical "LIVE · 12s" counter).
+ */
 function LiveStatus({ compact }: { compact?: boolean }) {
   const { syncedAt } = usePulse();
   const [now, setNow] = useState(() => Date.now());
@@ -68,12 +71,19 @@ function LiveStatus({ compact }: { compact?: boolean }) {
     const t = window.setInterval(() => setNow(Date.now()), 5_000);
     return () => window.clearInterval(t);
   }, []);
-  const ago = syncedAt ? Math.max(0, Math.round((now - syncedAt) / 1000)) : null;
-  const ok = ago != null && ago < 90;
+  // Not yet synced counts as fine; the first sync is on its way
+  const stale = syncedAt != null && now - syncedAt > 90_000;
+  if (!stale) return null;
+  const help = "Шинэ захиалга, мессеж автоматаар орж ирэхгүй байна. Интернэтээ шалгаад хуудсаа дахин ачаална уу.";
+  // On the phone avatar there is only room for the dot
+  if (compact) return <span title={help} className="block size-2.5 rounded-full bg-amber-500 ring-2 ring-white" />;
   return (
-    <span className="flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-muted" title={ago != null ? `Сүүлд ${ago} секундын өмнө шинэчлэгдсэн` : "Холбогдож байна…"}>
-      <span className={`size-2 rounded-full ${ok ? "admin-live-dot bg-accent" : "bg-amber-500"}`} />
-      {compact ? null : ok ? `live · ${ago}s` : "sync…"}
+    <span
+      className="flex items-center gap-2 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800"
+      title={help}
+    >
+      <span className="size-2 rounded-full bg-amber-500" />
+      Холболт тасарсан
     </span>
   );
 }

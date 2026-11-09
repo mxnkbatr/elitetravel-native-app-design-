@@ -5,6 +5,7 @@ import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import Link from "next/link";
 import { Field, GalleryField, ImageField, inputClass, LinesField, Section } from "@/app/admin/(panel)/fields";
 import { SaveBar } from "@/app/admin/(panel)/SaveBar";
+import { TourDatesEditor } from "@/components/TourDatesEditor";
 import type { ItineraryDay, Tour } from "@/data/tours";
 import { DOC_TYPES } from "@/lib/documents";
 import { useState } from "react";
@@ -28,15 +29,25 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
   return (
     <div className="mx-auto max-w-4xl space-y-5 pb-28">
       <Link href="/admin/tours" className="inline-flex text-sm font-semibold text-accent">
-        ‹ Аяллууд
+        ‹ Аялал
       </Link>
-      <AdminTitle title={originalId ? tour.title || "Аялал" : "Шинэ аялал"} />
+      <AdminTitle
+        title={originalId ? tour.title || "Аялал засах" : "Аялал нэмэх"}
+        sub={originalId ? "Доорх хэсгүүдийг бөглөөд доор хадгална." : "Шинэ аяллын мэдээллийг хэсэг хэсгээр бөглөнө."}
+        action={
+          originalId ? (
+            <Link href={`/admin/departures/${originalId}`} className="inline-flex h-11 items-center gap-1.5 rounded-full border border-[var(--line)] bg-white px-4 text-sm font-semibold text-accent">
+              Аялагчид ›
+            </Link>
+          ) : null
+        }
+      />
 
-      <Section title="Үндсэн мэдээлэл">
-        <Field label="Гарчиг" wide>
-          <input value={tour.title} onChange={(e) => set("title", e.target.value)} className={inputClass} />
+      <Section title="1. Үндсэн" hint="Нэр, чиглэл, хэд хоног, огноо — эхлээд эдгээрийг бөглө.">
+        <Field label="Аяллын нэр" wide>
+          <input value={tour.title} onChange={(e) => set("title", e.target.value)} placeholder="Жишээ: Хайнань 8 хоног" className={inputClass} />
         </Field>
-        <Field label="ID (холбоос)" hint={`elitetravel.mn/tours/${tour.id || "…"} — жижиг латин үсэг, тоо, зураас`}>
+        <Field label="Холбоос (ID)" hint={`elitetravel.mn/tours/${tour.id || "…"}`}>
           <input value={tour.id} onChange={(e) => set("id", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} className={inputClass} />
         </Field>
         <Field label="Чиглэлийн бүс" hint="Газрын зураг, цэсэнд хаана харагдах">
@@ -57,9 +68,7 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
         <Field label="Шөнийн тоо">
           <input inputMode="numeric" value={tour.nights ?? ""} onChange={(e) => set("nights", numOrNull(e.target.value))} className={inputClass} />
         </Field>
-        <Field label="Огноонууд" hint="Олон огноо бол « · » тэмдгээр тусгаарла: 11/03–11/10 · 11/10–11/17" wide>
-          <input value={tour.dates ?? ""} onChange={(e) => set("dates", e.target.value)} className={inputClass} />
-        </Field>
+        <TourDatesEditor value={tour.dates ?? ""} onChange={(v) => set("dates", v || undefined)} />
         <Field label="Нислэг / хөдлөх">
           <input value={tour.departure ?? ""} onChange={(e) => set("departure", e.target.value)} className={inputClass} />
         </Field>
@@ -79,15 +88,15 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
         </Field>
         <label className="flex items-center gap-2.5 text-sm sm:col-span-2">
           <input type="checkbox" checked={tour.status === "ended"} onChange={(e) => set("status", e.target.checked ? "ended" : undefined)} className="size-4 accent-[#0d8f84]" />
-          Дууссан аялал — жагсаалтаас нуух (холбоосоор нээгдсээр байна)
+          Дууссан аялал — жагсаалтаас нуух
         </label>
         <label className="flex items-center gap-2.5 text-sm sm:col-span-2">
           <input type="checkbox" checked={tour.unlisted === true} onChange={(e) => set("unlisted", e.target.checked ? true : undefined)} className="size-4 accent-[#0d8f84]" />
-          Нууц (туршилтын) аялал — зөвхөн холбоосоор захиалагдана, сайт, хайлт, чатад харагдахгүй
+          Нууц туршилтын аялал — зөвхөн холбоосоор
         </label>
       </Section>
 
-      <Section title="Үнэ">
+      <Section title="2. Үнэ" hint="Том хүний үнэ заавал. Бусад нь нэмэлт.">
         <Field label="Үнэ (₮, том хүн)" hint="Хоосон бол «Удахгүй»">
           <input inputMode="numeric" value={tour.price ?? ""} onChange={(e) => set("price", numOrNull(e.target.value))} className={inputClass} />
         </Field>
@@ -112,12 +121,12 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
         </label>
       </Section>
 
-      <Section title="Зураг">
+      <Section title="3. Зураг" hint="Нүүр зураг сайт, апп дээр том харагдана.">
         <ImageField label="Нүүр зураг" value={tour.image} onChange={(v) => set("image", v)} />
         <GalleryField value={tour.gallery} onChange={(v) => set("gallery", v)} />
       </Section>
 
-      <Section title="Тайлбар">
+      <Section title="4. Тайлбар" hint="Товч нь жагсаалтад, дэлгэрэнгүй нь аяллын хуудсанд.">
         <Field label="Товч тайлбар" hint="Карт, хайлтад гарна" wide>
           <textarea rows={2} value={tour.description} onChange={(e) => set("description", e.target.value)} className={inputClass} />
         </Field>
@@ -132,8 +141,7 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
 
       <ItineraryEditor days={tour.itinerary} onChange={(v) => set("itinerary", v)} />
 
-      <Section title="Аялагчаас авах баримт">
-        <p className="-mt-2 text-xs text-muted sm:col-span-2">Сонгосон баримтуудыг аялагч аппаараа хуулна. Тоо нь хүний тооноос хамаарна (жишээ нь зураг зорчигч бүрээс, төрсний гэрчилгээ хүүхэд бүрээс).</p>
+      <Section title="5. Баримт" hint="Аялагч аппаараа хуулах ёстой баримтууд.">
         {DOC_TYPES.map((d) => {
           const on = tour.documents?.includes(d.type) ?? false;
           return (
@@ -179,8 +187,12 @@ function ItineraryEditor({ days, onChange }: { days: ItineraryDay[]; onChange: (
   };
 
   return (
-    <section className="rounded-2xl border border-[var(--line)] bg-white p-5 sm:p-6">
-      <h2 className="mb-4 font-display text-xl font-semibold">Хөтөлбөр</h2>
+    <section className="overflow-hidden rounded-[1.5rem] border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(6,42,42,0.04)]">
+      <header className="border-b border-[var(--line)] bg-[#f7faf9] px-4 py-4 sm:px-6">
+        <h2 className="font-display text-[1.35rem] font-semibold leading-tight">Өдөр тутмын хөтөлбөр</h2>
+        <p className="mt-1 text-xs text-muted">Өдөр бүрийн гарчиг, тайлбар. Доор «Өдөр нэмэх» дар.</p>
+      </header>
+      <div className="p-4 sm:p-6">
       <div className="space-y-3">
         {days.map((d, i) => (
           <div key={i} className="rounded-xl border border-[var(--line)] bg-[#f8faf9] p-4">
@@ -213,6 +225,7 @@ function ItineraryEditor({ days, onChange }: { days: ItineraryDay[]; onChange: (
       >
         + Өдөр нэмэх
       </button>
+      </div>
     </section>
   );
 }

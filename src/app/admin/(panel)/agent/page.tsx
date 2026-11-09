@@ -1,7 +1,7 @@
 import { AgentChat } from "@/app/admin/(panel)/agent/AgentChat";
 import type { ProposalStatus } from "@/lib/agent";
 import { getConversation, listConversations } from "@/lib/server/agent/conversations";
-import { chatModel } from "@/lib/server/ai";
+import { agentModel } from "@/lib/server/ai";
 import { requireAdmin } from "@/lib/server/auth";
 import { db } from "@/lib/server/trips";
 
@@ -32,7 +32,7 @@ export default async function AdminAgentPage({ searchParams }: PageProps<"/admin
       initial={open ? { id: open.id, messages: open.messages } : null}
       statuses={statuses}
       role={admin.role}
-      configured={chatModel() != null}
+      configured={agentModel() != null}
     />
   );
 }

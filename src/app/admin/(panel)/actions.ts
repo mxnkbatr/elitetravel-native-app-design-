@@ -1,16 +1,17 @@
 "use server";
 
-import { formatPrice } from "@/data/tours";
+import { formatPrice, getTour, tourDates } from "@/data/tours";
+import { quote } from "@/lib/pricing";
 import { can, ROLES, type Role } from "@/lib/permissions";
 import { audit } from "@/lib/server/audit";
 import { requireAdmin } from "@/lib/server/auth";
-import { CONTENT_TAG } from "@/lib/server/content";
+import { CONTENT_TAG, getTours } from "@/lib/server/content";
 import { invalidMessage, parseNews, parseTour } from "@/lib/server/content-validate";
 import { issueReceipt } from "@/lib/server/ebarimt";
-import { deletePassengers, logPassportAccess, readPassengers } from "@/lib/server/passports";
+import { deletePassengers, logPassportAccess, readPassengers, savePassengers } from "@/lib/server/passports";
 import { onPaymentPaid } from "@/lib/server/payments";
-import { promoteWaitlist } from "@/lib/server/seats";
-import { BOOKING_COLUMNS, db, postMessage, refreshSeats, statusNotice, type BookingRow } from "@/lib/server/trips";
+import { departureState, promoteWaitlist } from "@/lib/server/seats";
+import { BOOKING_COLUMNS, db, newAccessToken, postMessage, refreshSeats, statusNotice, type BookingRow } from "@/lib/server/trips";
 import { unfilledParts } from "@/lib/contract";
 import { docInfo, type Care, type DocSlot, type DocStatus } from "@/lib/documents";
 import { getContractTemplate, setContractTemplate, signedContract } from "@/lib/server/contract";
@@ -119,6 +120,130 @@ export async function adminDeletePassengers(bookingId: string): Promise<SaveResu
   await postMessage(bookingId, "system", "Таны паспортын мэдээллийг манай системээс устгалаа.");
   revalidatePath("/admin");
   return { ok: true };
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function staffPassengers(input: unknown, max: number): Passenger[] | null {
+  if (!Array.isArray(input) || input.length === 0 || input.length > max) return null;
+  const out: Passenger[] = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== "object") return null;
+    const r = raw as Record<string, unknown>;
+    const str = (v: unknown, n: number) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+    const name = str(r.name, 80).toUpperCase().replace(/\s+/g, " ");
+    if (name && !/^[A-Z][A-Z .'-]+$/.test(name)) return null;
+    const passport = str(r.passport, 20).toUpperCase().replace(/\s/g, "");
+    if (passport && !/^[A-Z0-9]{5,20}$/.test(passport)) return null;
+    const birth = str(r.birth, 10);
+    const expiry = str(r.expiry, 10);
+    if ((birth && !ISO_DATE.test(birth)) || (expiry && !ISO_DATE.test(expiry))) return null;
+    const gender = r.gender === "M" || r.gender === "F" ? r.gender : undefined;
+    out.push({ name, gender, birth: birth || undefined, passport: passport || undefined, expiry: expiry || undefined });
+  }
+  return out;
+}
+
+/** Staff enter passport details by hand when the traveller cannot use the app. */
+export async function adminSavePassengers(bookingId: string, passengers: unknown): Promise<SaveResult> {
+  const admin = await requireAdmin("passports.view");
+  if (!can(admin.role, "bookings.manage")) return DENIED;
+  const { data: b } = await db().from("booking_requests").select("adults, kids_own_bed, kids_shared_bed, travel_date, status").eq("id", bookingId).maybeSingle();
+  if (!b || b.status === "cancelled") return { ok: false, error: "Захиалга олдсонгүй." };
+  const max = Math.max(1, b.adults + b.kids_own_bed + b.kids_shared_bed);
+  const rows = staffPassengers(passengers, max);
+  if (!rows) return { ok: false, error: "Нэр, паспортыг латин үсгээр зөв оруулна уу." };
+  try {
+    await savePassengers(bookingId, rows, b.travel_date);
+  } catch {
+    return { ok: false, error: "Хадгалж чадсангүй." };
+  }
+  await logPassportAccess(admin.email, bookingId, "view");
+  await audit(admin.email, "passengers.manual", { type: "booking", id: bookingId }, { count: rows.length });
+  revalidatePath("/admin");
+  revalidatePath("/admin/departures");
+  return { ok: true };
+}
+
+function bookingCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return "ET-" + Array.from(randomBytes(8), (b) => alphabet[b % alphabet.length]).join("");
+}
+
+export type ManualBookingInput = {
+  tourId: string;
+  date?: string;
+  name: string;
+  phone: string;
+  adults: number;
+  kidsOwnBed?: number;
+  kidsSharedBed?: number;
+  singleRooms?: number;
+  note?: string;
+};
+
+/** Walk-in / phone booking entered by staff (source = staff). */
+export async function createManualBooking(input: ManualBookingInput): Promise<SaveResult & { id?: string }> {
+  const admin = await requireAdmin("bookings.manage");
+  const tour = getTour(await getTours(), input.tourId);
+  if (!tour) return { ok: false, error: "Аялал олдсонгүй." };
+
+  const name = input.name.trim().slice(0, 80);
+  const phone = input.phone.trim().slice(0, 20);
+  const note = input.note?.trim().slice(0, 500) || null;
+  const date = input.date?.trim().slice(0, 60) || null;
+  const adults = Number.isInteger(input.adults) && input.adults >= 1 && input.adults <= 30 ? input.adults : null;
+  const kidsOwnBed = Number.isInteger(input.kidsOwnBed ?? 0) ? Math.max(0, Math.min(30, input.kidsOwnBed ?? 0)) : null;
+  const kidsSharedBed = Number.isInteger(input.kidsSharedBed ?? 0) ? Math.max(0, Math.min(30, input.kidsSharedBed ?? 0)) : null;
+  const singleRooms = Number.isInteger(input.singleRooms ?? 0) ? Math.max(0, Math.min(30, input.singleRooms ?? 0)) : null;
+
+  if (name.length < 2) return { ok: false, error: "Нэрээ оруулна уу." };
+  if (!/^[0-9+ ]{8,20}$/.test(phone)) return { ok: false, error: "Утасны дугаараа шалгана уу." };
+  if (adults == null || kidsOwnBed == null || kidsSharedBed == null || singleRooms == null) return { ok: false, error: "Хүний тоо буруу байна." };
+
+  const dateOptions = tourDates(tour);
+  if (date && dateOptions.length > 0 && !dateOptions.includes(date)) return { ok: false, error: "Огноо буруу байна." };
+
+  const { total, deposit } = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms });
+  const departure = await departureState(tour.id, date ?? "");
+  if (departure.closed) return { ok: false, error: "Энэ огноо хаагдсан байна." };
+  const people = adults + kidsOwnBed + kidsSharedBed;
+  const status: TripStatus =
+    departure.capacity != null && departure.capacity - departure.held < people ? "waitlist" : "contacted";
+
+  const id = bookingCode();
+  const { error } = await db().from("booking_requests").insert({
+    access_token: newAccessToken(),
+    status,
+    id,
+    tour_id: tour.id,
+    tour_title: tour.title,
+    travel_date: date,
+    name,
+    phone,
+    adults,
+    kids_own_bed: kidsOwnBed,
+    kids_shared_bed: kidsSharedBed,
+    single_rooms: Math.min(singleRooms, adults),
+    total,
+    deposit,
+    note,
+    source: "staff",
+  });
+  if (error) return { ok: false, error: "Хадгалж чадсангүй." };
+
+  await postMessage(
+    id,
+    "system",
+    status === "waitlist"
+      ? statusNotice("waitlist", { total, deposit, paid_amount: 0 })!
+      : `Сайн байна уу, ${name}! «${tour.title}» аяллын захиалгыг манай баг бүртгэлээ (${id}).`,
+  );
+  await audit(admin.email, "booking.manual", { type: "booking", id }, { tour: tour.id, date, people });
+  refreshSeats();
+  revalidatePath("/admin");
+  revalidatePath("/admin/departures");
+  return { ok: true, id };
 }
 
 /** Cash / bank transfer received outside QPay. */

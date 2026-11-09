@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
-export type ListItem = { id: string; title: string; sub: string; image: string; badge?: string; muted?: boolean };
+export type ListItem = { id: string; title: string; sub: string; image: string; badge?: string; muted?: boolean; peopleHref?: string };
 
 /** Tours / news overview: reorder with arrows (order shown on the site), edit, delete. */
 export function ContentList({ table, items: initial }: { table: "tours" | "news"; items: ListItem[] }) {
@@ -70,6 +70,13 @@ export function ContentList({ table, items: initial }: { table: "tours" | "news"
             </div>
           </Link>
           {item.badge ? <span className="hidden rounded-full bg-bg px-2.5 py-1 text-[0.7rem] font-semibold text-muted sm:inline">{item.badge}</span> : null}
+          {item.peopleHref ? (
+            <Link href={item.peopleHref} className="grid size-10 place-items-center rounded-full text-accent hover:bg-accent/10" aria-label="Аялагчид" title="Аялагчид">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm-6 9a6 6 0 0 1 12 0M16 4.5a3.5 3.5 0 0 1 0 6.5M21 20a6 6 0 0 0-3.5-5.4" />
+              </svg>
+            </Link>
+          ) : null}
           <Link href={`/admin/${table}/${item.id}`} className="hidden rounded-full px-3 py-2 text-xs font-semibold text-accent hover:bg-accent/10 sm:inline">
             Засах
           </Link>

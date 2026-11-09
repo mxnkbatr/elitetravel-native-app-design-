@@ -23,9 +23,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
     title: "Өдөр тутам",
     items: [
-      { href: "/admin", label: "Захиалга", hint: "Хүсэлт, чат, төлөв, баримт", icon: TicketIcon, keywords: "booking zahialga chat" },
-      { href: "/admin/payments", label: "Төлбөр", hint: "QPay, хуваан төлөх, И-баримт", icon: CardIcon, keywords: "qpay pocket toki ebarimt tulbur" },
-      { href: "/admin/departures", label: "Огноо, суудал", hint: "Суудал, хүлээлэг, нислэгийн жагсаалт", icon: PlaneIcon, keywords: "seats suudal ognoo manifest" },
+      // First: staff start here and ask the agent instead of hunting through screens
       {
         href: "/admin/agent",
         label: "Elite AI",
@@ -33,13 +31,16 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
         icon: SparkIcon,
         keywords: "ai grok agent tuslah agentic chat boost",
       },
+      { href: "/admin", label: "Захиалга", hint: "Хүсэлт, аялагч нэмэх, чат", icon: TicketIcon, keywords: "booking zahialga chat aylagch" },
+      { href: "/admin/payments", label: "Төлбөр", hint: "QPay, хуваан төлөх, И-баримт", icon: CardIcon, keywords: "qpay pocket toki ebarimt tulbur" },
+      { href: "/admin/departures", label: "Аялагчид", hint: "Аялал → хүмүүс → мэдээлэл", icon: PlaneIcon, keywords: "seats suudal ognoo manifest aylagch" },
     ],
   },
   {
     title: "Сайт",
     items: [
-      { href: "/admin/tours", label: "Аялал", hint: "Аялал нэмэх, засах, дараалал", icon: CompassIcon, keywords: "tour ayalal" },
-      { href: "/admin/news", label: "Мэдээ", hint: "Нийтлэл, урамшуулал", icon: NewsIcon, keywords: "news medee" },
+      { href: "/admin/tours", label: "Аялал нэмэх", hint: "Аялал бичих, засах", icon: CompassIcon, keywords: "tour ayalal" },
+      { href: "/admin/news", label: "Мэдээ бичих", hint: "Нийтлэл, урамшуулал", icon: NewsIcon, keywords: "news medee" },
       { href: "/admin/poster", label: "Постер", hint: "Instagram-д тавих зураг үүсгэх", icon: ImageIcon, keywords: "poster instagram" },
       { href: "/admin/assistant", label: "Сайтын чат", hint: "Сайтын AI туслахын мэндчилгээ, асуулт, заавар", icon: ChatIcon, keywords: "chat tuslah assistant site greeting" },
     ],
@@ -63,7 +64,7 @@ export const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
 ];
 
 /** Bottom tabs on phones; the rest is in the «Цэс» sheet. */
-export const PHONE_TABS = ["/admin", "/admin/payments", "/admin/agent", "/admin/tours"];
+export const PHONE_TABS = ["/admin/agent", "/admin", "/admin/departures", "/admin/tours"];
 
 export const navAllowed = (role: Role, item: NavItem) => can(role, routePermission(item.href));
 

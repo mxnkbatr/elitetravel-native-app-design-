@@ -3,7 +3,7 @@
 import { Icon } from "@/components/Icon";
 import { AdminEmpty } from "@/app/admin/(panel)/AdminEmpty";
 import { confirmAction, toast } from "@/app/admin/(panel)/feedback";
-import { adminDeletePassengers, getThread, recordPayment, sendStaffMessage, updateBooking, viewPassengers } from "@/app/admin/(panel)/actions";
+import { adminDeletePassengers, adminSavePassengers, getThread, recordPayment, sendStaffMessage, updateBooking, viewPassengers } from "@/app/admin/(panel)/actions";
 import { DocsPanel } from "@/app/admin/(panel)/DocsPanel";
 import { InstallmentActions } from "@/app/admin/(panel)/payments/InstallmentActions";
 import { Sheet } from "@/components/Sheet";
@@ -77,6 +77,7 @@ export function BookingsBoard({
   perms,
   initialQuery = "",
   initialFilter,
+  initialTab,
   docs = [],
 }: {
   /** Bookings with documents waiting for review */
@@ -90,6 +91,8 @@ export function BookingsBoard({
   initialQuery?: string;
   /** From `/admin?f=unread|new|…`, the «today» shortcuts */
   initialFilter?: string;
+  /** From `/admin?tab=people|chat|money|docs` — auto-open that panel on the matched booking */
+  initialTab?: string;
 }) {
   const [rows, setRows] = useState(bookings);
   const [unread, setUnread] = useState(() => new Set(initialUnread));
@@ -97,6 +100,15 @@ export function BookingsBoard({
     initialFilter === "unread" || initialFilter === "docs" || STATUSES.some((s) => s.key === initialFilter) ? (initialFilter as Filter) : "all",
   );
   const [q, setQ] = useState(initialQuery);
+  const autoOpen = useMemo(() => {
+    const id = initialQuery.trim().toUpperCase();
+    if (!id) return null;
+    const hit = bookings.find((b) => b.id.toUpperCase() === id);
+    if (!hit) return null;
+    const tabs = ["people", "chat", "money", "docs", "status"] as const;
+    const tab = tabs.includes(initialTab as (typeof tabs)[number]) ? (initialTab as (typeof tabs)[number]) : "people";
+    return { id: hit.id, tab };
+  }, [bookings, initialQuery, initialTab]);
 
   const counts = useMemo(() => Object.fromEntries(STATUSES.map((s) => [s.key, rows.filter((r) => r.status === s.key).length])), [rows]);
   const shown = useMemo(() => {
@@ -156,6 +168,7 @@ export function BookingsBoard({
             perms={perms}
             onChange={(c) => patch(b.id, c)}
             onRead={() => markRead(b.id)}
+            autoOpen={autoOpen?.id === b.id ? autoOpen.tab : null}
           />
         ))}
       </div>
@@ -171,6 +184,7 @@ function BookingRow({
   perms,
   onChange,
   onRead,
+  autoOpen,
 }: {
   b: AdminBooking;
   unread: boolean;
@@ -179,11 +193,22 @@ function BookingRow({
   perms: BoardPerms;
   onChange: (c: Partial<AdminBooking>) => void;
   onRead: () => void;
+  autoOpen?: "status" | "chat" | "money" | "people" | "docs" | null;
 }) {
   const [pending, start] = useTransition();
   const [note, setNote] = useState(b.staff_note ?? "");
   const [error, setError] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<"status" | "chat" | "money" | "people" | "docs" | null>(null);
+  const [sheet, setSheet] = useState<"status" | "chat" | "money" | "people" | "docs" | null>(autoOpen ?? null);
+  const opened = useRef(false);
+  useEffect(() => {
+    if (!autoOpen || opened.current) return;
+    opened.current = true;
+    setSheet(autoOpen);
+    if (autoOpen === "chat") onRead();
+    // scroll the matched card into view once
+    document.getElementById(`booking-${b.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen, b.id]);
   const status = STATUSES.find((s) => s.key === b.status) ?? STATUSES[0];
   const kids = b.kids_own_bed + b.kids_shared_bed;
   const people = b.adults + kids;
@@ -213,6 +238,7 @@ function BookingRow({
 
   return (
     <article
+      id={`booking-${b.id}`}
       className={`rounded-[1.4rem] border bg-white p-4 shadow-[0_8px_24px_rgba(6,42,42,0.04)] transition sm:p-5 ${b.status === "cancelled" ? "opacity-60" : ""} ${
         unread ? "border-red-300 ring-2 ring-red-100" : stale ? "border-amber-300" : "border-[var(--line)]"
       }`}
@@ -370,7 +396,7 @@ function BookingRow({
       <Sheet open={sheet === "money"} onClose={close} title="Дүн, төлбөр">
         <MoneyPanel b={b} onChange={onChange} />
       </Sheet>
-      <Sheet open={sheet === "people"} onClose={close} title={`Паспорт ${ready}/${people}`}>
+      <Sheet open={sheet === "people"} onClose={close} title={`${b.name} · мэдээлэл`}>
         <PeoplePanel b={b} onChange={onChange} />
       </Sheet>
       <Sheet open={sheet === "docs"} onClose={close} tall title="Баримт, гэрээ">
@@ -587,71 +613,166 @@ function MoneyPanel({ b, onChange }: { b: AdminBooking; onChange: (c: Partial<Ad
   );
 }
 
+function blankPassenger(): Passenger {
+  return { name: "", gender: undefined, birth: "", passport: "", expiry: "" };
+}
+
 function PeoplePanel({ b, onChange }: { b: AdminBooking; onChange: (c: Partial<AdminBooking>) => void }) {
+  const count = Math.max(1, b.adults + b.kids_own_bed + b.kids_shared_bed);
   const [passengers, setPassengers] = useState<Passenger[] | null>(null);
+  const [editing, setEditing] = useState(!b.passengers_count);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   useEffect(() => {
-    if (!b.passengers_count) return;
     let alive = true;
+    if (!b.passengers_count) {
+      setPassengers(Array.from({ length: count }, blankPassenger));
+      setEditing(true);
+      return;
+    }
     viewPassengers(b.id)
-      .then((p) => alive && setPassengers(p))
+      .then((p) => {
+        if (!alive) return;
+        const rows = Array.from({ length: count }, (_, i) => p[i] ?? blankPassenger());
+        setPassengers(rows);
+      })
       .catch(() => alive && setError("Паспортын мэдээлэл уншиж чадсангүй."));
     return () => {
       alive = false;
     };
-  }, [b.id, b.passengers_count]);
+  }, [b.id, b.passengers_count, count]);
+
+  function patch(i: number, change: Partial<Passenger>) {
+    setPassengers((all) => (all ? all.map((p, j) => (j === i ? { ...p, ...change } : p)) : all));
+  }
+
+  function save() {
+    if (!passengers) return;
+    setError(null);
+    start(async () => {
+      const res = await adminSavePassengers(b.id, passengers);
+      if (!res.ok) {
+        setError(res.error);
+        toast(res.error, "error");
+        return;
+      }
+      const ready = passengers.filter((p) => !passengerIssue(p, b.travel_date)).length;
+      onChange({ passengers_count: passengers.filter((p) => p.name || p.passport).length, passengers_ready: ready });
+      setEditing(false);
+      toast("Паспорт хадгалагдлаа");
+    });
+  }
 
   async function remove() {
     if (!(await confirmAction({ title: "Паспортын мэдээллийг устгах уу?", body: "Энэ захиалгын паспортын мэдээлэл бүрмөсөн устна. Аялагчид мэдэгдэл очно.", confirm: "Устгах", danger: true }))) return;
     start(async () => {
       const res = await adminDeletePassengers(b.id);
       if (res.ok) {
-        setPassengers([]);
+        setPassengers(Array.from({ length: count }, blankPassenger));
+        setEditing(true);
         onChange({ passengers_count: 0, passengers_ready: 0 });
       }
     });
   }
 
-  if (!b.passengers_count) return <p className="rounded-2xl bg-bg p-6 text-center text-sm text-muted">Аялагч паспортын мэдээллээ оруулаагүй байна.</p>;
-  if (error) return <p className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{error}</p>;
+  if (error && !passengers) return <p className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{error}</p>;
   if (!passengers) return <p className="rounded-2xl bg-bg p-6 text-center text-sm text-muted">Шифрээс тайлж байна…</p>;
+
   return (
-    <div className="space-y-2 pb-2">
-      <p className="text-[0.7rem] text-muted"><Icon name="lock" size={14} className="mr-1.5 inline -mt-0.5 text-muted" />Шифрлэгдсэн мэдээлэл. Энэ харалт бүртгэгдлээ.</p>
+    <div className="space-y-3 pb-2">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[0.7rem] leading-relaxed text-muted">
+          <Icon name="lock" size={14} className="mr-1.5 inline -mt-0.5 text-muted" />
+          {editing ? "Латин үсгээр, паспортын хэвээр. Гар аргаар бөглөж болно." : "Шифрлэгдсэн мэдээлэл. Энэ харалт бүртгэгдлээ."}
+        </p>
+        {!editing ? (
+          <button type="button" onClick={() => setEditing(true)} className="shrink-0 text-xs font-semibold text-accent">
+            Засах
+          </button>
+        ) : null}
+      </div>
+
       {passengers.map((p, i) => {
         const issue = passengerIssue(p, b.travel_date);
-        return (
-          <div key={i} className="rounded-2xl border border-[var(--line)] bg-white p-3.5">
-            <div className="flex items-start justify-between gap-2">
-              <p className="font-semibold">{p.name || "—"}</p>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${issue ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}>{issue ?? "Бэлэн"}</span>
+        if (!editing) {
+          return (
+            <div key={i} className="rounded-2xl border border-[var(--line)] bg-white p-3.5">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-semibold">{p.name || "—"}</p>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${issue ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}>{issue ?? "Бэлэн"}</span>
+              </div>
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                <div>
+                  <dt className="text-muted">Паспорт</dt>
+                  <dd className="font-mono font-semibold">{p.passport || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Дуусах</dt>
+                  <dd className="font-semibold">{p.expiry || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Төрсөн</dt>
+                  <dd className="font-semibold">{p.birth || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Хүйс</dt>
+                  <dd className="font-semibold">{p.gender === "M" ? "Эр" : p.gender === "F" ? "Эм" : "—"}</dd>
+                </div>
+              </dl>
             </div>
-            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-              <div>
-                <dt className="text-muted">Паспорт</dt>
-                <dd className="font-mono font-semibold">{p.passport ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Дуусах</dt>
-                <dd className="font-semibold">{p.expiry ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Төрсөн</dt>
-                <dd className="font-semibold">{p.birth ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">Хүйс</dt>
-                <dd className="font-semibold">{p.gender === "M" ? "Эр" : p.gender === "F" ? "Эм" : "—"}</dd>
-              </div>
-            </dl>
+          );
+        }
+        return (
+          <div key={i} className="space-y-2 rounded-2xl border border-[var(--line)] bg-white p-3.5">
+            <p className="text-xs font-semibold text-muted">{i + 1}-р зорчигч</p>
+            <input
+              value={p.name}
+              onChange={(e) => patch(i, { name: e.target.value.toUpperCase() })}
+              placeholder="OVOG NER (латин)"
+              className="h-11 w-full rounded-xl border border-[var(--line)] bg-bg px-3.5 text-sm outline-none focus:border-accent"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                value={p.passport ?? ""}
+                onChange={(e) => patch(i, { passport: e.target.value.toUpperCase().replace(/\s/g, "") })}
+                placeholder="Паспорт №"
+                className="h-11 rounded-xl border border-[var(--line)] bg-bg px-3.5 font-mono text-sm outline-none focus:border-accent"
+              />
+              <select
+                value={p.gender ?? ""}
+                onChange={(e) => patch(i, { gender: e.target.value === "M" || e.target.value === "F" ? e.target.value : undefined })}
+                className="h-11 rounded-xl border border-[var(--line)] bg-bg px-3 text-sm outline-none focus:border-accent"
+              >
+                <option value="">Хүйс</option>
+                <option value="M">Эр</option>
+                <option value="F">Эм</option>
+              </select>
+              <label className="block">
+                <span className="mb-1 block text-[0.65rem] text-muted">Төрсөн</span>
+                <input type="date" value={p.birth ?? ""} onChange={(e) => patch(i, { birth: e.target.value })} className="h-11 w-full rounded-xl border border-[var(--line)] bg-bg px-3 text-sm outline-none focus:border-accent" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-[0.65rem] text-muted">Дуусах</span>
+                <input type="date" value={p.expiry ?? ""} onChange={(e) => patch(i, { expiry: e.target.value })} className="h-11 w-full rounded-xl border border-[var(--line)] bg-bg px-3 text-sm outline-none focus:border-accent" />
+              </label>
+            </div>
           </div>
         );
       })}
-      <button type="button" disabled={pending} onClick={remove} className="mt-2 h-11 w-full rounded-full border border-red-200 text-sm font-semibold text-red-600 disabled:opacity-50">
-        Паспортын мэдээлэл устгах
-      </button>
+
+      {error ? <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+
+      {editing ? (
+        <button type="button" disabled={pending} onClick={save} className="h-12 w-full rounded-full bg-accent text-sm font-semibold text-white disabled:opacity-50">
+          {pending ? "Хадгалж байна…" : "Паспорт хадгалах"}
+        </button>
+      ) : null}
+      {b.passengers_count ? (
+        <button type="button" disabled={pending} onClick={remove} className="h-11 w-full rounded-full border border-red-200 text-sm font-semibold text-red-600 disabled:opacity-50">
+          Паспортын мэдээлэл устгах
+        </button>
+      ) : null}
     </div>
   );
 }

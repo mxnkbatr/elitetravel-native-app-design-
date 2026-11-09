@@ -13,11 +13,11 @@ export default async function AdminToursPage() {
   return (
     <>
       <AdminTitle
-        title="Аяллууд"
-        sub="Дараалал нь сайт дээр харагдах дарааллаар. Хадгалмагц сайт, апп шууд шинэчлэгдэнэ."
+        title="Аялал"
+        sub="Аялал нэмэх, засах. Нэг аялал дээр дарж мэдээллээ засана."
         action={
           <Link href="/admin/tours/new" className={titleActionClass}>
-            + Шинэ аялал
+            + Аялал нэмэх
           </Link>
         }
       />
@@ -30,6 +30,7 @@ export default async function AdminToursPage() {
           image: t.image,
           badge: t.unlisted ? "Нууц · туршилт" : t.status === "ended" ? "Дууссан" : t.tag === "soon" ? "Удахгүй" : t.tag === "sale" ? "Хямдрал" : t.tag === "hot" ? "Эрэлттэй" : undefined,
           muted: t.status === "ended",
+          peopleHref: `/admin/departures/${t.id}`,
         }))}
       />
     </>

@@ -2,7 +2,7 @@ import { can } from "@/lib/permissions";
 import { agentTools } from "@/lib/server/agent/tools";
 import { openConversation, saveConversation } from "@/lib/server/agent/conversations";
 import { agentSystemPrompt } from "@/lib/server/agent/prompt";
-import { chatModel } from "@/lib/server/ai";
+import { agentModel, agentProviderOptions } from "@/lib/server/ai";
 import { getAdmin } from "@/lib/server/auth";
 import { rateLimit } from "@/lib/server/chat-security";
 import { convertToModelMessages, createIdGenerator, isStepCount, streamText, type UIMessage } from "ai";
@@ -11,8 +11,8 @@ export const runtime = "nodejs";
 export const maxDuration = 120;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/** Turns sent to the model; the whole chat stays saved. */
-const CONTEXT_MESSAGES = 30;
+/** Recent turns only — long history burns input tokens every message. */
+const CONTEXT_MESSAGES = 16;
 
 function fail(status: number, error: string) {
   return Response.json({ error }, { status });
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   if (!admin) return fail(401, "Дахин нэвтэрнэ үү.");
   if (!can(admin.role, "agent.use")) return fail(403, "Танд AI туслах ашиглах эрх алга.");
   if (!rateLimit(`agent:${admin.email}`, 20)) return fail(429, "Хэт олон хүсэлт. Нэг минут хүлээгээд дахин оролдоно уу.");
-  const model = chatModel();
+  const model = agentModel();
   if (!model) return fail(503, "AI тохируулаагүй байна (XAI_API_KEY).");
 
   let body: { id?: unknown; message?: unknown };
@@ -59,12 +59,12 @@ export async function POST(request: Request) {
 
   const result = streamText({
     model,
-    providerOptions: { xai: { reasoningEffort: "medium" } },
+    providerOptions: agentProviderOptions,
     system: agentSystemPrompt(admin, Object.keys(tools)),
     messages: await convertToModelMessages(messages.slice(-CONTEXT_MESSAGES), { tools, ignoreIncompleteToolCalls: true }),
     tools,
-    stopWhen: isStepCount(8),
-    maxOutputTokens: 4000,
+    stopWhen: isStepCount(5),
+    maxOutputTokens: 2000,
     onError: ({ error }) => console.error("[agent]", error instanceof Error ? error.message : error),
   });
 

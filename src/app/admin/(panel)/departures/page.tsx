@@ -4,6 +4,7 @@ import { tourDates, type Tour } from "@/data/tours";
 import { requireAdmin } from "@/lib/server/auth";
 import { db } from "@/lib/server/trips";
 import { HOLDING_STATUSES, type TripStatus } from "@/lib/trips";
+import Link from "next/link";
 
 type Row = {
   tour_id: string;
@@ -62,14 +63,16 @@ export default async function AdminDeparturesPage() {
   return (
     <>
       <AdminTitle
-        title="Огноо, суудал"
-        sub="Суудлын тоог оруулбал сайт дээр бодит үлдэгдэл харагдана. Дүүрмэгц шинэ хүсэлт хүлээлгийн жагсаалтад орно. Шинэ, холбогдсон, баталгаажсан, төлсөн хүсэлт бүгд суудал эзэлнэ."
+        title="Аялагчид · огноо"
+        sub="Аялал дээр дарж бүртгэгдсэн хүмүүсийг харна. Суудал тохируулна."
       />
       <div className="mt-6 space-y-5">
         {groups.map(({ tour, stats }) => (
-          <section key={tour.id} className="rounded-2xl border border-[var(--line)] bg-white p-4 sm:p-5">
+          <section key={tour.id} className="rounded-[1.5rem] border border-[var(--line)] bg-white p-4 shadow-[0_8px_24px_rgba(6,42,42,0.04)] sm:p-5">
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="font-display text-xl font-semibold">{tour.title}</h2>
+              <Link href={`/admin/departures/${tour.id}`} className="font-display text-xl font-semibold text-ink transition hover:text-accent">
+                {tour.title} ›
+              </Link>
               <p className="text-xs text-muted">{[tour.destination, tour.duration, tour.status === "ended" ? "Дууссан" : ""].filter(Boolean).join(" · ")}</p>
             </div>
             <div className="hidden grid-cols-[minmax(9rem,1.2fr)_6rem_1fr_repeat(3,5.5rem)_auto] gap-3 px-2 pb-2 text-[0.7rem] font-semibold uppercase tracking-wide text-muted lg:grid">

@@ -14,10 +14,10 @@ export default async function AdminNewsPage() {
     <>
       <AdminTitle
         title="Мэдээ"
-        sub="Эхний 3 мэдээ нүүр хэсэгт онцолж харагдана."
+        sub="Мэдээ бичих, засах. Эхний 3 нь нүүр дээр онцлогдоно."
         action={
           <Link href="/admin/news/new" className={titleActionClass}>
-            + Шинэ мэдээ
+            + Мэдээ бичих
           </Link>
         }
       />

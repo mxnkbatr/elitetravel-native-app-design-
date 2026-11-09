@@ -2,9 +2,11 @@
 
 import { AnimatedNumber } from "@/components/AnimatedNumber";
 import { BoardingPass } from "@/components/BoardingPass";
+import { DateRangeCalendar } from "@/components/DateRangeCalendar";
 import { Icon } from "@/components/Icon";
 import { PartnerLogo } from "@/components/PartnerLogo";
 import { formatPrice, tourDates, type Tour, type TourSummary } from "@/data/tours";
+import { formatDateRange, parseDateRange, rangeDayCount } from "@/lib/dates";
 import { INSTALLMENT_PROVIDERS } from "@/lib/trips";
 import { useSeats } from "@/lib/content";
 import { addBooking, type BookingRequest } from "@/lib/traveller-store";
@@ -57,10 +59,10 @@ function Stepper({
   onChange: (v: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-bg px-3.5 py-3">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-foam">{label}</p>
-        {hint ? <p className="text-[0.7rem] text-muted">{hint}</p> : null}
+        <p className="text-sm font-semibold text-foam">{label}</p>
+        {hint ? <p className="mt-0.5 text-[0.7rem] leading-snug text-muted">{hint}</p> : null}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <button
@@ -71,11 +73,11 @@ function Stepper({
             haptic("tap");
             onChange(value - 1);
           }}
-          className="tap grid size-10 place-items-center rounded-full border border-[var(--line)] text-lg leading-none transition enabled:hover:border-accent enabled:hover:text-accent disabled:opacity-30"
+          className="tap grid size-11 place-items-center rounded-full border border-[var(--line)] bg-bg-elevated text-lg leading-none transition enabled:hover:border-accent enabled:hover:text-accent disabled:opacity-30"
         >
           −
         </button>
-        <motion.span key={value} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-5 text-center font-semibold tabular-nums">
+        <motion.span key={value} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-6 text-center font-num text-lg font-semibold tabular-nums">
           {value}
         </motion.span>
         <button
@@ -86,7 +88,7 @@ function Stepper({
             haptic("tap");
             onChange(value + 1);
           }}
-          className="tap grid size-10 place-items-center rounded-full border border-[var(--line)] text-lg leading-none transition enabled:hover:border-accent enabled:hover:text-accent disabled:opacity-30"
+          className="tap grid size-11 place-items-center rounded-full border border-accent/30 bg-accent/10 text-lg leading-none text-accent transition enabled:hover:bg-accent enabled:hover:text-white disabled:opacity-30"
         >
           +
         </button>
@@ -131,6 +133,17 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
   const p = tour.pricing ?? {};
   const dateOptions = tourDates(tour);
   const seats = useSeats(tour.id);
+  const calendarOptions = useMemo(
+    () =>
+      dateOptions
+        .map((label) => {
+          const range = parseDateRange(label);
+          return range ? { label, range, disabled: Boolean(seats[label]?.closed) } : null;
+        })
+        .filter((x): x is { label: string; range: NonNullable<ReturnType<typeof parseDateRange>>; disabled: boolean } => x != null),
+    [dateOptions, seats],
+  );
+  const useCalendar = calendarOptions.length > 0;
   const [adults, setAdults] = useState(2);
   const [kidsOwnBed, setKidsOwnBed] = useState(0);
   const [kidsSharedBed, setKidsSharedBed] = useState(0);
@@ -138,6 +151,7 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
   const [date, setDate] = useState(dateOptions.find((d) => !seats[d]?.closed) ?? dateOptions[0] ?? "");
   const [waitlisted, setWaitlisted] = useState(false);
   const people = adults + kidsOwnBed + kidsSharedBed;
+  const selectedRange = useMemo(() => parseDateRange(date), [date]);
   const seatInfo = seats[date];
   const willWaitlist = seatInfo != null && !seatInfo.closed && seatInfo.left < people;
   const [name, setName] = useState("");
@@ -282,7 +296,64 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
               ) : null}
             </div>
 
-            {dateOptions.length > 1 ? (
+            {useCalendar ? (
+              <div className="mt-5">
+                <div className="mb-2 flex items-end justify-between gap-2">
+                  <div>
+                    <p className="type-label text-muted">Огноо сонгох</p>
+                    <p className="mt-0.5 text-[0.7rem] text-muted">Календараас хөдлөх өдрөө дарна уу</p>
+                  </div>
+                  {selectedRange ? (
+                    <p className="text-right text-xs font-semibold text-accent">
+                      {formatDateRange(selectedRange)}
+                      <span className="mt-0.5 block font-normal text-muted">{rangeDayCount(selectedRange)} өдөр</span>
+                    </p>
+                  ) : null}
+                </div>
+                {calendarOptions.length > 1 ? (
+                  <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+                    {calendarOptions.map((opt, i) => {
+                      const s = seats[opt.label];
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          disabled={opt.disabled}
+                          onClick={() => {
+                            haptic("tap");
+                            setDate(opt.label);
+                          }}
+                          className={`min-w-[7.5rem] shrink-0 rounded-2xl border px-3 py-2.5 text-left transition disabled:line-through disabled:opacity-40 ${
+                            date === opt.label ? "border-accent bg-accent text-white" : "border-[var(--line)] bg-bg hover:border-accent"
+                          }`}
+                        >
+                          <span className={`block text-[0.65rem] font-semibold ${date === opt.label ? "text-white/75" : "text-muted"}`}>{i + 1}-р хөдлөх</span>
+                          <span className="mt-0.5 block text-xs font-semibold leading-snug">{formatDateRange(opt.range)}</span>
+                          {s && !s.closed && s.left <= 10 ? (
+                            <span className={`mt-1 block text-[0.62rem] ${date === opt.label ? "text-white/80" : "text-[#c9964a] dark:text-[#e8b86d]"}`}>
+                              {s.left ? `${s.left} суудал` : "дүүрсэн"}
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+                <div className="rounded-2xl border border-[var(--line)] bg-bg p-3">
+                  <DateRangeCalendar
+                    compact
+                    value={selectedRange}
+                    onChange={() => {}}
+                    selectable={calendarOptions}
+                    selectedLabel={date}
+                    onSelectLabel={(label) => {
+                      haptic("tap");
+                      setDate(label);
+                    }}
+                  />
+                </div>
+              </div>
+            ) : dateOptions.length > 1 ? (
               <div className="mt-5">
                 <p className="type-label text-muted">Огноо сонгох</p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -319,28 +390,42 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
               </p>
             ) : null}
 
-            <div className="mt-3 divide-y divide-[var(--line)]">
-              <Stepper label="Том хүн" hint="12-оос дээш нас" value={adults} min={1} onChange={setAdults} />
-              {ownBedAllowed ? (
-                <Stepper label="Хүүхэд, тусдаа ор" hint="2–12 нас · том хүний үнээр" value={kidsOwnBed} onChange={setKidsOwnBed} />
-              ) : null}
-              {p.childSharedBed ? (
-                <Stepper
-                  label="Хүүхэд, хамт унтах"
-                  hint={`2–12 нас · ${formatPrice(p.childSharedBed)}`}
-                  value={kidsSharedBed}
-                  onChange={setKidsSharedBed}
-                />
-              ) : null}
-              {p.singleSupplement ? (
-                <Stepper
-                  label="Ганцаараа өрөө"
-                  hint={`+${formatPrice(p.singleSupplement)} / хүн`}
-                  value={singleRooms}
-                  max={adults}
-                  onChange={setSingleRooms}
-                />
-              ) : null}
+            <div className="mt-5">
+              <div className="mb-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="grid size-8 place-items-center rounded-full bg-accent/10 text-accent">
+                    <Icon name="users" size={15} />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold">Аялагчид нэмэх</p>
+                    <p className="text-[0.7rem] text-muted">Хэдэн хүн явах вэ?</p>
+                  </div>
+                </div>
+                <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-accent">{people} хүн</span>
+              </div>
+              <div className="space-y-2">
+                <Stepper label="Том хүн" hint="12-оос дээш нас" value={adults} min={1} onChange={setAdults} />
+                {ownBedAllowed ? (
+                  <Stepper label="Хүүхэд, тусдаа ор" hint="2–12 нас · том хүний үнээр" value={kidsOwnBed} onChange={setKidsOwnBed} />
+                ) : null}
+                {p.childSharedBed ? (
+                  <Stepper
+                    label="Хүүхэд, хамт унтах"
+                    hint={`2–12 нас · ${formatPrice(p.childSharedBed)}`}
+                    value={kidsSharedBed}
+                    onChange={setKidsSharedBed}
+                  />
+                ) : null}
+                {p.singleSupplement ? (
+                  <Stepper
+                    label="Ганцаараа өрөө"
+                    hint={`+${formatPrice(p.singleSupplement)} / хүн`}
+                    value={singleRooms}
+                    max={adults}
+                    onChange={setSingleRooms}
+                  />
+                ) : null}
+              </div>
             </div>
 
             <div className="mt-3 space-y-1.5 rounded-xl bg-bg p-3.5 text-sm">

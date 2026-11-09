@@ -3,19 +3,45 @@ import "server-only";
 import { createXai } from "@ai-sdk/xai";
 import type { LanguageModel } from "ai";
 
+type Effort = "none" | "low" | "medium" | "high";
+
+function xai(model: string): LanguageModel | null {
+  const key = process.env.XAI_API_KEY;
+  if (!key) return null;
+  return createXai({ apiKey: key }).responses(model);
+}
+
 /**
- * The language model behind the site's assistants. xAI Grok when XAI_API_KEY is set,
- * otherwise the Vercel AI Gateway; null when neither is configured (assistants stay quiet).
+ * Public site chat + booking auto-replies.
+ * Default grok-4.3 (~½ of 4.7). Override with XAI_SITE_MODEL.
  */
-export function chatModel(): LanguageModel | null {
-  const xaiKey = process.env.XAI_API_KEY;
-  if (xaiKey) return createXai({ apiKey: xaiKey }).responses(process.env.XAI_MODEL || "grok-4.7");
+export function siteModel(): LanguageModel | null {
+  const named = process.env.XAI_SITE_MODEL || process.env.XAI_MODEL || "grok-4.3";
+  const model = xai(named);
+  if (model) return model;
   if (process.env.AI_GATEWAY_API_KEY) return process.env.AI_GATEWAY_MODEL || "openai/gpt-4o-mini";
   return null;
 }
 
-/** Quick answers for chat: Grok's default high reasoning is slow and costly for this. */
-export const chatProviderOptions = { xai: { reasoningEffort: "low" as const } };
+/**
+ * Staff Elite Travel Agentic AI.
+ * Default grok-4.3 + low reasoning. Set XAI_AGENT_MODEL=grok-4.7 only when you need the flagship.
+ */
+export function agentModel(): LanguageModel | null {
+  const named = process.env.XAI_AGENT_MODEL || process.env.XAI_MODEL || "grok-4.3";
+  return xai(named) ?? siteModel();
+}
+
+/** @deprecated Prefer siteModel() / agentModel() — kept for older call sites. */
+export function chatModel(): LanguageModel | null {
+  return siteModel();
+}
+
+/** Site chat: no deep reasoning — short FAQ answers. */
+export const chatProviderOptions = { xai: { reasoningEffort: "none" as Effort } };
+
+/** Admin agent: light reasoning is enough for tool use; medium burns tokens. */
+export const agentProviderOptions = { xai: { reasoningEffort: (process.env.XAI_AGENT_EFFORT as Effort) || "low" } };
 
 export const PHONE = "+976 9003 1771";
 

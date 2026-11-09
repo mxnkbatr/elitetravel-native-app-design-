@@ -11,18 +11,22 @@ export const inputClass =
 export function Field({ label, hint, children, wide }: { label: string; hint?: string; children: ReactNode; wide?: boolean }) {
   return (
     <label className={`block ${wide ? "sm:col-span-2" : ""}`}>
-      <span className="mb-1.5 block text-xs font-semibold text-muted">{label}</span>
+      <span className="mb-1.5 block text-[0.8rem] font-semibold text-ink">{label}</span>
       {children}
-      {hint ? <span className="mt-1 block text-[0.7rem] text-muted/80">{hint}</span> : null}
+      {hint ? <span className="mt-1 block text-[0.7rem] leading-snug text-muted">{hint}</span> : null}
     </label>
   );
 }
 
-export function Section({ title, children }: { title: string; children: ReactNode }) {
+/** Native-app style block: big title, one short hint, then the fields. */
+export function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
-    <section className="rounded-[1.4rem] border border-[var(--line)] bg-white p-4 sm:p-6">
-      <h2 className="mb-4 font-display text-xl font-semibold">{title}</h2>
-      <div className="grid gap-4 sm:grid-cols-2">{children}</div>
+    <section className="overflow-hidden rounded-[1.5rem] border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(6,42,42,0.04)]">
+      <header className="border-b border-[var(--line)] bg-[#f7faf9] px-4 py-4 sm:px-6">
+        <h2 className="font-display text-[1.35rem] font-semibold leading-tight tracking-[-0.02em]">{title}</h2>
+        {hint ? <p className="mt-1 text-xs leading-relaxed text-muted">{hint}</p> : null}
+      </header>
+      <div className="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">{children}</div>
     </section>
   );
 }

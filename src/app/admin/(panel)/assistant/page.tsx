@@ -1,6 +1,6 @@
 import { AdminTitle } from "@/app/admin/(panel)/AdminTitle";
 import { AssistantEditor } from "@/app/admin/(panel)/assistant/AssistantEditor";
-import { chatModel } from "@/lib/server/ai";
+import { siteModel } from "@/lib/server/ai";
 import { getAssistantSettings } from "@/lib/server/assistant-settings";
 import { requireAdmin } from "@/lib/server/auth";
 
@@ -13,7 +13,7 @@ export default async function AdminAssistantPage() {
         title="Сайтын чат"
         sub="Сайт болон апп дээрх AI туслахын мэндчилгээ, санал болгох асуултууд, багийн нэмэлт заавар. Хадгалмагц шууд хэрэгжинэ."
       />
-      <AssistantEditor initial={settings} modelReady={chatModel() != null} />
+      <AssistantEditor initial={settings} modelReady={siteModel() != null} />
     </>
   );
 }
