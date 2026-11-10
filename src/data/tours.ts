@@ -32,6 +32,131 @@ export type TourCalculatorConfig = {
   sale?: { endsAt?: string };
 };
 
+/**
+ * Hard defaults for the seven live calculator tours.
+ * Applied when Supabase JSON omits `calculator` so the UI never silently falls back to legacy steppers.
+ * Admin can still set `enabled: false` to turn one off.
+ */
+export const TOUR_CALCULATOR_DEFAULTS: Record<string, TourCalculatorConfig> = {
+  "weeknd-world-tour": {
+    enabled: true,
+    adultPrice: 6_290_000,
+    childDiscount: 0,
+    singleSupplement: 1_200_000,
+    allowChildExtraBed: false,
+    depositPercent: 50,
+    singleAdultChildAsAdult: true,
+    sale: { endsAt: "2026-09-15T00:00:00+08:00" },
+  },
+  "dately-show-hainan": {
+    enabled: true,
+    adultPrice: 2_990_000,
+    childDiscount: 300_000,
+    singleSupplement: 700_000,
+    allowChildExtraBed: true,
+    depositPercent: 30,
+    singleAdultChildAsAdult: true,
+  },
+  hainan: {
+    enabled: true,
+    adultPrice: 2_690_000,
+    childDiscount: 300_000,
+    singleSupplement: 700_000,
+    allowChildExtraBed: true,
+    depositPercent: 30,
+    singleAdultChildAsAdult: true,
+  },
+  "hainan-2": {
+    enabled: true,
+    adultPrice: 3_290_000,
+    childDiscount: 300_000,
+    singleSupplement: 700_000,
+    allowChildExtraBed: true,
+    depositPercent: 30,
+    singleAdultChildAsAdult: true,
+  },
+  "hainan-3": {
+    enabled: true,
+    adultPrice: 3_290_000,
+    childDiscount: 300_000,
+    singleSupplement: 700_000,
+    allowChildExtraBed: true,
+    depositPercent: 30,
+    singleAdultChildAsAdult: true,
+  },
+  "hainan-4": {
+    enabled: true,
+    adultPrice: 2_990_000,
+    childDiscount: 300_000,
+    singleSupplement: 700_000,
+    allowChildExtraBed: true,
+    depositPercent: 30,
+    singleAdultChildAsAdult: true,
+  },
+  bali: {
+    enabled: true,
+    adultPrice: 5_790_000,
+    childDiscount: 0,
+    childBasePrice: 5_990_000,
+    childSalePrice: 5_490_000,
+    singleSupplement: 1_100_000,
+    allowChildExtraBed: true,
+    depositPercent: 50,
+    singleAdultChildAsAdult: true,
+    sale: { endsAt: "2026-09-07T00:00:00+08:00" },
+  },
+};
+
+type TourLike = {
+  id: string;
+  price?: number | null;
+  calculator?: TourCalculatorConfig;
+  pricing?: {
+    childSharedBed?: number;
+    childOwnBed?: boolean;
+    singleSupplement?: number;
+    depositPercent?: number;
+    saleEndsAt?: string;
+  };
+};
+
+/**
+ * Ensure the room calculator is on for every priced tour.
+ * Known IDs use TOUR_CALCULATOR_DEFAULTS; others derive from price + pricing.
+ * Admin can still set `calculator.enabled: false` to hide it.
+ */
+export function ensureTourCalculator<T extends TourLike>(tour: T): T {
+  if (tour.calculator?.enabled === false) return tour;
+
+  const known = TOUR_CALCULATOR_DEFAULTS[tour.id];
+  if (known) {
+    return { ...tour, calculator: { ...known, ...tour.calculator, enabled: true } };
+  }
+
+  const adultPrice = tour.calculator?.adultPrice ?? tour.price ?? null;
+  if (adultPrice == null || adultPrice <= 0) return tour;
+
+  const childShared = tour.pricing?.childSharedBed;
+  const derivedDiscount =
+    childShared != null && childShared < adultPrice ? Math.max(0, adultPrice - childShared) : 300_000;
+
+  const derived: TourCalculatorConfig = {
+    enabled: true,
+    adultPrice,
+    childDiscount: derivedDiscount,
+    singleSupplement: tour.pricing?.singleSupplement ?? 700_000,
+    allowChildExtraBed: tour.pricing?.childOwnBed !== false,
+    depositPercent: tour.pricing?.depositPercent ?? 30,
+    singleAdultChildAsAdult: true,
+    ...(tour.pricing?.saleEndsAt ? { sale: { endsAt: tour.pricing.saleEndsAt } } : {}),
+  };
+
+  return {
+    ...tour,
+    calculator: { ...derived, ...tour.calculator, enabled: true, adultPrice: tour.calculator?.adultPrice ?? adultPrice },
+  };
+}
+
 export type Tour = {
   id: string;
   title: string;
@@ -415,6 +540,7 @@ export const seedTours: Tour[] = [
       allowChildExtraBed: false,
       depositPercent: 50,
       singleAdultChildAsAdult: true,
+      sale: { endsAt: "2026-09-15T00:00:00+08:00" },
     },
   },
   {
@@ -677,6 +803,7 @@ export const seedTours: Tour[] = [
       allowChildExtraBed: true,
       depositPercent: 50,
       singleAdultChildAsAdult: true,
+      sale: { endsAt: "2026-09-07T00:00:00+08:00" },
     },
   },
   {
