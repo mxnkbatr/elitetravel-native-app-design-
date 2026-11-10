@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { NewsCategory, NewsItem } from "@/data/news";
-import type { DatePrice, ItineraryDay, Tour } from "@/data/tours";
+import type { DatePrice, ItineraryDay, Tour, TourCalculatorConfig } from "@/data/tours";
 import { tourDates } from "@/data/tours";
 import { isDocType } from "@/lib/documents";
 
@@ -101,12 +101,41 @@ export function parseTour(input: unknown): Tour {
       childOwnBed: pricing.childOwnBed === false ? false : undefined,
       singleSupplement: num(pricing.singleSupplement, "Ганц өрөөний нэмэгдэл") ?? undefined,
       depositPercent: num(pricing.depositPercent, "Урьдчилгаа %") ?? undefined,
+      saleEndsAt: optSaleEnds(pricing.saleEndsAt),
     },
+    calculator: parseCalculator(t.calculator),
     notes: list(t.notes ?? [], "Санамж"),
     documents: Array.isArray(t.documents) ? [...new Set(t.documents.filter(isDocType))] : undefined,
   };
   if (tour.pricing?.depositPercent != null && tour.pricing.depositPercent > 100) throw new Invalid("Урьдчилгаа 100%-аас их байж болохгүй.");
+  if (tour.calculator?.depositPercent != null && tour.calculator.depositPercent > 100) throw new Invalid("Тооцооллын урьдчилгаа 100%-аас их байж болохгүй.");
   return JSON.parse(JSON.stringify(tour)) as Tour; // drops undefined keys
+}
+
+function parseCalculator(raw: unknown): TourCalculatorConfig | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const c = raw as Record<string, unknown>;
+  const sale = c.sale && typeof c.sale === "object" && !Array.isArray(c.sale) ? (c.sale as Record<string, unknown>) : null;
+  const out: TourCalculatorConfig = {
+    enabled: c.enabled === true ? true : c.enabled === false ? false : undefined,
+    adultPrice: num(c.adultPrice, "Тооцоолол · том хүн") ?? undefined,
+    childDiscount: num(c.childDiscount, "Тооцоолол · хүүхдийн хөнгөлөлт") ?? undefined,
+    childBasePrice: num(c.childBasePrice, "Тооцоолол · хүүхдийн үндсэн үнэ") ?? undefined,
+    childSalePrice: num(c.childSalePrice, "Тооцоолол · хүүхдийн хямдралтай үнэ") ?? undefined,
+    singleSupplement: num(c.singleSupplement, "Тооцоолол · ганц өрөө") ?? undefined,
+    allowChildExtraBed: typeof c.allowChildExtraBed === "boolean" ? c.allowChildExtraBed : undefined,
+    depositPercent: num(c.depositPercent, "Тооцоолол · урьдчилгаа %") ?? undefined,
+    singleAdultChildAsAdult: typeof c.singleAdultChildAsAdult === "boolean" ? c.singleAdultChildAsAdult : undefined,
+    sale: sale ? { endsAt: optSaleEnds(sale.endsAt) } : undefined,
+  };
+  return Object.values(out).some((v) => v !== undefined) ? out : undefined;
+}
+
+function optSaleEnds(v: unknown): string | undefined {
+  if (typeof v !== "string" || !v.trim()) return undefined;
+  const t = Date.parse(v.trim());
+  if (!Number.isFinite(t)) throw new Invalid("«Хямдрал дуусах» огноо буруу байна.");
+  return new Date(t).toISOString();
 }
 
 function parseDatePrices(raw: unknown, dates?: string): Record<string, DatePrice> | undefined {

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Field, GalleryField, ImageField, inputClass, LinesField, Section } from "@/app/admin/(panel)/fields";
 import { SaveBar } from "@/app/admin/(panel)/SaveBar";
 import { TourDatesEditor } from "@/components/TourDatesEditor";
-import { DESTINATION_PRESETS, formatPrice, slugDestinationKey, tourDates, type DatePrice, type ItineraryDay, type Tour } from "@/data/tours";
+import { DESTINATION_PRESETS, formatPrice, slugDestinationKey, tourDates, type DatePrice, type ItineraryDay, type Tour, type TourCalculatorConfig } from "@/data/tours";
 import { DOC_TYPES } from "@/lib/documents";
 import { useState } from "react";
 
@@ -21,6 +21,15 @@ const HOTEL_SUGGESTIONS = [
 
 const numOrNull = (v: string) => (v.trim() === "" ? null : Number(v.replace(/[^\d]/g, "")));
 
+/** datetime-local value from an ISO string (empty if unparsable). */
+function toLocalInput(iso: string) {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  const d = new Date(t);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function TourEditor({ initial, originalId }: { initial: Tour; originalId: string | null }) {
   const [tour, setTour] = useState<Tour>(initial);
   // What was last saved; anything different is an unsaved edit
@@ -28,6 +37,8 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
   const [customDest, setCustomDest] = useState(() => !isPresetKey(initial.destinationKey));
   const set = <K extends keyof Tour>(key: K, value: Tour[K]) => setTour((t) => ({ ...t, [key]: value }));
   const setPricing = (key: keyof NonNullable<Tour["pricing"]>, value: unknown) => setTour((t) => ({ ...t, pricing: { ...t.pricing, [key]: value } }));
+  const setCalc = (key: keyof TourCalculatorConfig, value: unknown) =>
+    setTour((t) => ({ ...t, calculator: { ...t.calculator, [key]: value } as TourCalculatorConfig }));
   const departureLabels = tourDates(tour);
 
   function setDates(nextDates: string) {
@@ -192,6 +203,14 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
         <Field label="Урьдчилгаа (%)">
           <input inputMode="numeric" value={tour.pricing?.depositPercent ?? ""} onChange={(e) => setPricing("depositPercent", numOrNull(e.target.value) ?? undefined)} className={inputClass} />
         </Field>
+        <Field label="Хямдрал дуусах" hint="Дууссаны дараа хуучин үнэ автоматаар бодогдоно">
+          <input
+            type="datetime-local"
+            value={tour.pricing?.saleEndsAt ? toLocalInput(tour.pricing.saleEndsAt) : ""}
+            onChange={(e) => setPricing("saleEndsAt", e.target.value ? new Date(e.target.value).toISOString() : undefined)}
+            className={inputClass}
+          />
+        </Field>
         <Field label="Хүүхдийн үнийн тайлбар">
           <input value={tour.pricing?.child ?? ""} onChange={(e) => setPricing("child", e.target.value)} className={inputClass} />
         </Field>
@@ -253,6 +272,65 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
             </div>
           </div>
         ) : null}
+      </Section>
+
+      <Section title="2b. Өрөөний тооцоолол" hint="Идэвхжүүлбэл захиалгын хуудсанд Lovable-тай ижил өрөөний тооцоолуур гарна.">
+        <label className="flex items-center gap-2.5 text-sm sm:col-span-2">
+          <input type="checkbox" checked={tour.calculator?.enabled === true} onChange={(e) => setCalc("enabled", e.target.checked ? true : false)} className="size-4 accent-[#0d8f84]" />
+          Тооцоолуур идэвхтэй (calculatorEnabled)
+        </label>
+        <Field label="adultPrice (₮)" hint="Хоосон бол үндсэн үнэ">
+          <input inputMode="numeric" value={tour.calculator?.adultPrice ?? ""} onChange={(e) => setCalc("adultPrice", numOrNull(e.target.value) ?? undefined)} className={inputClass} />
+        </Field>
+        <Field label="childDiscount (₮)" hint="Анхдагч 500000">
+          <input inputMode="numeric" value={tour.calculator?.childDiscount ?? ""} onChange={(e) => setCalc("childDiscount", numOrNull(e.target.value) ?? undefined)} className={inputClass} />
+        </Field>
+        <Field label="childBasePrice (₮)">
+          <input inputMode="numeric" value={tour.calculator?.childBasePrice ?? ""} onChange={(e) => setCalc("childBasePrice", numOrNull(e.target.value) ?? undefined)} className={inputClass} />
+        </Field>
+        <Field label="childSalePrice (₮)">
+          <input inputMode="numeric" value={tour.calculator?.childSalePrice ?? ""} onChange={(e) => setCalc("childSalePrice", numOrNull(e.target.value) ?? undefined)} className={inputClass} />
+        </Field>
+        <Field label="singleSupplement (₮)" hint="Анхдагч 700000">
+          <input inputMode="numeric" value={tour.calculator?.singleSupplement ?? ""} onChange={(e) => setCalc("singleSupplement", numOrNull(e.target.value) ?? undefined)} className={inputClass} />
+        </Field>
+        <Field label="depositPercent (%)">
+          <input inputMode="numeric" value={tour.calculator?.depositPercent ?? ""} onChange={(e) => setCalc("depositPercent", numOrNull(e.target.value) ?? undefined)} className={inputClass} />
+        </Field>
+        <Field label="sale.endsAt" hint="Хүүхдийн sale үнэ + countdown">
+          <input
+            type="datetime-local"
+            value={tour.calculator?.sale?.endsAt ? toLocalInput(tour.calculator.sale.endsAt) : ""}
+            onChange={(e) =>
+              setTour((t) => ({
+                ...t,
+                calculator: {
+                  ...t.calculator,
+                  sale: e.target.value ? { endsAt: new Date(e.target.value).toISOString() } : undefined,
+                },
+              }))
+            }
+            className={inputClass}
+          />
+        </Field>
+        <label className="flex items-center gap-2.5 text-sm sm:col-span-2">
+          <input
+            type="checkbox"
+            checked={tour.calculator?.allowChildExtraBed !== false}
+            onChange={(e) => setCalc("allowChildExtraBed", e.target.checked)}
+            className="size-4 accent-[#0d8f84]"
+          />
+          allowChildExtraBed — нэмэлт ор зөвшөөрөх
+        </label>
+        <label className="flex items-center gap-2.5 text-sm sm:col-span-2">
+          <input
+            type="checkbox"
+            checked={tour.calculator?.singleAdultChildAsAdult !== false}
+            onChange={(e) => setCalc("singleAdultChildAsAdult", e.target.checked)}
+            className="size-4 accent-[#0d8f84]"
+          />
+          singleAdultChildAsAdult — 1+1 үед хүүхэд том хүний үнэ
+        </label>
       </Section>
 
       <Section title="3. Зураг" hint="Нүүр зураг сайт, апп дээр том харагдана.">

@@ -54,7 +54,7 @@ export type BookingRow = {
 
 /** Everything except the access token and passport details (see passports.ts). */
 export const BOOKING_COLUMNS =
-  "id, created_at, tour_id, tour_title, travel_date, name, phone, adults, kids_own_bed, kids_shared_bed, single_rooms, total, deposit, paid_amount, note, status, staff_note, source, passengers_count, passengers_ready, passport_consent_at, traveller_seen_at, staff_seen_at";
+  "id, created_at, tour_id, tour_title, travel_date, name, phone, adults, kids_own_bed, kids_shared_bed, single_rooms, total, deposit, paid_amount, note, status, staff_note, source, calculator, passengers_count, passengers_ready, passport_consent_at, traveller_seen_at, staff_seen_at";
 
 /**
  * Adds a message to a booking's thread and pushes it: staff and system messages to the

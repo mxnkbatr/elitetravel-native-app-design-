@@ -1,6 +1,7 @@
 import { formatPrice, getTour, isBookable, tourDates } from "@/data/tours";
-import { getTours } from "@/lib/server/content";
+import { calculateTourPrice, parseCalculatorState } from "@/lib/tour-calculator";
 import { quote } from "@/lib/pricing";
+import { getTours } from "@/lib/server/content";
 import { currentTraveller } from "@/lib/server/account";
 import { clientIp, rateLimit } from "@/lib/server/chat-security";
 import { reportError } from "@/lib/server/error-log";
@@ -22,6 +23,7 @@ type Body = {
   kidsOwnBed?: unknown;
   kidsSharedBed?: unknown;
   singleRooms?: unknown;
+  calculator?: unknown;
   /** Honeypot — real visitors never see or fill it */
   website?: unknown;
 };
@@ -29,7 +31,6 @@ type Body = {
 const count = (v: unknown, min: number) => (Number.isInteger(v) && (v as number) >= min && (v as number) <= 30 ? (v as number) : null);
 const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
-/** Short, unambiguous reference the traveller can read out over the phone. */
 function bookingId() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return "ET-" + Array.from(randomBytes(8), (b) => alphabet[b % alphabet.length]).join("");
@@ -51,8 +52,7 @@ export async function POST(request: Request) {
     return fail(400, "Хүсэлт буруу байна.");
   }
 
-  if (text(body.website, 100)) return Response.json({ id: bookingId() }); // quietly drop bots
-  // New requests hold seats, so a flood could make a departure look sold out
+  if (text(body.website, 100)) return Response.json({ id: bookingId() });
   if (!rateLimit(`booking:${clientIp(request)}`, 5) || !rateLimit(`booking-phone:${text(body.phone, 20).replace(/\D/g, "")}`, 3, 10 * 60_000)) {
     return fail(429, "Хэт олон хүсэлт илгээлээ. Хэдэн минут хүлээгээд дахин оролдоно уу, эсвэл манай утсаар холбогдоно уу.");
   }
@@ -64,18 +64,62 @@ export async function POST(request: Request) {
   const phone = text(body.phone, 20);
   const note = text(body.note, 500) || null;
   const date = text(body.date, 60) || null;
-  const adults = count(body.adults, 1);
-  const kidsOwnBed = count(body.kidsOwnBed ?? 0, 0);
-  const kidsSharedBed = count(body.kidsSharedBed ?? 0, 0);
-  const singleRooms = count(body.singleRooms ?? 0, 0);
 
   if (name.length < 2) return fail(400, "Нэрээ оруулна уу.");
   if (!/^[0-9+ ]{8,20}$/.test(phone)) return fail(400, "Утасны дугаараа шалгана уу.");
-  if (adults == null || kidsOwnBed == null || kidsSharedBed == null || singleRooms == null) return fail(400, "Хүний тоо буруу байна.");
   const dateOptions = tourDates(tour);
   if (date && dateOptions.length > 1 && !dateOptions.includes(date)) return fail(400, "Огноо буруу байна.");
 
-  const { total, deposit } = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms }, date);
+  let adults: number;
+  let kidsOwnBed: number;
+  let kidsSharedBed: number;
+  let singleRooms: number;
+  let total: number;
+  let deposit: number;
+  let calculator: Record<string, unknown> | null = null;
+
+  const calcState = tour.calculator?.enabled ? parseCalculatorState(body.calculator) : null;
+  if (calcState) {
+    const q = calculateTourPrice(tour, calcState);
+    if (!q.ready) return fail(400, "Өрөөний сонголтоо бүрэн хийнэ үү.");
+    adults = q.party.adults;
+    kidsOwnBed = q.party.kidsOwnBed;
+    kidsSharedBed = q.party.kidsSharedBed;
+    singleRooms = q.party.singleRooms;
+    total = q.total;
+    deposit = q.deposit;
+    calculator = {
+      adults: calcState.adults,
+      children: calcState.children,
+      pairRooms: calcState.pairRooms.map((r) => ({
+        choice: r.choice,
+        extraBed: r.kids.extraBed,
+        withParents: r.kids.withParents,
+      })),
+      oddRoom: calcState.oddRoom
+        ? { choice: calcState.oddRoom.choice, extraBed: calcState.oddRoom.kids.extraBed, withParents: calcState.oddRoom.kids.withParents }
+        : null,
+      childWithBed: q.childWithBed,
+      childNoBed: q.childNoBed,
+      singleRooms,
+      total,
+      deposit,
+      savings: q.savings,
+    };
+  } else {
+    const a = count(body.adults, 1);
+    const own = count(body.kidsOwnBed ?? 0, 0);
+    const shared = count(body.kidsSharedBed ?? 0, 0);
+    const singles = count(body.singleRooms ?? 0, 0);
+    if (a == null || own == null || shared == null || singles == null) return fail(400, "Хүний тоо буруу байна.");
+    adults = a;
+    kidsOwnBed = own;
+    kidsSharedBed = shared;
+    singleRooms = singles;
+    const q = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms }, date);
+    total = q.total;
+    deposit = q.deposit;
+  }
 
   const db = supabaseAdmin();
   if (!db) return fail(503, "Захиалгын сан түр холбогдохгүй байна.");
@@ -105,6 +149,7 @@ export async function POST(request: Request) {
     total,
     deposit,
     note,
+    calculator,
   });
 
   if (error) {
@@ -112,12 +157,21 @@ export async function POST(request: Request) {
     return fail(502, "Хүсэлт хадгалахад алдаа гарлаа.");
   }
 
+  const calcSummary = calculator
+    ? ` Өрөө: ${JSON.stringify({
+        pairs: (calculator.pairRooms as unknown[])?.length ?? 0,
+        odd: calculator.oddRoom ?? null,
+        kidsBed: calculator.childWithBed,
+        kidsNoBed: calculator.childNoBed,
+      })}.`
+    : "";
+
   await postMessage(
     id,
     "system",
     status === "waitlist"
       ? statusNotice("waitlist", { total, deposit, paid_amount: 0 })!
-      : `Сайн байна уу, ${name}! «${tour.title}» аяллын хүсэлтийг хүлээн авлаа (${id}). ${deposit ? `Урьдчилгаа ${formatPrice(deposit)}` : "Төлбөрөө"} «Төлбөр» хэсгээс QPay эсвэл хуваан төлөх аргаар төлмөгц захиалга автоматаар баталгаажна. Асуух зүйлээ энд бичээрэй.`,
+      : `Сайн байна уу, ${name}! «${tour.title}» аяллын хүсэлтийг хүлээн авлаа (${id}). ${deposit ? `Урьдчилгаа ${formatPrice(deposit)}` : "Төлбөрөө"} «Төлбөр» хэсгээс QPay эсвэл хуваан төлөх аргаар төлмөгц захиалга автоматаар баталгаажна.${calcSummary} Асуух зүйлээ энд бичээрэй.`,
   );
   await db.from("booking_requests").update({ traveller_seen_at: new Date().toISOString() }).eq("id", id);
   refreshSeats();

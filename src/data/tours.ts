@@ -18,6 +18,20 @@ export type DatePrice = {
   oldPrice?: number;
 };
 
+/** Lovable-style room calculator — optional; when enabled the tour detail booking UI uses it. */
+export type TourCalculatorConfig = {
+  enabled?: boolean;
+  adultPrice?: number;
+  childDiscount?: number;
+  childBasePrice?: number;
+  childSalePrice?: number;
+  singleSupplement?: number;
+  allowChildExtraBed?: boolean;
+  depositPercent?: number;
+  singleAdultChildAsAdult?: boolean;
+  sale?: { endsAt?: string };
+};
+
 export type Tour = {
   id: string;
   title: string;
@@ -56,7 +70,11 @@ export type Tour = {
     childOwnBed?: boolean;
     singleSupplement?: number;
     depositPercent?: number;
+    /** ISO timestamp — after this, oldPrice becomes the live adult fare */
+    saleEndsAt?: string;
   };
+  /** Room / guest price calculator (pair + odd rooms). Additive — legacy booking still works. */
+  calculator?: TourCalculatorConfig;
   notes?: string[];
   /** Documents travellers upload in the app for this tour */
   documents?: DocType[];
@@ -389,6 +407,15 @@ export const seedTours: Tour[] = [
       singleSupplement: 1200000,
       depositPercent: 50,
     },
+    calculator: {
+      enabled: true,
+      adultPrice: 6_290_000,
+      childDiscount: 0,
+      singleSupplement: 1_200_000,
+      allowChildExtraBed: false,
+      depositPercent: 50,
+      singleAdultChildAsAdult: true,
+    },
   },
   {
     id: "dately-show-hainan",
@@ -486,6 +513,15 @@ export const seedTours: Tour[] = [
       singleSupplement: 700000,
       depositPercent: 30,
     },
+    calculator: {
+      enabled: true,
+      adultPrice: 2_990_000,
+      childDiscount: 300_000,
+      singleSupplement: 700_000,
+      allowChildExtraBed: true,
+      depositPercent: 30,
+      singleAdultChildAsAdult: true,
+    },
     notes: [
       hainanChildNote,
       "Арга хэмжээний үеэр согтууруулах ундааг хариуцлагатай хэрэглэж, бусад аялагчдын тав тух, аюулгүй байдлыг хүндэтгэнэ үү.",
@@ -502,6 +538,15 @@ export const seedTours: Tour[] = [
     dates: "11/03 – 11/10",
     image: asset("269c7c28-b5a3-46ae-b9ee-4b239417cbfa/hainan-main-sep15.png"),
     pricing: { child: "2–12 нас: хамт унтвал ₮300'000 хямд", childSharedBed: 2990000, singleSupplement: 700000, depositPercent: 30 },
+    calculator: {
+      enabled: true,
+      adultPrice: 3_290_000,
+      childDiscount: 300_000,
+      singleSupplement: 700_000,
+      allowChildExtraBed: true,
+      depositPercent: 30,
+      singleAdultChildAsAdult: true,
+    },
   },
   {
     ...hainanBase,
@@ -514,6 +559,15 @@ export const seedTours: Tour[] = [
     dates: "11/10 – 11/17",
     image: asset("269c7c28-b5a3-46ae-b9ee-4b239417cbfa/hainan-main-sep15.png"),
     pricing: { child: "2–12 нас: хамт унтвал ₮300'000 хямд", childSharedBed: 2690000, singleSupplement: 700000, depositPercent: 30 },
+    calculator: {
+      enabled: true,
+      adultPrice: 2_990_000,
+      childDiscount: 300_000,
+      singleSupplement: 700_000,
+      allowChildExtraBed: true,
+      depositPercent: 30,
+      singleAdultChildAsAdult: true,
+    },
   },
   {
     id: "bali",
@@ -613,6 +667,17 @@ export const seedTours: Tour[] = [
       singleSupplement: 1100000,
       depositPercent: 50,
     },
+    calculator: {
+      enabled: true,
+      adultPrice: 5_790_000,
+      childDiscount: 0,
+      childBasePrice: 5_990_000,
+      childSalePrice: 5_490_000,
+      singleSupplement: 1_100_000,
+      allowChildExtraBed: true,
+      depositPercent: 50,
+      singleAdultChildAsAdult: true,
+    },
   },
   {
     ...hainanBase,
@@ -628,6 +693,15 @@ export const seedTours: Tour[] = [
     dates: "09/29 – 10/06",
     image: asset("269c7c28-b5a3-46ae-b9ee-4b239417cbfa/hainan-main-sep15.png"),
     pricing: { child: "2–12 нас: хамт унтвал ₮2'290'000", childSharedBed: 2290000, singleSupplement: 700000, depositPercent: 30 },
+    calculator: {
+      enabled: true,
+      adultPrice: 3_290_000,
+      childDiscount: 300_000,
+      singleSupplement: 700_000,
+      allowChildExtraBed: true,
+      depositPercent: 30,
+      singleAdultChildAsAdult: true,
+    },
   },
   {
     ...hainanBase,
@@ -640,6 +714,15 @@ export const seedTours: Tour[] = [
     dates: "10/06–10/13 · 10/13–10/20 · 10/20–10/27",
     image: asset("8ce9b508-74d0-44a0-89ed-cf34d352091e/hainan-overview.png"),
     pricing: { child: "2–12 нас: хамт унтвал ₮2'390'000", childSharedBed: 2390000, singleSupplement: 700000, depositPercent: 30 },
+    calculator: {
+      enabled: true,
+      adultPrice: 2_690_000,
+      childDiscount: 300_000,
+      singleSupplement: 700_000,
+      allowChildExtraBed: true,
+      depositPercent: 30,
+      singleAdultChildAsAdult: true,
+    },
   },
   {
     id: "bts",

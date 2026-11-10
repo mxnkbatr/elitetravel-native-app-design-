@@ -124,7 +124,22 @@ const tourFields = z.object({
     childOwnBed: z.boolean().optional(),
     singleSupplement: z.number().int().min(0).optional(),
     depositPercent: z.number().int().min(0).max(100).optional(),
+    saleEndsAt: z.string().datetime().optional(),
   }),
+  calculator: z
+    .object({
+      enabled: z.boolean().optional(),
+      adultPrice: z.number().int().min(0).max(500_000_000).optional(),
+      childDiscount: z.number().int().min(0).max(500_000_000).optional(),
+      childBasePrice: z.number().int().min(0).max(500_000_000).optional(),
+      childSalePrice: z.number().int().min(0).max(500_000_000).optional(),
+      singleSupplement: z.number().int().min(0).max(500_000_000).optional(),
+      allowChildExtraBed: z.boolean().optional(),
+      depositPercent: z.number().int().min(0).max(100).optional(),
+      singleAdultChildAsAdult: z.boolean().optional(),
+      sale: z.object({ endsAt: z.string().datetime().optional() }).optional(),
+    })
+    .optional(),
   notes: z.array(z.string().max(1000)).max(20),
   documents: z.array(z.enum(DOC_TYPES.map((d) => d.type) as [string, ...string[]])).max(10),
 });

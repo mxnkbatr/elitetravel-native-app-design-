@@ -14,8 +14,8 @@ export type Quote = {
 };
 
 /**
- * The operator's published pricing rules (tours.ts `pricing` + optional `datePrices`).
- * Used by the booking planner for the live estimate and by the API so a posted total is never trusted.
+ * Legacy party quote (tours without the Lovable room calculator).
+ * Uses published `pricing` + optional per-date overrides.
  */
 export function quote(tour: TourSummary, party: Party, date?: string | null): Quote {
   const p = tour.pricing ?? {};
@@ -23,12 +23,19 @@ export function quote(tour: TourSummary, party: Party, date?: string | null): Qu
   const price = rates.price ?? 0;
   const childSharedBed = rates.childSharedBed;
   const kidsOwnBed = p.childOwnBed === false ? 0 : party.kidsOwnBed;
-  const kidsSharedBed = childSharedBed ? party.kidsSharedBed : 0;
+  let kidsSharedBed = childSharedBed ? party.kidsSharedBed : 0;
   const singleRooms = p.singleSupplement ? Math.min(party.singleRooms, party.adults) : 0;
 
+  // Exactly 1 adult + 1 child → child pays adult fare
+  const totalKids = kidsOwnBed + kidsSharedBed;
+  if (party.adults === 1 && totalKids === 1) {
+    kidsSharedBed = 0;
+  }
+  const kidsAtAdult = party.adults === 1 && totalKids === 1 ? 1 : kidsOwnBed;
+
   const lines: Quote["lines"] = [{ label: `${party.adults} том хүн × ${formatPrice(price)}`, amount: party.adults * price }];
-  if (kidsOwnBed) lines.push({ label: `${kidsOwnBed} хүүхэд, тусдаа ор × ${formatPrice(price)}`, amount: kidsOwnBed * price });
-  if (kidsSharedBed && childSharedBed)
+  if (kidsAtAdult) lines.push({ label: `${kidsAtAdult} хүүхэд × ${formatPrice(price)}`, amount: kidsAtAdult * price });
+  if (kidsSharedBed && childSharedBed && !(party.adults === 1 && totalKids === 1))
     lines.push({ label: `${kidsSharedBed} хүүхэд, хамт × ${formatPrice(childSharedBed)}`, amount: kidsSharedBed * childSharedBed });
   if (singleRooms && p.singleSupplement)
     lines.push({ label: `Ганцаараа өрөө × ${singleRooms}`, amount: singleRooms * p.singleSupplement });

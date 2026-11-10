@@ -101,6 +101,7 @@ export const EDITABLE_TOUR_FIELDS = [
   "excludes",
   "itinerary",
   "pricing",
+  "calculator",
   "notes",
   "documents",
 ] as const satisfies readonly (keyof Tour)[];
