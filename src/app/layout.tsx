@@ -80,6 +80,9 @@ export const viewport: Viewport = {
   themeColor: "#eef5f2",
 };
 
+/** Keep catalogue fresh when tours are upserted outside /admin (scripts). */
+export const revalidate = 60;
+
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const [tours, news, seats, assistant] = await Promise.all([getTours(), getNews(), getSeats(), getAssistantSettings()]);
   return (

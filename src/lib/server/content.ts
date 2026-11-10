@@ -23,14 +23,15 @@ async function load<T>(table: "tours" | "news", fallback: T[]): Promise<T[]> {
 
 const cachedTours = unstable_cache(() => load<Tour>("tours", seedTours), ["tours"], {
   tags: [CONTENT_TAG],
-  revalidate: 3600,
+  // Short TTL: scripts upsert outside /admin, so hour-long cache hid new tours on Vercel
+  revalidate: 60,
 });
 
 const cachedNews = unstable_cache(() => load<NewsItem>("news", seedNews), ["news"], {
   tags: [CONTENT_TAG],
-  revalidate: 3600,
+  revalidate: 60,
 });
 
-/** Dev skips the hour-long cache so script/admin upserts show up on refresh. */
+/** Dev skips Data Cache so script/admin upserts show on the next refresh. */
 export const getTours = process.env.NODE_ENV === "development" ? () => load<Tour>("tours", seedTours) : cachedTours;
 export const getNews = process.env.NODE_ENV === "development" ? () => load<NewsItem>("news", seedNews) : cachedNews;
