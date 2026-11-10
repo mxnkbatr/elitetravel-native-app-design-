@@ -15,7 +15,8 @@ export type Tour = {
   id: string;
   title: string;
   destination: string;
-  destinationKey: "hainan" | "hongkong" | "bali" | "soon";
+  /** Slug for filters/map grouping — known presets or any custom key admins add */
+  destinationKey: string;
   description: string;
   story: string;
   price: number | null;
@@ -93,6 +94,47 @@ export function relatedTours<T extends TourSummary>(tours: T[], tourId: string, 
 
 /** Former elitetravel.mn asset path → its Cloudinary copy (elitetravel/tours/<file name>) */
 const asset = (path: string) => cldImage(`elitetravel/tours/${path.split("/").pop()!.replace(/\.\w+$/, "")}`);
+
+/** Admin preset chips + tour filters. Custom keys are allowed beyond this list. */
+export const DESTINATION_PRESETS = [
+  { key: "hainan", label: "Хайнань" },
+  { key: "hongkong", label: "Хонг Конг" },
+  { key: "bali", label: "Бали" },
+  { key: "egypt", label: "Египет" },
+  { key: "soon", label: "Удахгүй / бусад" },
+] as const;
+
+export function slugDestinationKey(raw: string) {
+  return raw
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+}
+
+/** Filter chips: core destinations that have live tours, then any custom keys. */
+export function tourDestinationFilters(tours: Pick<TourSummary, "destinationKey" | "destination" | "status">[]) {
+  const live = tours.filter((t) => t.status !== "ended");
+  const counts = new Map<string, number>();
+  const labels = new Map<string, string>(DESTINATION_PRESETS.map((p) => [p.key, p.label]));
+  for (const t of live) {
+    counts.set(t.destinationKey, (counts.get(t.destinationKey) ?? 0) + 1);
+    if (!labels.has(t.destinationKey)) labels.set(t.destinationKey, t.destination || t.destinationKey);
+  }
+
+  const chips = [{ key: "all", label: "Бүгд" }];
+  for (const key of ["hainan", "hongkong", "bali"] as const) {
+    if ((counts.get(key) ?? 0) > 0) chips.push({ key, label: labels.get(key) ?? key });
+  }
+  for (const [key, label] of labels) {
+    if (key === "soon" || chips.some((c) => c.key === key)) continue;
+    if ((counts.get(key) ?? 0) > 0) chips.push({ key, label });
+  }
+  if ((counts.get("soon") ?? 0) > 0) chips.push({ key: "soon", label: "Удахгүй" });
+  return chips;
+}
 
 /** Synced from elitetravel.mn — 2026-10-27 */
 export const destinations = [

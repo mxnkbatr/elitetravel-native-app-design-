@@ -6,15 +6,17 @@ import Link from "next/link";
 import { Field, GalleryField, ImageField, inputClass, LinesField, Section } from "@/app/admin/(panel)/fields";
 import { SaveBar } from "@/app/admin/(panel)/SaveBar";
 import { TourDatesEditor } from "@/components/TourDatesEditor";
-import type { ItineraryDay, Tour } from "@/data/tours";
+import { DESTINATION_PRESETS, slugDestinationKey, type ItineraryDay, type Tour } from "@/data/tours";
 import { DOC_TYPES } from "@/lib/documents";
 import { useState } from "react";
 
-const DESTINATIONS = [
-  { key: "hainan", label: "Хайнань" },
-  { key: "hongkong", label: "Хонг Конг" },
-  { key: "bali", label: "Бали" },
-  { key: "soon", label: "Удахгүй / бусад" },
+const CUSTOM = "__custom__";
+const isPresetKey = (key: string) => DESTINATION_PRESETS.some((d) => d.key === key);
+
+const HOTEL_SUGGESTIONS = [
+  "Timton Fuhe Hotel, Саняа",
+  "Bing Tang Bali Resort",
+  "Harbour Plaza & Degrees",
 ] as const;
 
 const numOrNull = (v: string) => (v.trim() === "" ? null : Number(v.replace(/[^\d]/g, "")));
@@ -23,8 +25,24 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
   const [tour, setTour] = useState<Tour>(initial);
   // What was last saved; anything different is an unsaved edit
   const [saved, setSaved] = useState(() => JSON.stringify(initial));
+  const [customDest, setCustomDest] = useState(() => !isPresetKey(initial.destinationKey));
   const set = <K extends keyof Tour>(key: K, value: Tour[K]) => setTour((t) => ({ ...t, [key]: value }));
   const setPricing = (key: keyof NonNullable<Tour["pricing"]>, value: unknown) => setTour((t) => ({ ...t, pricing: { ...t.pricing, [key]: value } }));
+
+  const pickDestination = (value: string) => {
+    if (value === CUSTOM) {
+      setCustomDest(true);
+      if (isPresetKey(tour.destinationKey)) set("destinationKey", "");
+      return;
+    }
+    setCustomDest(false);
+    const preset = DESTINATION_PRESETS.find((d) => d.key === value);
+    setTour((t) => ({
+      ...t,
+      destinationKey: value,
+      destination: t.destination.trim() ? t.destination : (preset?.label ?? t.destination),
+    }));
+  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 pb-28">
@@ -50,14 +68,24 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
         <Field label="Холбоос (ID)" hint={`elitetravel.mn/tours/${tour.id || "…"}`}>
           <input value={tour.id} onChange={(e) => set("id", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))} className={inputClass} />
         </Field>
-        <Field label="Чиглэлийн бүс" hint="Газрын зураг, цэсэнд хаана харагдах">
-          <select value={tour.destinationKey} onChange={(e) => set("destinationKey", e.target.value as Tour["destinationKey"])} className={inputClass}>
-            {DESTINATIONS.map((d) => (
+        <Field label="Чиглэлийн бүс" hint="Жагсаалтаас сонгох эсвэл өөрөө нэмэх — цэс, шүүлтүүрт ашиглагдана">
+          <select value={customDest ? CUSTOM : tour.destinationKey} onChange={(e) => pickDestination(e.target.value)} className={inputClass}>
+            {DESTINATION_PRESETS.map((d) => (
               <option key={d.key} value={d.key}>
                 {d.label}
               </option>
             ))}
+            <option value={CUSTOM}>Өөрөө нэмэх…</option>
           </select>
+          {customDest ? (
+            <input
+              value={tour.destinationKey}
+              onChange={(e) => set("destinationKey", slugDestinationKey(e.target.value))}
+              placeholder="жишээ: dubai, tokyo, phuket"
+              className={`${inputClass} mt-2`}
+              autoComplete="off"
+            />
+          ) : null}
         </Field>
         <Field label="Чиглэл (харагдах нэр)">
           <input value={tour.destination} onChange={(e) => set("destination", e.target.value)} placeholder="Хайнань, Хятад" className={inputClass} />
@@ -72,8 +100,20 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
         <Field label="Нислэг / хөдлөх">
           <input value={tour.departure ?? ""} onChange={(e) => set("departure", e.target.value)} className={inputClass} />
         </Field>
-        <Field label="Буудал">
-          <input value={tour.stay ?? ""} onChange={(e) => set("stay", e.target.value)} className={inputClass} />
+        <Field label="Буудал" hint="Жагсаалтаас сонгох эсвэл өөрөө бичнэ — Буудлууд хуудсанд гарна">
+          <input
+            list="hotel-suggestions"
+            value={tour.stay ?? ""}
+            onChange={(e) => set("stay", e.target.value)}
+            placeholder="Жишээ: Atlantis Sanya, Саняа"
+            className={inputClass}
+            autoComplete="off"
+          />
+          <datalist id="hotel-suggestions">
+            {HOTEL_SUGGESTIONS.map((h) => (
+              <option key={h} value={h} />
+            ))}
+          </datalist>
         </Field>
         <Field label="Шошго">
           <select value={tour.tag ?? ""} onChange={(e) => set("tag", (e.target.value || undefined) as Tour["tag"])} className={inputClass}>

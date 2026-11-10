@@ -5,10 +5,10 @@ import { Icon } from "@/components/Icon";
 import { formatDateRange, joinDateRanges, parseDateRanges, type DateRange } from "@/lib/dates";
 import { useMemo, useState } from "react";
 
-const MAX_RANGES = 3;
+const MAX_RANGES = 12;
 
 /**
- * Admin date editor: up to 3 consecutive departures picked on a calendar,
+ * Admin date editor: up to 12 departures picked on a calendar,
  * stored as the catalogue's « · »-joined string. Free-text kept for open dates.
  */
 export function TourDatesEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -40,7 +40,7 @@ export function TourDatesEditor({ value, onChange }: { value: string; onChange: 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-xs font-semibold text-muted">Огноонууд</p>
-          <p className="mt-0.5 text-[0.7rem] text-muted/80">Календараас эхлэх·дуусах өдөр сонгоно. Нэг аялалд 2–3 удаагийн хөдлөх огноо нэмж болно.</p>
+          <p className="mt-0.5 text-[0.7rem] text-muted/80">Календараас эхлэх·дуусах өдөр сонгоно. Олон ээлжит аялалд {MAX_RANGES} хүртэлх хөдлөх огноо нэмж болно.</p>
         </div>
         <div className="flex rounded-full border border-[var(--line)] p-0.5 text-xs font-semibold">
           <button

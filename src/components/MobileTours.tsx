@@ -3,7 +3,7 @@
 import { Icon } from "@/components/Icon";
 import { SaveButton } from "@/components/SaveButton";
 import { Sheet } from "@/components/Sheet";
-import { formatPrice, type TourSummary } from "@/data/tours";
+import { formatPrice, tourDestinationFilters, type TourSummary } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { useReflow, useToday } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
@@ -12,21 +12,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-const places = [
-  { key: "all", label: "Бүгд" },
-  { key: "hainan", label: "Хайнань" },
-  { key: "hongkong", label: "Хонг Конг" },
-  { key: "bali", label: "Бали" },
-  { key: "soon", label: "Удахгүй" },
-] as const;
-
 const sorts = [
   { key: "soonest", label: "Ойрын огноо" },
   { key: "cheap", label: "Хямд нь эхэндээ" },
   { key: "pricey", label: "Үнэтэй нь эхэндээ" },
 ] as const;
 
-type Place = (typeof places)[number]["key"];
 type Sort = (typeof sorts)[number]["key"];
 
 
@@ -44,15 +35,17 @@ function sortTours(list: TourSummary[], sort: Sort) {
 export function MobileTours({ initialFilter = "all" }: { initialFilter?: string }) {
   const tours = useTours();
   const listed = useMemo(() => tours.filter((t) => t.status !== "ended"), [tours]);
+  const places = useMemo(() => tourDestinationFilters(listed), [listed]);
   const priced = listed.filter((t) => t.price != null).map((t) => t.price!);
   const priceMax = priced.length ? Math.max(...priced) : 0;
   const priceMin = priced.length ? Math.min(...priced) : 0;
-  const start = (places.some((p) => p.key === initialFilter) ? initialFilter : "all") as Place;
-  const [place, setPlace] = useState<Place>(start);
+  const start = places.some((p) => p.key === initialFilter) ? initialFilter : "all";
+  const [place, setPlace] = useState(start);
   const [sort, setSort] = useState<Sort>("soonest");
   const [maxPrice, setMaxPrice] = useState(priceMax);
   const [sheet, setSheet] = useState(false);
   const today = useToday();
+  if (place !== "all" && !places.some((p) => p.key === place)) setPlace("all");
   const reflow = useReflow(`${place}|${sort}|${maxPrice}`);
 
   const result = useMemo(() => {

@@ -2,7 +2,7 @@
 
 import { Icon, type IconName } from "@/components/Icon";
 import { SaveButton } from "@/components/SaveButton";
-import { formatPrice, isBookable, type Tour } from "@/data/tours";
+import { formatPrice, isBookable, tourDates, type Tour } from "@/data/tours";
 import { scrollToY } from "@/lib/scroll";
 import { POSTER_SIZES, posterGlow } from "@/lib/tour-poster";
 import { isUnderway } from "@/lib/dates";
@@ -68,7 +68,7 @@ function PhotoSwiper({ images, alt }: { images: string[]; alt: string }) {
         className="hide-scrollbar absolute inset-0 flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain sm:overflow-hidden"
       >
         {images.map((src, i) => (
-          <div key={src} className="relative h-full w-full shrink-0 snap-center">
+          <div key={`${src}-${i}`} className="relative h-full w-full shrink-0 snap-center">
             <Image src={src} alt={i === 0 ? alt : ""} fill preload={i === 0} fetchPriority={i === 0 ? "high" : undefined} className="object-cover" sizes={POSTER_SIZES} />
           </div>
         ))}
@@ -76,7 +76,7 @@ function PhotoSwiper({ images, alt }: { images: string[]; alt: string }) {
       {images.length > 1 ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center gap-1.5 sm:hidden" aria-hidden>
           {images.map((src, i) => (
-            <span key={src} className={`h-1.5 rounded-full bg-white shadow transition-all duration-300 ${i === index ? "w-5" : "w-1.5 opacity-60"}`} />
+            <span key={`${src}-${i}`} className={`h-1.5 rounded-full bg-white shadow transition-all duration-300 ${i === index ? "w-5" : "w-1.5 opacity-60"}`} />
           ))}
         </div>
       ) : null}
@@ -109,16 +109,19 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
 
   function book() {
     const el = document.getElementById("book");
-    // Desktop scrolls to the sidebar planner; phones (planner hidden) open the sheet
+    // Desktop: scroll to the sidebar calendar. Phone: open the booking sheet.
     if (el && el.offsetParent) scrollToY(el.getBoundingClientRect().top + window.scrollY - 110);
     else onBook();
   }
 
+  const dateParts = tourDates(tour);
+  const datesLabel =
+    dateParts.length > 1 ? `${dateParts.length} огноо · ${dateParts[0]}-аас` : dateParts[0];
   const chips = [
-    tour.dates && { icon: "calendar", text: tour.dates },
+    datesLabel && { icon: "calendar", text: datesLabel },
     { icon: "clock", text: tour.duration },
     tour.stay && { icon: "hotel", text: tour.stay },
-    { icon: "plane", text: `${tour.departure ?? "Улаанбаатар"}-аас` },
+    { icon: "plane", text: "Улаанбаатараас" },
   ].filter(Boolean) as { icon: IconName; text: string }[];
 
   return (
@@ -143,7 +146,10 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
             className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-[1.75rem] bg-[#cfe0db] shadow-[0_40px_90px_rgba(6,42,42,0.35)] sm:max-w-xl lg:aspect-[4/3.1]"
           >
             <Image src={posterGlow(tour.image)} alt="" fill unoptimized className="scale-110 object-cover" />
-            <PhotoSwiper images={[tour.image, ...tour.gallery].slice(0, 8)} alt={tour.title} />
+            <PhotoSwiper
+              images={[...new Set([tour.image, ...tour.gallery])].filter(Boolean).slice(0, 8)}
+              alt={tour.title}
+            />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/15" />
             <div className="absolute right-3 top-3 flex gap-2">
               <ShareButton tour={tour} className="grid size-10 place-items-center rounded-full bg-white/90 text-ink shadow-sm backdrop-blur-md" />

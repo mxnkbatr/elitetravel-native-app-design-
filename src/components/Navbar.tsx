@@ -131,6 +131,13 @@ export function Navbar() {
           pathname === "/map" ? "max-sm:hidden" : ""
         }`}
       >
+        {/* Full-bleed veil so scrolled page content can't peek around the floating pill */}
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-x-0 top-0 -z-10 h-[calc(4.75rem+env(safe-area-inset-top,0px))] bg-gradient-to-b from-bg from-55% to-transparent transition-opacity duration-300 ${
+            scrolled && !onDark ? "opacity-100" : "opacity-0"
+          }`}
+        />
         <motion.div
           initial={false}
           data-island={island ?? undefined}
@@ -151,7 +158,8 @@ export function Navbar() {
           } ${
             onDark
               ? "border-white/15 bg-white/[0.07] backdrop-blur-md"
-              : "border-[var(--line)] bg-bg-elevated/95 shadow-[0_10px_40px_rgba(6,42,42,0.10)] backdrop-blur-xl sm:bg-bg-elevated/85"
+              : // Solid pill — translucent glass let scrolled price/CTA bleed through the nav links
+                `border-[var(--line)] bg-bg-elevated shadow-[0_10px_40px_rgba(6,42,42,${scrolled ? "0.14" : "0.10"})]`
           }`}
         >
           <EliteLogo size="sm" light={onDark} showWordmark={!compact && !asDot} />

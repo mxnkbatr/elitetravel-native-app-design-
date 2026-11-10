@@ -8,7 +8,7 @@ export const alt = "Elite Travel аялал";
 export const size = ogSize;
 export const contentType = "image/png";
 
-const placeEn = { hainan: "Hainan", hongkong: "Hong Kong", bali: "Bali", soon: "Coming soon" } as const;
+const placeEn: Record<string, string> = { hainan: "Hainan", hongkong: "Hong Kong", bali: "Bali", egypt: "Egypt", soon: "Coming soon" };
 
 export async function generateStaticParams() {
   const tours = await getTours();
@@ -23,11 +23,12 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const price = tour ? formatPrice(tour.price).replace("₮", "MNT ") : "";
   const meta = tour ? [tour.duration, price].filter(Boolean).join("  ·  ") : undefined;
   const fonts = await loadDisplayFont(`${title}${meta ?? ""}elite`);
+  const place = tour ? (placeEn[tour.destinationKey] ?? tour.destination) : "";
 
   return new ImageResponse(
     <OgFrame
       background={background}
-      eyebrow={tour ? `Elite Travel · ${placeEn[tour.destinationKey]}` : "Elite Travel Mongolia"}
+      eyebrow={tour ? `Elite Travel · ${place}` : "Elite Travel Mongolia"}
       title={title}
       meta={meta}
     />,

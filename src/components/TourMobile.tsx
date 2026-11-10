@@ -60,10 +60,10 @@ export function TourTabs({ onPrice }: { onPrice: () => void }) {
   );
 }
 
-/** Bottom sheet holding the stepped booking flow; drag down or tap outside to close. */
+/** Booking sheet — opens only after «Захиалах»; phone bottom sheet / desktop dialog. */
 export function BookingSheet({ tour, open, onClose }: { tour: Tour; open: boolean; onClose: () => void }) {
   return (
-    <Sheet open={open} onClose={onClose} title={<span className="block truncate">{tour.title}</span>} label="Захиалга">
+    <Sheet open={open} onClose={onClose} tall title={<span className="block truncate">{tour.title}</span>} label="Захиалга">
       <div className="pt-2">
         <BookingPlanner tour={tour} variant="sheet" />
       </div>

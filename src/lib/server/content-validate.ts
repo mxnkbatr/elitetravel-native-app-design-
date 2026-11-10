@@ -69,7 +69,11 @@ export function parseTour(input: unknown): Tour {
     id,
     title: str(t.title, "Гарчиг", 200),
     destination: str(t.destination, "Чиглэл", 120),
-    destinationKey: oneOf(t.destinationKey, ["hainan", "hongkong", "bali", "soon"] as const, "Чиглэлийн бүс"),
+    destinationKey: (() => {
+      const key = str(t.destinationKey, "Чиглэлийн бүс", 40).toLowerCase();
+      if (!/^[a-z0-9-]{2,40}$/.test(key)) throw new Invalid("«Чиглэлийн бүс» зөвхөн жижиг латин үсэг, тоо, зураас (-) агуулна.");
+      return key;
+    })(),
     description: str(t.description, "Товч тайлбар", 600),
     story: str(t.story, "Дэлгэрэнгүй"),
     price: num(t.price, "Үнэ"),

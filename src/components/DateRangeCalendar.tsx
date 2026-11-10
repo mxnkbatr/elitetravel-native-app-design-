@@ -9,7 +9,7 @@ import {
   type DateRange,
   type MonthDay,
 } from "@/lib/dates";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const WEEKDAYS = ["Да", "Мя", "Лх", "Пү", "Ба", "Бя", "Ня"];
 const MONTHS = ["1-р сар", "2-р сар", "3-р сар", "4-р сар", "5-р сар", "6-р сар", "7-р сар", "8-р сар", "9-р сар", "10-р сар", "11-р сар", "12-р сар"];
@@ -24,6 +24,13 @@ function toMonthDay(d: Date): MonthDay {
 
 function dayKey(d: Date) {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+/** Prefer the next occurrence of a month/day range from today (handles Dec→Jan). */
+function upcomingSpan(range: DateRange, now = new Date()) {
+  const thisYear = resolveRangeDates(range, now.getFullYear());
+  if (thisYear.end.getTime() >= now.getTime() - 7 * 86400000) return thisYear;
+  return resolveRangeDates(range, now.getFullYear() + 1);
 }
 
 type Props = {
@@ -53,10 +60,20 @@ export function DateRangeCalendar({
 }: Props) {
   const selectMode = Boolean(selectable?.length);
   const seed = value ?? selectable?.find((s) => s.label === selectedLabel)?.range ?? selectable?.[0]?.range ?? null;
-  const seedYear = new Date().getFullYear();
-  const seedDate = seed ? resolveRangeDates(seed, seedYear).start : new Date();
+  const seedDate = seed ? upcomingSpan(seed).start : new Date();
   const [cursor, setCursor] = useState(() => new Date(seedDate.getFullYear(), seedDate.getMonth(), 1));
   const [picking, setPicking] = useState<Date | null>(null);
+
+  // Jump the month grid when the traveller picks another departure chip
+  useEffect(() => {
+    const range = value ?? selectable?.find((s) => s.label === selectedLabel)?.range ?? null;
+    if (!range) return;
+    const start = upcomingSpan(range).start;
+    setCursor((prev) => {
+      if (prev.getFullYear() === start.getFullYear() && prev.getMonth() === start.getMonth()) return prev;
+      return new Date(start.getFullYear(), start.getMonth(), 1);
+    });
+  }, [value, selectedLabel, selectable]);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -74,14 +91,11 @@ export function DateRangeCalendar({
 
   /** Prefer the year whose span overlaps the visible month (handles 12/28–01/03). */
   function spanForMonth(range: DateRange) {
-    const a = resolveRangeDates(range, year);
-    const b = resolveRangeDates(range, year - 1);
+    const candidates = [resolveRangeDates(range, year), resolveRangeDates(range, year - 1), resolveRangeDates(range, year + 1)];
     const monthStart = new Date(year, month, 1).getTime();
     const monthEnd = new Date(year, month + 1, 0).getTime();
     const overlaps = (s: { start: Date; end: Date }) => s.start.getTime() <= monthEnd && s.end.getTime() >= monthStart;
-    if (overlaps(a)) return a;
-    if (overlaps(b)) return b;
-    return a;
+    return candidates.find(overlaps) ?? candidates[0];
   }
 
   const active = useMemo(() => {
@@ -107,14 +121,15 @@ export function DateRangeCalendar({
     return t >= span.start.getTime() && t <= span.end.getTime();
   }
 
+  function spanAroundYear(range: DateRange) {
+    return [resolveRangeDates(range, year), resolveRangeDates(range, year - 1), resolveRangeDates(range, year + 1)];
+  }
+
   function clickDay(day: Date) {
     if (selectMode && selectable && onSelectLabel) {
       const hit = selectable.find((s) => {
         if (s.disabled) return false;
-        const span = resolveRangeDates(s.range, year);
-        // Cross-year: also try previous year for Jan ends
-        const alt = resolveRangeDates(s.range, year - 1);
-        return inSpan(day, span) || inSpan(day, alt);
+        return spanAroundYear(s.range).some((span) => inSpan(day, span));
       });
       if (hit) onSelectLabel(hit.label);
       return;
@@ -132,27 +147,27 @@ export function DateRangeCalendar({
     setPicking(null);
   }
 
-  const cell = compact ? "size-9 text-[0.72rem]" : "size-10 text-sm sm:size-11";
+  const cell = compact ? "aspect-square w-full text-[0.72rem]" : "aspect-square w-full text-sm";
 
   return (
-    <div className={compact ? "space-y-2" : "space-y-3"}>
+    <div className={`min-w-0 ${compact ? "space-y-2" : "space-y-3"}`}>
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
           aria-label="Өмнөх сар"
           onClick={() => setCursor(new Date(year, month - 1, 1))}
-          className="grid size-9 place-items-center rounded-full border border-[var(--line)] text-muted transition hover:border-accent hover:text-accent"
+          className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--line)] text-muted transition hover:border-accent hover:text-accent"
         >
           <Icon name="chevron-left" size={16} />
         </button>
-        <p className="font-display text-base font-semibold tabular-nums">
+        <p className="min-w-0 truncate text-center font-display text-base font-semibold tabular-nums">
           {MONTHS[month]} · {year}
         </p>
         <button
           type="button"
           aria-label="Дараагийн сар"
           onClick={() => setCursor(new Date(year, month + 1, 1))}
-          className="grid size-9 place-items-center rounded-full border border-[var(--line)] text-muted transition hover:border-accent hover:text-accent"
+          className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--line)] text-muted transition hover:border-accent hover:text-accent"
         >
           <Icon name="chevron-right" size={16} />
         </button>
@@ -165,7 +180,7 @@ export function DateRangeCalendar({
           </span>
         ))}
         {cells.map((day, i) => {
-          if (!day) return <span key={`e-${i}`} />;
+          if (!day) return <span key={`e-${i}`} className="aspect-square w-full" />;
           const isStart = active ? sameDay(day, active.start) : picking ? sameDay(day, picking) : false;
           const isEnd = active ? sameDay(day, active.end) : false;
           const inActive = inSpan(day, active);
@@ -174,7 +189,7 @@ export function DateRangeCalendar({
             !selectMode ||
             selectable?.some((s) => {
               if (s.disabled) return false;
-              return inSpan(day, resolveRangeDates(s.range, year)) || inSpan(day, resolveRangeDates(s.range, year - 1));
+              return spanAroundYear(s.range).some((span) => inSpan(day, span));
             });
 
           return (
@@ -183,7 +198,7 @@ export function DateRangeCalendar({
               type="button"
               disabled={selectMode && !isPickable}
               onClick={() => clickDay(day)}
-              className={`${cell} relative mx-auto grid place-items-center rounded-full font-medium tabular-nums transition disabled:cursor-default disabled:opacity-35 ${
+              className={`${cell} relative grid place-items-center rounded-full font-medium tabular-nums transition disabled:cursor-default disabled:opacity-35 ${
                 isStart || isEnd
                   ? "bg-accent text-white"
                   : inActive

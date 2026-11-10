@@ -21,12 +21,16 @@ async function load<T>(table: "tours" | "news", fallback: T[]): Promise<T[]> {
   return data.map((row) => row.data as T);
 }
 
-export const getTours = unstable_cache(() => load<Tour>("tours", seedTours), ["tours"], {
+const cachedTours = unstable_cache(() => load<Tour>("tours", seedTours), ["tours"], {
   tags: [CONTENT_TAG],
   revalidate: 3600,
 });
 
-export const getNews = unstable_cache(() => load<NewsItem>("news", seedNews), ["news"], {
+const cachedNews = unstable_cache(() => load<NewsItem>("news", seedNews), ["news"], {
   tags: [CONTENT_TAG],
   revalidate: 3600,
 });
+
+/** Dev skips the hour-long cache so script/admin upserts show up on refresh. */
+export const getTours = process.env.NODE_ENV === "development" ? () => load<Tour>("tours", seedTours) : cachedTours;
+export const getNews = process.env.NODE_ENV === "development" ? () => load<NewsItem>("news", seedNews) : cachedNews;

@@ -1,7 +1,7 @@
 "use client";
 
 import { SaveButton } from "@/components/SaveButton";
-import { formatPrice } from "@/data/tours";
+import { formatPrice, tourDestinationFilters } from "@/data/tours";
 import { useTours } from "@/lib/content";
 
 import { filterChipClass, useReflow } from "@/lib/ui";
@@ -9,14 +9,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-
-const filters = [
-  { key: "all", label: "Бүгд" },
-  { key: "hainan", label: "Хайнань" },
-  { key: "hongkong", label: "Хонг Конг" },
-  { key: "bali", label: "Бали" },
-  { key: "soon", label: "Удахгүй" },
-] as const;
 
 type ToursProps = {
   showHeader?: boolean;
@@ -30,18 +22,20 @@ export function Tours({
   initialFilter = "all",
 }: ToursProps) {
   const tours = useTours();
+  const filters = useMemo(() => tourDestinationFilters(tours), [tours]);
   const start = filters.some((f) => f.key === initialFilter) ? initialFilter : "all";
-  const [filter, setFilter] = useState<(typeof filters)[number]["key"]>(
-    start as (typeof filters)[number]["key"],
-  );
+  const [filter, setFilter] = useState(start);
 
   const reflow = useReflow(filter);
 
-  // A new ?dest= in the URL resets the chip
+  // A new ?dest= in the URL resets the chip; drop unknown/empty chips (e.g. ?dest=soon)
   const [filterFrom, setFilterFrom] = useState(initialFilter);
   if (filterFrom !== initialFilter) {
     setFilterFrom(initialFilter);
-    if (filters.some((f) => f.key === initialFilter)) setFilter(initialFilter as (typeof filters)[number]["key"]);
+    setFilter(filters.some((f) => f.key === initialFilter) ? initialFilter : "all");
+  }
+  if (filter !== "all" && !filters.some((f) => f.key === filter)) {
+    setFilter("all");
   }
 
   const visible = useMemo(() => {
@@ -89,6 +83,15 @@ export function Tours({
           ))}
         </div>
 
+        {visible.length === 0 ? (
+          <div className="rounded-[1.5rem] border border-dashed border-[var(--line)] bg-bg-elevated px-6 py-12 text-center">
+            <p className="font-display text-xl font-semibold">Энэ чиглэлд аялал алга</p>
+            <p className="mt-2 text-sm text-muted">Бүгд рүү буцаж бусад аяллуудыг үзээрэй.</p>
+            <button type="button" onClick={() => setFilter("all")} className="mt-5 inline-flex h-11 items-center rounded-full bg-accent px-5 text-sm font-semibold text-white">
+              Бүгд аялал харах
+            </button>
+          </div>
+        ) : (
         <motion.div layout={reflow} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {visible.map((tour, i) => (
@@ -144,6 +147,7 @@ export function Tours({
             ))}
           </AnimatePresence>
         </motion.div>
+        )}
       </div>
     </section>
   );

@@ -86,7 +86,7 @@ const itineraryDay = z.object({
 const tourFields = z.object({
   title: z.string().max(200),
   destination: z.string().max(120),
-  destinationKey: z.enum(["hainan", "hongkong", "bali", "soon"]),
+  destinationKey: z.string().regex(/^[a-z0-9-]{2,40}$/).max(40),
   description: z.string().max(600),
   story: z.string().max(4000),
   price: z.number().int().min(0).max(500_000_000).nullable(),

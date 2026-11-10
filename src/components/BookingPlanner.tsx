@@ -225,7 +225,11 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
   return (
     <div
       id={stepped ? undefined : "book"}
-      className={stepped ? "" : "scroll-mt-28 rounded-[1.5rem] border border-[var(--line)] bg-bg-elevated p-5 shadow-[var(--shadow)]"}
+      className={
+        stepped
+          ? "min-w-0"
+          : "min-w-0 max-h-[calc(100dvh-6.5rem)] scroll-mt-28 overflow-x-hidden overflow-y-auto overscroll-contain rounded-[1.5rem] border border-[var(--line)] bg-bg-elevated p-5 shadow-[var(--shadow)]"
+      }
     >
       {stepped ? <Steps current={done ? 2 : step} /> : null}
       <AnimatePresence mode="wait">
@@ -297,21 +301,23 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
             </div>
 
             {useCalendar ? (
-              <div className="mt-5">
+              <div className="mt-5 min-w-0">
                 <div className="mb-2 flex items-end justify-between gap-2">
-                  <div>
+                  <div className="min-w-0">
                     <p className="type-label text-muted">Огноо сонгох</p>
-                    <p className="mt-0.5 text-[0.7rem] text-muted">Календараас хөдлөх өдрөө дарна уу</p>
+                    <p className="mt-0.5 text-[0.7rem] text-muted">
+                      {calendarOptions.length > 1 ? "Ээлжээ сонгоод календараас шалгана" : "Календараас хөдлөх өдрөө дарна уу"}
+                    </p>
                   </div>
                   {selectedRange ? (
-                    <p className="text-right text-xs font-semibold text-accent">
+                    <p className="shrink-0 text-right text-xs font-semibold text-accent">
                       {formatDateRange(selectedRange)}
                       <span className="mt-0.5 block font-normal text-muted">{rangeDayCount(selectedRange)} өдөр</span>
                     </p>
                   ) : null}
                 </div>
                 {calendarOptions.length > 1 ? (
-                  <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+                  <div className="hide-scrollbar -mx-1 mb-3 flex gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1">
                     {calendarOptions.map((opt, i) => {
                       const s = seats[opt.label];
                       return (
@@ -323,12 +329,12 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
                             haptic("tap");
                             setDate(opt.label);
                           }}
-                          className={`min-w-[7.5rem] shrink-0 rounded-2xl border px-3 py-2.5 text-left transition disabled:line-through disabled:opacity-40 ${
+                          className={`w-[6.75rem] shrink-0 rounded-2xl border px-2.5 py-2 text-left transition disabled:line-through disabled:opacity-40 ${
                             date === opt.label ? "border-accent bg-accent text-white" : "border-[var(--line)] bg-bg hover:border-accent"
                           }`}
                         >
-                          <span className={`block text-[0.65rem] font-semibold ${date === opt.label ? "text-white/75" : "text-muted"}`}>{i + 1}-р хөдлөх</span>
-                          <span className="mt-0.5 block text-xs font-semibold leading-snug">{formatDateRange(opt.range)}</span>
+                          <span className={`block text-[0.62rem] font-semibold ${date === opt.label ? "text-white/75" : "text-muted"}`}>{i + 1}-р хөдлөх</span>
+                          <span className="mt-0.5 block text-[0.7rem] font-semibold leading-snug">{formatDateRange(opt.range)}</span>
                           {s && !s.closed && s.left <= 10 ? (
                             <span className={`mt-1 block text-[0.62rem] ${date === opt.label ? "text-white/80" : "text-[#c9964a] dark:text-[#e8b86d]"}`}>
                               {s.left ? `${s.left} суудал` : "дүүрсэн"}
@@ -339,11 +345,12 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
                     })}
                   </div>
                 ) : null}
-                <div className="rounded-2xl border border-[var(--line)] bg-bg p-3">
+                <div className="min-w-0 rounded-2xl border border-[var(--line)] bg-bg p-3">
                   <DateRangeCalendar
                     compact
                     value={selectedRange}
                     onChange={() => {}}
+                    others={calendarOptions.filter((o) => o.label !== date).map((o) => o.range)}
                     selectable={calendarOptions}
                     selectedLabel={date}
                     onSelectLabel={(label) => {
@@ -390,18 +397,18 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
               </p>
             ) : null}
 
-            <div className="mt-5">
+            <div className="mt-5 min-w-0">
               <div className="mb-2.5 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="grid size-8 place-items-center rounded-full bg-accent/10 text-accent">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
                     <Icon name="users" size={15} />
                   </span>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold">Аялагчид нэмэх</p>
                     <p className="text-[0.7rem] text-muted">Хэдэн хүн явах вэ?</p>
                   </div>
                 </div>
-                <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-accent">{people} хүн</span>
+                <span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-accent">{people} хүн</span>
               </div>
               <div className="space-y-2">
                 <Stepper label="Том хүн" hint="12-оос дээш нас" value={adults} min={1} onChange={setAdults} />

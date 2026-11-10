@@ -26,9 +26,10 @@ export function TourDetailView({ tour }: { tour: Tour }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const bookable = isBookable(tour);
   const underway = useClientValue(() => tour.status === "ended" && isUnderway(tour.dates), false);
+  const openBook = () => setSheetOpen(true);
 
   return (
-    <div className="relative w-full max-w-[100vw] overflow-x-clip pb-16 sm:pb-20">
+    <div className="relative w-full max-w-[100vw] pb-16 sm:pb-20">
       <div className="mx-auto w-full max-w-6xl px-4 pt-[calc(5.5rem+env(safe-area-inset-top))] sm:px-6">
         <Link
           href="/tours"
@@ -38,9 +39,9 @@ export function TourDetailView({ tour }: { tour: Tour }) {
           Аяллууд руу буцах
         </Link>
 
-        <TourHero tour={tour} onBook={() => setSheetOpen(true)} />
+        <TourHero tour={tour} onBook={openBook} />
 
-        {bookable ? <TourTabs onPrice={() => setSheetOpen(true)} /> : null}
+        {bookable ? <TourTabs onPrice={openBook} /> : null}
 
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="min-w-0 space-y-8">
@@ -141,13 +142,14 @@ export function TourDetailView({ tour }: { tour: Tour }) {
             ) : null}
           </div>
 
-          <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
+          {/* Desktop: live calendar + booking form in the sticky sidebar. Phone uses the sheet. */}
+          <aside className="min-w-0 space-y-4 lg:sticky lg:top-[5.75rem] lg:z-10 lg:self-start">
             {bookable ? (
-              <div className="hidden sm:block">
+              <div className="hidden min-w-0 sm:block">
                 <BookingPlanner tour={tour} />
               </div>
             ) : (
-              <div className="rounded-[1.5rem] border border-[var(--line)] bg-bg-elevated p-5 shadow-[var(--shadow)]">
+              <div className="hidden rounded-[1.5rem] border border-[var(--line)] bg-bg-elevated p-5 shadow-[var(--shadow)] sm:block">
                 <p className="font-display text-2xl font-semibold">
                   {underway ? "Аялал явагдаж байна" : tour.status === "ended" ? "Энэ аялал дууссан" : "Тун удахгүй"}
                 </p>
@@ -208,7 +210,7 @@ export function TourDetailView({ tour }: { tour: Tour }) {
           {bookable ? (
             <button
               type="button"
-              onClick={() => setSheetOpen(true)}
+              onClick={openBook}
               className="btn-shine inline-flex h-12 shrink-0 items-center rounded-full bg-accent px-5 text-sm font-semibold text-white active:scale-95"
             >
               Захиалах

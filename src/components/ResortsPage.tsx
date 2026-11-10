@@ -1,6 +1,6 @@
 "use client";
 
-import { formatPrice, isBookable } from "@/data/tours";
+import { formatPrice, isBookable, type TourSummary } from "@/data/tours";
 import { cldImage } from "@/lib/cloudinary";
 import { useTours } from "@/lib/content";
 import { motion } from "framer-motion";
@@ -8,43 +8,86 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 
-/** Where travellers actually stay, taken from the tour itineraries. */
-const hotels = [
+/** Curated copy/photos for known hotels; anything else comes from tour.stay text. */
+const curated = [
   {
     name: "Timton Fuhe Hotel",
     place: "Саняа, Хайнань",
     blurb: "Хайнань аяллуудын 6 шөнийг өнгөрүүлэх Саняагийн буудал — далайн эрэг, бассейн, чөлөөт өдрүүд.",
     image: cldImage("elitetravel/tours/day7-resort-pool"),
-    match: (stay?: string) => stay?.includes("Timton"),
+    match: (stay?: string) => stay?.includes("Timton") ?? false,
   },
   {
     name: "Bing Tang Bali Resort",
     place: "Бали, Индонез",
     blurb: "Убуд, хүрхрээ, Нуса Пенида руу гарах аяллын төв. 8 шөнийн турш эндээ буудаллана.",
     image: cldImage("elitetravel/tours/cretya-ubud"),
-    match: (stay?: string) => stay?.includes("Bing Tang"),
+    match: (stay?: string) => stay?.includes("Bing Tang") ?? false,
   },
   {
     name: "Harbour Plaza & Degrees",
     place: "Хонг Конг",
     blurb: "The Weeknd-ийн тоглолт болох газраас ердөө 600 метрт. Хотын аялал, тоглолт хоёуланд нь ойр.",
     image: cldImage("elitetravel/tours/hongkong-skyline"),
-    match: (stay?: string) => stay?.includes("Harbour Plaza"),
+    match: (stay?: string) => stay?.includes("Harbour Plaza") ?? false,
   },
-];
+] as const;
+
+export type StayCard = {
+  name: string;
+  place: string;
+  blurb: string;
+  image: string;
+  linked: TourSummary[];
+  from: number | null;
+};
+
+function lowestPrice(linked: TourSummary[]) {
+  return linked.reduce<number | null>((min, t) => (t.price && (!min || t.price < min) ? t.price : min), null);
+}
+
+function splitStay(stay: string) {
+  const [name, ...rest] = stay.split(",");
+  return { name: name.trim(), place: rest.join(",").trim() };
+}
 
 /** Each hotel with the open tours that stay there and their lowest price. */
 export function useStays() {
   const tours = useTours();
-  return useMemo(
-    () =>
-      hotels.map((s) => {
-        const linked = tours.filter((t) => isBookable(t) && s.match(t.stay));
-        const from = linked.reduce<number | null>((min, t) => (t.price && (!min || t.price < min) ? t.price : min), null);
-        return { ...s, linked, from };
-      }),
-    [tours],
-  );
+  return useMemo(() => {
+    const bookable = tours.filter(isBookable);
+    const stays: StayCard[] = curated.map((s) => {
+      const linked = bookable.filter((t) => s.match(t.stay));
+      return { name: s.name, place: s.place, blurb: s.blurb, image: s.image, linked, from: lowestPrice(linked) };
+    });
+
+    const covered = new Set(
+      bookable.filter((t) => t.stay && curated.some((s) => s.match(t.stay))).map((t) => t.stay!.trim()),
+    );
+
+    const extras = new Map<string, TourSummary[]>();
+    for (const t of bookable) {
+      const stay = t.stay?.trim();
+      if (!stay || covered.has(stay)) continue;
+      const list = extras.get(stay) ?? [];
+      list.push(t);
+      extras.set(stay, list);
+    }
+
+    for (const [stay, linked] of extras) {
+      const { name, place } = splitStay(stay);
+      stays.push({
+        name,
+        place: place || linked[0]?.destination || "",
+        blurb: `${place || linked[0]?.destination || "Аялал"}-ын буудал — аяллын багцад багтсан.`,
+        image: linked[0]?.image ?? curated[0].image,
+        linked,
+        from: lowestPrice(linked),
+      });
+    }
+
+    return stays;
+  }, [tours]);
 }
 
 export function ResortsPage() {

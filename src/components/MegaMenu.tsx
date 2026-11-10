@@ -8,11 +8,39 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+type MenuGroup = {
+  key: string;
+  name: string;
+  en: string;
+  blurb: string;
+  image: string;
+  tours: TourSummary[];
+};
+
 function buildMenu(tours: TourSummary[]) {
-  const groups = destinations.map((d) => ({
-    ...d,
-    tours: tours.filter((t) => t.destinationKey === d.key || (d.key === "egypt" && t.id === "shakira-egypt")).filter((t) => t.status !== "ended"),
+  const live = tours.filter((t) => t.status !== "ended");
+  const groups: MenuGroup[] = destinations.map((d) => ({
+    key: d.key,
+    name: d.name,
+    en: d.en,
+    blurb: d.blurb,
+    image: d.image,
+    tours: live.filter((t) => t.destinationKey === d.key || (d.key === "egypt" && t.id === "shakira-egypt")),
   }));
+
+  const known = new Set(destinations.map((d) => d.key as string));
+  for (const key of [...new Set(live.map((t) => t.destinationKey))]) {
+    if (known.has(key) || key === "soon") continue;
+    const sample = live.find((t) => t.destinationKey === key)!;
+    groups.push({
+      key,
+      name: sample.destination || key,
+      en: key,
+      blurb: "",
+      image: sample.image,
+      tours: live.filter((t) => t.destinationKey === key),
+    });
+  }
 
   const nextUp = tours
     .filter(isBookable)
