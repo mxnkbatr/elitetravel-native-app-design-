@@ -169,15 +169,17 @@ export async function POST(req: Request) {
           kidsOwnBed: z.number().int().min(0).max(30).optional().describe("2–12 насны, тусдаа ортой хүүхэд (том хүний үнээр)"),
           kidsSharedBed: z.number().int().min(0).max(30).optional().describe("2–12 насны, эцэг эхтэйгээ нэг оронд унтах хүүхэд"),
           singleRooms: z.number().int().min(0).max(30).optional().describe("ганцаараа өрөөнд байрлах том хүний тоо"),
+          date: z.string().optional().describe("сонгосон хөдлөх огнооны label (жишээ: 12/12 – 12/19); огноо бүрийн үнэ өөр байж болно"),
         }),
-        execute: async ({ tourId, adults, kidsOwnBed = 0, kidsSharedBed = 0, singleRooms = 0 }) => {
+        execute: async ({ tourId, adults, kidsOwnBed = 0, kidsSharedBed = 0, singleRooms = 0, date }) => {
           const tour = getTour(live, tourId);
           if (!tour) return { ok: false, error: "tour_not_found" };
-          if (tour.price == null) return { ok: false, error: "price_unknown", contact: PHONE };
-          const q = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms });
+          if (tour.price == null && !(date && tour.datePrices?.[date]?.price != null)) return { ok: false, error: "price_unknown", contact: PHONE };
+          const q = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms }, date);
           return {
             ok: true,
             tour: tour.title,
+            date: date ?? null,
             lines: q.lines.map((l) => `${l.label} = ${formatPrice(l.amount)}`),
             total: formatPrice(q.total),
             deposit: q.deposit ? formatPrice(q.deposit) : null,

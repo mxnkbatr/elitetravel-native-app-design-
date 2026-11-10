@@ -1,6 +1,6 @@
 import "server-only";
 
-import { formatPrice, tourDates, type Tour } from "@/data/tours";
+import { formatPrice, fromPrice, tourDates, type Tour } from "@/data/tours";
 import { EDITABLE_TOUR_FIELDS, firstName, maskPhone, salesSummary, tourDiff, type DiffRow, type ProposalKind, type ProposalView, type SalesBooking } from "@/lib/agent";
 import { siteStats } from "@/lib/server/analytics";
 import { heldSeats } from "@/lib/server/seats";
@@ -40,13 +40,15 @@ async function loadTours() {
 }
 
 function tourCard(t: Tour, seats?: Record<string, { left: number; closed: boolean }>) {
+  const price = fromPrice(t);
   return {
     id: t.id,
     title: t.title,
     destination: t.destination,
-    price: t.price,
-    price_label: formatPrice(t.price),
+    price,
+    price_label: formatPrice(price),
     old_price: t.oldPrice ?? null,
+    date_prices: t.datePrices ?? null,
     tag: t.tag ?? null,
     status: t.status === "ended" ? "ended" : t.tag === "soon" ? "soon" : "live",
     dates: tourDates(t),
@@ -99,6 +101,17 @@ const tourFields = z.object({
   image: z.string().url().max(1000),
   gallery: z.array(z.string().url().max(1000)).max(30),
   dates: z.string().max(400).nullable(),
+  datePrices: z
+    .record(
+      z.string().max(60),
+      z.object({
+        price: z.number().int().min(0).max(500_000_000),
+        childSharedBed: z.number().int().min(0).max(500_000_000).optional(),
+        oldPrice: z.number().int().min(0).max(500_000_000).optional(),
+      }),
+    )
+    .nullable()
+    .optional(),
   stay: z.string().max(200).nullable(),
   departure: z.string().max(200).nullable(),
   highlights: z.array(z.string().max(1000)).max(20),

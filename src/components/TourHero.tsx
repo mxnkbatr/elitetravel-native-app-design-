@@ -2,7 +2,7 @@
 
 import { Icon, type IconName } from "@/components/Icon";
 import { SaveButton } from "@/components/SaveButton";
-import { formatPrice, isBookable, tourDates, type Tour } from "@/data/tours";
+import { formatPrice, fromPrice, isBookable, tourDates, type Tour } from "@/data/tours";
 import { scrollToY } from "@/lib/scroll";
 import { POSTER_SIZES, posterGlow } from "@/lib/tour-poster";
 import { isUnderway } from "@/lib/dates";
@@ -20,7 +20,7 @@ function ShareButton({ tour, className = "" }: { tour: Tour; className?: string 
     const url = window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: tour.title, text: `${tour.title} · ${formatPrice(tour.price)}`, url });
+        await navigator.share({ title: tour.title, text: `${tour.title} · ${formatPrice(fromPrice(tour))}`, url });
         return;
       }
       await navigator.clipboard.writeText(url);
@@ -196,9 +196,14 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
 
           <div {...reveal(0.55, "mt-6 flex flex-wrap items-end gap-x-6 gap-y-4")}>
             <div>
-              <p className="text-xs text-muted">Үнэ / хүн</p>
+              <p className="text-xs text-muted">{tour.datePrices && Object.keys(tour.datePrices).length ? "Үнэ / хүн · огнооноос хамаарна" : "Үнэ / хүн"}</p>
               <div className="flex items-baseline gap-2">
-                <span className="font-num text-[2.2rem] leading-none text-accent">{formatPrice(tour.price)}</span>
+                <span className="font-num text-[2.2rem] leading-none text-accent">
+                  {formatPrice(fromPrice(tour))}
+                  {tour.datePrices && Object.values(tour.datePrices).some((d) => d.price !== tour.price) ? (
+                    <span className="ml-1 text-base font-medium text-muted">-аас</span>
+                  ) : null}
+                </span>
                 {tour.oldPrice ? <span className="text-sm text-muted line-through">{formatPrice(tour.oldPrice)}</span> : null}
               </div>
             </div>

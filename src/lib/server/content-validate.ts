@@ -1,7 +1,8 @@
 import "server-only";
 
 import type { NewsCategory, NewsItem } from "@/data/news";
-import type { ItineraryDay, Tour } from "@/data/tours";
+import type { DatePrice, ItineraryDay, Tour } from "@/data/tours";
+import { tourDates } from "@/data/tours";
 import { isDocType } from "@/lib/documents";
 
 /**
@@ -87,6 +88,7 @@ export function parseTour(input: unknown): Tour {
     image: url(t.image, "Нүүр зураг"),
     gallery: list(t.gallery, "Галерей").filter((g) => g.startsWith("https://")),
     dates: optStr(t.dates, 400),
+    datePrices: parseDatePrices(t.datePrices, optStr(t.dates, 400)),
     stay: optStr(t.stay, 200),
     departure: optStr(t.departure, 200),
     highlights: list(t.highlights, "Онцлох"),
@@ -105,6 +107,27 @@ export function parseTour(input: unknown): Tour {
   };
   if (tour.pricing?.depositPercent != null && tour.pricing.depositPercent > 100) throw new Invalid("Урьдчилгаа 100%-аас их байж болохгүй.");
   return JSON.parse(JSON.stringify(tour)) as Tour; // drops undefined keys
+}
+
+function parseDatePrices(raw: unknown, dates?: string): Record<string, DatePrice> | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const allowed = new Set(tourDates({ dates }));
+  const out: Record<string, DatePrice> = {};
+  for (const [label, value] of Object.entries(raw as Record<string, unknown>)) {
+    const key = label.trim().slice(0, 60);
+    if (!key || (allowed.size > 0 && !allowed.has(key))) continue;
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+    const row = value as Record<string, unknown>;
+    const price = num(row.price, `Огнооны үнэ (${key})`);
+    if (price == null) continue;
+    const entry: DatePrice = { price };
+    const childSharedBed = num(row.childSharedBed, `Огнооны хүүхдийн үнэ (${key})`);
+    if (childSharedBed != null) entry.childSharedBed = childSharedBed;
+    const oldPrice = num(row.oldPrice, `Огнооны хуучин үнэ (${key})`);
+    if (oldPrice != null) entry.oldPrice = oldPrice;
+    out[key] = entry;
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 const CATEGORIES: readonly NewsCategory[] = ["Мэдээ", "Урамшуулал", "Зөвлөгөө"];

@@ -1,7 +1,7 @@
 "use client";
 
 import { SaveButton } from "@/components/SaveButton";
-import { formatPrice, type TourSummary } from "@/data/tours";
+import { formatPrice, fromPrice, type TourSummary } from "@/data/tours";
 import { useSeats } from "@/lib/content";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,8 +15,10 @@ export function TourCard({
 }) {
   const open = Object.values(useSeats(tour.id)).filter((s) => !s.closed);
   const seats = open.length ? Math.max(...open.map((s) => s.left)) : null;
+  const price = fromPrice(tour);
+  const priceVaries = Boolean(tour.datePrices && Object.values(tour.datePrices).some((d) => d.price !== tour.price));
   // A coming-soon tour has nothing to book yet: the button opens its page instead
-  const bookHref = tour.price ? `/tours/${tour.id}#book` : `/tours/${tour.id}`;
+  const bookHref = price != null ? `/tours/${tour.id}#book` : `/tours/${tour.id}`;
 
   return (
     <article
@@ -66,7 +68,8 @@ export function TourCard({
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-[var(--line)] pt-3">
           <div>
             <p className="font-num text-xl font-semibold leading-none text-accent">
-              {formatPrice(tour.price)}
+              {formatPrice(price)}
+              {priceVaries && price != null ? <span className="ml-0.5 text-sm font-medium text-muted">-аас</span> : null}
             </p>
             {tour.oldPrice ? (
               <p className="mt-1 text-[0.7rem] text-muted line-through">{formatPrice(tour.oldPrice)}</p>
@@ -81,7 +84,7 @@ export function TourCard({
             href={bookHref}
             className="inline-flex h-10 shrink-0 items-center rounded-full bg-accent px-4 text-sm font-semibold text-white transition hover:bg-accent-soft"
           >
-            {tour.price ? "Захиалах" : "Дэлгэрэнгүй"}
+            {price != null ? "Захиалах" : "Дэлгэрэнгүй"}
           </Link>
         </div>
       </div>

@@ -11,6 +11,13 @@ export type ItineraryDay = {
   host?: string;
 };
 
+/** Per-departure override; keys match labels from tourDates() (e.g. "12/12 – 12/19"). */
+export type DatePrice = {
+  price: number;
+  childSharedBed?: number;
+  oldPrice?: number;
+};
+
 export type Tour = {
   id: string;
   title: string;
@@ -19,6 +26,7 @@ export type Tour = {
   destinationKey: string;
   description: string;
   story: string;
+  /** Default / "from" adult price when a date has no override */
   price: number | null;
   oldPrice?: number | null;
   duration: string;
@@ -32,6 +40,8 @@ export type Tour = {
   image: string;
   gallery: string[];
   dates?: string;
+  /** Adult (and optional child) price per departure label */
+  datePrices?: Record<string, DatePrice>;
   stay?: string;
   departure?: string;
   highlights: string[];
@@ -71,6 +81,24 @@ export function getTour<T extends TourSummary>(tours: T[], id: string) {
 /** «11/03–11/10 · 11/10–11/17» → one label per departure */
 export function tourDates(t: Pick<Tour, "dates">) {
   return (t.dates ?? "").split("·").map((d) => d.trim()).filter(Boolean);
+}
+
+/** Resolve adult/child/old prices for a departure; falls back to tour defaults. */
+export function priceForDate(tour: Pick<Tour, "price" | "oldPrice" | "pricing" | "datePrices">, date?: string | null) {
+  const override = date ? tour.datePrices?.[date] : undefined;
+  return {
+    price: override?.price ?? tour.price,
+    oldPrice: override?.oldPrice ?? tour.oldPrice ?? null,
+    childSharedBed: override?.childSharedBed ?? tour.pricing?.childSharedBed,
+  };
+}
+
+/** Lowest adult price across default + date overrides — for cards ("…-аас"). */
+export function fromPrice(tour: Pick<Tour, "price" | "datePrices">) {
+  const prices = [tour.price, ...Object.values(tour.datePrices ?? {}).map((d) => d.price)].filter(
+    (n): n is number => typeof n === "number" && Number.isFinite(n),
+  );
+  return prices.length ? Math.min(...prices) : null;
 }
 
 export function formatPrice(price: number | null) {

@@ -1,4 +1,4 @@
-import { formatPrice, type TourSummary } from "@/data/tours";
+import { formatPrice, priceForDate, type TourSummary } from "@/data/tours";
 
 export type Party = {
   adults: number;
@@ -14,20 +14,22 @@ export type Quote = {
 };
 
 /**
- * The operator's published pricing rules (tours.ts `pricing`). Used by the booking
- * planner for the live estimate and by the API so a posted total is never trusted.
+ * The operator's published pricing rules (tours.ts `pricing` + optional `datePrices`).
+ * Used by the booking planner for the live estimate and by the API so a posted total is never trusted.
  */
-export function quote(tour: TourSummary, party: Party): Quote {
+export function quote(tour: TourSummary, party: Party, date?: string | null): Quote {
   const p = tour.pricing ?? {};
-  const price = tour.price ?? 0;
+  const rates = priceForDate(tour, date);
+  const price = rates.price ?? 0;
+  const childSharedBed = rates.childSharedBed;
   const kidsOwnBed = p.childOwnBed === false ? 0 : party.kidsOwnBed;
-  const kidsSharedBed = p.childSharedBed ? party.kidsSharedBed : 0;
+  const kidsSharedBed = childSharedBed ? party.kidsSharedBed : 0;
   const singleRooms = p.singleSupplement ? Math.min(party.singleRooms, party.adults) : 0;
 
   const lines: Quote["lines"] = [{ label: `${party.adults} том хүн × ${formatPrice(price)}`, amount: party.adults * price }];
   if (kidsOwnBed) lines.push({ label: `${kidsOwnBed} хүүхэд, тусдаа ор × ${formatPrice(price)}`, amount: kidsOwnBed * price });
-  if (kidsSharedBed && p.childSharedBed)
-    lines.push({ label: `${kidsSharedBed} хүүхэд, хамт × ${formatPrice(p.childSharedBed)}`, amount: kidsSharedBed * p.childSharedBed });
+  if (kidsSharedBed && childSharedBed)
+    lines.push({ label: `${kidsSharedBed} хүүхэд, хамт × ${formatPrice(childSharedBed)}`, amount: kidsSharedBed * childSharedBed });
   if (singleRooms && p.singleSupplement)
     lines.push({ label: `Ганцаараа өрөө × ${singleRooms}`, amount: singleRooms * p.singleSupplement });
 

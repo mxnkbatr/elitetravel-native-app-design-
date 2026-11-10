@@ -1,7 +1,7 @@
 "use client";
 
 import { DestinationMap } from "@/components/DestinationMap";
-import { destinations, formatPrice, isBookable } from "@/data/tours";
+import { destinations, formatPrice, fromPrice, isBookable } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import Image from "next/image";
@@ -30,7 +30,10 @@ export function MapExplorer() {
 
   const dest = destinations[index];
   const list = toursFor(dest.key);
-  const from = list.reduce<number | null>((m, t) => (t.price && (!m || t.price < m) ? t.price : m), null);
+  const from = list.reduce<number | null>((m, t) => {
+    const p = fromPrice(t);
+    return p != null && (!m || p < m) ? p : m;
+  }, null);
 
   function go(step: number) {
     setDir(step);
@@ -226,7 +229,7 @@ export function MapExplorer() {
                         <p className="truncate font-semibold">{t.title}</p>
                         <p className="truncate text-xs text-muted">{t.dates} · {t.duration}</p>
                       </div>
-                      <p className="shrink-0 text-sm font-semibold text-accent">{formatPrice(t.price)}</p>
+                      <p className="shrink-0 text-sm font-semibold text-accent">{formatPrice(fromPrice(t))}</p>
                     </Link>
                   </li>
                 ))}

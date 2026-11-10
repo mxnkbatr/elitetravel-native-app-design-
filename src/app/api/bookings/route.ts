@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   const dateOptions = tourDates(tour);
   if (date && dateOptions.length > 1 && !dateOptions.includes(date)) return fail(400, "Огноо буруу байна.");
 
-  const { total, deposit } = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms });
+  const { total, deposit } = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms }, date);
 
   const db = supabaseAdmin();
   if (!db) return fail(503, "Захиалгын сан түр холбогдохгүй байна.");

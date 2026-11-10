@@ -204,7 +204,7 @@ export async function createManualBooking(input: ManualBookingInput): Promise<Sa
   const dateOptions = tourDates(tour);
   if (date && dateOptions.length > 0 && !dateOptions.includes(date)) return { ok: false, error: "Огноо буруу байна." };
 
-  const { total, deposit } = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms });
+  const { total, deposit } = quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms }, date);
   const departure = await departureState(tour.id, date ?? "");
   if (departure.closed) return { ok: false, error: "Энэ огноо хаагдсан байна." };
   const people = adults + kidsOwnBed + kidsSharedBed;

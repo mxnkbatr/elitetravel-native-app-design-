@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Field, GalleryField, ImageField, inputClass, LinesField, Section } from "@/app/admin/(panel)/fields";
 import { SaveBar } from "@/app/admin/(panel)/SaveBar";
 import { TourDatesEditor } from "@/components/TourDatesEditor";
-import { DESTINATION_PRESETS, slugDestinationKey, type ItineraryDay, type Tour } from "@/data/tours";
+import { DESTINATION_PRESETS, formatPrice, slugDestinationKey, tourDates, type DatePrice, type ItineraryDay, type Tour } from "@/data/tours";
 import { DOC_TYPES } from "@/lib/documents";
 import { useState } from "react";
 
@@ -28,6 +28,46 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
   const [customDest, setCustomDest] = useState(() => !isPresetKey(initial.destinationKey));
   const set = <K extends keyof Tour>(key: K, value: Tour[K]) => setTour((t) => ({ ...t, [key]: value }));
   const setPricing = (key: keyof NonNullable<Tour["pricing"]>, value: unknown) => setTour((t) => ({ ...t, pricing: { ...t.pricing, [key]: value } }));
+  const departureLabels = tourDates(tour);
+
+  function setDates(nextDates: string) {
+    const labels = new Set(tourDates({ dates: nextDates }));
+    setTour((t) => {
+      const pruned: Record<string, DatePrice> = {};
+      for (const [label, price] of Object.entries(t.datePrices ?? {})) {
+        if (labels.has(label)) pruned[label] = price;
+      }
+      return {
+        ...t,
+        dates: nextDates || undefined,
+        datePrices: Object.keys(pruned).length ? pruned : undefined,
+      };
+    });
+  }
+
+  function setDatePrice(label: string, field: keyof DatePrice, raw: string) {
+    const value = numOrNull(raw);
+    setTour((t) => {
+      const cur = { ...(t.datePrices ?? {}) };
+      const prev = cur[label];
+      if (value == null) {
+        if (!prev) return t;
+        const next = { ...prev };
+        if (field === "price") {
+          delete cur[label];
+        } else {
+          delete next[field];
+          if (next.price == null) delete cur[label];
+          else cur[label] = next;
+        }
+      } else {
+        if (field !== "price" && !prev && t.price == null) return t;
+        const base: DatePrice = prev ?? { price: t.price as number };
+        cur[label] = { ...base, [field]: value };
+      }
+      return { ...t, datePrices: Object.keys(cur).length ? cur : undefined };
+    });
+  }
 
   const pickDestination = (value: string) => {
     if (value === CUSTOM) {
@@ -96,7 +136,7 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
         <Field label="Шөнийн тоо">
           <input inputMode="numeric" value={tour.nights ?? ""} onChange={(e) => set("nights", numOrNull(e.target.value))} className={inputClass} />
         </Field>
-        <TourDatesEditor value={tour.dates ?? ""} onChange={(v) => set("dates", v || undefined)} />
+        <TourDatesEditor value={tour.dates ?? ""} onChange={setDates} />
         <Field label="Нислэг / хөдлөх">
           <input value={tour.departure ?? ""} onChange={(e) => set("departure", e.target.value)} className={inputClass} />
         </Field>
@@ -136,8 +176,8 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
         </label>
       </Section>
 
-      <Section title="2. Үнэ" hint="Том хүний үнэ заавал. Бусад нь нэмэлт.">
-        <Field label="Үнэ (₮, том хүн)" hint="Хоосон бол «Удахгүй»">
+      <Section title="2. Үнэ" hint="Үндсэн үнэ + огноо бүрт өөр үнэ. Хоосон огноо = үндсэн үнэ.">
+        <Field label="Үндсэн үнэ (₮, том хүн)" hint="Хоосон бол «Удахгүй». Огноонд тусдаа үнэ байхгүй үед үүнийг ашиглана.">
           <input inputMode="numeric" value={tour.price ?? ""} onChange={(e) => set("price", numOrNull(e.target.value))} className={inputClass} />
         </Field>
         <Field label="Хуучин үнэ (₮)" hint="Хямдралтай үед зурааслаж харуулна">
@@ -159,6 +199,60 @@ export function TourEditor({ initial, originalId }: { initial: Tour; originalId:
           <input type="checkbox" checked={tour.pricing?.childOwnBed === false} onChange={(e) => setPricing("childOwnBed", e.target.checked ? false : undefined)} className="size-4 accent-[#0d8f84]" />
           Хүүхэд тусдаа орны үнэ байхгүй
         </label>
+
+        {departureLabels.length > 0 ? (
+          <div className="sm:col-span-2 space-y-3 rounded-2xl border border-[var(--line)] bg-[#f8faf9] p-3 sm:p-4">
+            <div>
+              <p className="text-xs font-semibold text-ink">Огноо бүрийн үнэ</p>
+              <p className="mt-0.5 text-[0.7rem] text-muted">
+                Хоосон бол үндсэн үнэ ({tour.price != null ? formatPrice(tour.price) : "—"}) ашиглагдана. Захиалга сонгосон огнооны үнээр тооцогдоно.
+              </p>
+            </div>
+            <div className="space-y-3">
+              {departureLabels.map((label, i) => {
+                const row = tour.datePrices?.[label];
+                return (
+                  <div key={label} className="grid gap-2 rounded-xl border border-[var(--line)] bg-white p-3 sm:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,1fr))] sm:items-end">
+                    <div className="min-w-0">
+                      <p className="text-[0.7rem] font-semibold text-muted">{i + 1}-р хөдлөх</p>
+                      <p className="truncate text-sm font-semibold text-ink">{label}</p>
+                    </div>
+                    <label className="block">
+                      <span className="mb-1 block text-[0.7rem] font-semibold text-muted">Том хүн</span>
+                      <input
+                        inputMode="numeric"
+                        value={row?.price ?? ""}
+                        placeholder={tour.price != null ? String(tour.price) : ""}
+                        onChange={(e) => setDatePrice(label, "price", e.target.value)}
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[0.7rem] font-semibold text-muted">Хүүхэд (хамт)</span>
+                      <input
+                        inputMode="numeric"
+                        value={row?.childSharedBed ?? ""}
+                        placeholder={tour.pricing?.childSharedBed != null ? String(tour.pricing.childSharedBed) : ""}
+                        onChange={(e) => setDatePrice(label, "childSharedBed", e.target.value)}
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[0.7rem] font-semibold text-muted">Хуучин үнэ</span>
+                      <input
+                        inputMode="numeric"
+                        value={row?.oldPrice ?? ""}
+                        placeholder={tour.oldPrice != null ? String(tour.oldPrice) : ""}
+                        onChange={(e) => setDatePrice(label, "oldPrice", e.target.value)}
+                        className={inputClass}
+                      />
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </Section>
 
       <Section title="3. Зураг" hint="Нүүр зураг сайт, апп дээр том харагдана.">

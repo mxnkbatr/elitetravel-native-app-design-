@@ -5,7 +5,7 @@ import { BoardingPass } from "@/components/BoardingPass";
 import { DateRangeCalendar } from "@/components/DateRangeCalendar";
 import { Icon } from "@/components/Icon";
 import { PartnerLogo } from "@/components/PartnerLogo";
-import { formatPrice, tourDates, type Tour, type TourSummary } from "@/data/tours";
+import { formatPrice, priceForDate, tourDates, type Tour, type TourSummary } from "@/data/tours";
 import { formatDateRange, parseDateRange, rangeDayCount } from "@/lib/dates";
 import { INSTALLMENT_PROVIDERS } from "@/lib/trips";
 import { useSeats } from "@/lib/content";
@@ -169,15 +169,16 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
   const [copied, setCopied] = useState(false);
 
   const ownBedAllowed = p.childOwnBed !== false;
+  const rates = useMemo(() => priceForDate(tour, date), [tour, date]);
   const { lines, total, deposit } = useMemo(
-    () => quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms }),
-    [tour, adults, kidsOwnBed, kidsSharedBed, singleRooms],
+    () => quote(tour, { adults, kidsOwnBed, kidsSharedBed, singleRooms }, date),
+    [tour, adults, kidsOwnBed, kidsSharedBed, singleRooms, date],
   );
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [website, setWebsite] = useState("");
 
-  if (!tour.price) return null;
+  if (rates.price == null) return null;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -291,9 +292,9 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
             <motion.div key="people" initial={stepped ? { opacity: 0, x: -24 } : false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, transition: { duration: 0 } }} transition={{ duration: 0.25 }}>
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="text-xs text-muted">Үнэ / хүн</p>
-                <p className="mt-1 font-num text-3xl font-semibold text-accent">{formatPrice(tour.price)}</p>
-                {tour.oldPrice ? <p className="text-sm text-muted line-through">{formatPrice(tour.oldPrice)}</p> : null}
+                <p className="text-xs text-muted">Үнэ / хүн{date ? " · сонгосон огноо" : ""}</p>
+                <p className="mt-1 font-num text-3xl font-semibold text-accent">{formatPrice(rates.price)}</p>
+                {rates.oldPrice ? <p className="text-sm text-muted line-through">{formatPrice(rates.oldPrice)}</p> : null}
               </div>
               {tour.discount ? (
                 <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">{tour.discount}</span>
@@ -335,6 +336,11 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
                         >
                           <span className={`block text-[0.62rem] font-semibold ${date === opt.label ? "text-white/75" : "text-muted"}`}>{i + 1}-р хөдлөх</span>
                           <span className="mt-0.5 block text-[0.7rem] font-semibold leading-snug">{formatDateRange(opt.range)}</span>
+                          {priceForDate(tour, opt.label).price != null ? (
+                            <span className={`mt-1 block font-num text-[0.62rem] ${date === opt.label ? "text-white/90" : "text-accent"}`}>
+                              {formatPrice(priceForDate(tour, opt.label).price)}
+                            </span>
+                          ) : null}
                           {s && !s.closed && s.left <= 10 ? (
                             <span className={`mt-1 block text-[0.62rem] ${date === opt.label ? "text-white/80" : "text-[#c9964a] dark:text-[#e8b86d]"}`}>
                               {s.left ? `${s.left} суудал` : "дүүрсэн"}
@@ -415,10 +421,10 @@ export function BookingPlanner({ tour, variant = "card" }: { tour: Tour; variant
                 {ownBedAllowed ? (
                   <Stepper label="Хүүхэд, тусдаа ор" hint="2–12 нас · том хүний үнээр" value={kidsOwnBed} onChange={setKidsOwnBed} />
                 ) : null}
-                {p.childSharedBed ? (
+                {rates.childSharedBed ? (
                   <Stepper
                     label="Хүүхэд, хамт унтах"
-                    hint={`2–12 нас · ${formatPrice(p.childSharedBed)}`}
+                    hint={`2–12 нас · ${formatPrice(rates.childSharedBed)}`}
                     value={kidsSharedBed}
                     onChange={setKidsSharedBed}
                   />

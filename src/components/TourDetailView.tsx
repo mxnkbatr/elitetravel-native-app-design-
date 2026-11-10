@@ -7,7 +7,7 @@ import { GalleryLightbox } from "@/components/GalleryLightbox";
 import { TourCard } from "@/components/TourCard";
 import { TourHero } from "@/components/TourHero";
 import { BookingSheet, TourTabs } from "@/components/TourMobile";
-import { formatPrice, isBookable, relatedTours, type ItineraryDay, type Tour } from "@/data/tours";
+import { formatPrice, fromPrice, isBookable, relatedTours, type ItineraryDay, type Tour } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { isUnderway } from "@/lib/dates";
 import { useClientValue, useMediaQuery } from "@/lib/ui";
@@ -196,8 +196,11 @@ export function TourDetailView({ tour }: { tour: Tour }) {
       <div className="fixed inset-x-0 bottom-0 z-[60] border-t border-[var(--line)] bg-bg-elevated/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:hidden">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-[0.65rem] text-muted">Үнэ / хүн</p>
-            <p className="truncate font-num text-lg font-semibold leading-tight text-accent">{formatPrice(tour.price)}</p>
+            <p className="text-[0.65rem] text-muted">Үнэ / хүн{tour.datePrices && Object.keys(tour.datePrices).length ? " · огнооноос" : ""}</p>
+            <p className="truncate font-num text-lg font-semibold leading-tight text-accent">
+              {formatPrice(fromPrice(tour))}
+              {tour.datePrices && Object.values(tour.datePrices).some((d) => d.price !== tour.price) ? <span className="text-sm font-medium text-muted">-аас</span> : null}
+            </p>
           </div>
           <SaveButton tourId={tour.id} variant="plain" className="size-11 shrink-0 border border-[var(--line)]" />
           <a

@@ -72,8 +72,9 @@ export function ManualBookingForm({
   const tour = tours.find((t) => t.id === tourId);
   const dates = tour ? tourDates(tour) : [];
   const pricing = useMemo(
-    () => (tour ? quote(tour as TourSummary, { adults, kidsOwnBed, kidsSharedBed, singleRooms }) : null),
-    [tour, adults, kidsOwnBed, kidsSharedBed, singleRooms],
+    () => (tour ? quote(tour as TourSummary, { adults, kidsOwnBed, kidsSharedBed, singleRooms }, date || dates[0] || null) : null),
+    // dates[0] is derived from tour; include date + party so the quote tracks the selected departure
+    [tour, adults, kidsOwnBed, kidsSharedBed, singleRooms, date, dates],
   );
 
   if (!canManage || !tours.length) return null;

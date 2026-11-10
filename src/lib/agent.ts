@@ -93,6 +93,7 @@ export const EDITABLE_TOUR_FIELDS = [
   "image",
   "gallery",
   "dates",
+  "datePrices",
   "stay",
   "departure",
   "highlights",
