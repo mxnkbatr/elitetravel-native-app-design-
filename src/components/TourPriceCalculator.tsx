@@ -278,7 +278,10 @@ export function TourPriceCalculator({
     io.observe(el);
     return () => io.disconnect();
   }, []);
-  useEffect(() => setMounted(true), []);
+  const sectionRef = useRef<HTMLElement>(null);
+  // The planner is also rendered in the desktop sidebar, which is display:none on phones.
+  // Only a calculator the traveller can actually see gets the floating total bar.
+  useEffect(() => setMounted(!!sectionRef.current?.offsetParent), []);
 
   const doubleLabel = (
     <span className="flex min-w-0 flex-wrap items-center gap-x-1.5">
@@ -383,7 +386,7 @@ export function TourPriceCalculator({
   // (handled above with OR choice === withChild)
 
   return (
-    <section className="mt-5 rounded-2xl border border-[var(--line)] bg-bg-elevated p-5 shadow-[var(--shadow)] sm:p-6">
+    <section ref={sectionRef} className="mt-5 rounded-2xl border border-[var(--line)] bg-bg-elevated p-5 shadow-[var(--shadow)] sm:p-6">
       <div className="flex items-center gap-2.5">
         <span className="grid size-9 place-items-center rounded-full bg-accent text-white">
           <Icon name="calculator" size={18} />
