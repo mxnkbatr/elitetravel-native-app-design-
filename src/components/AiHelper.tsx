@@ -1,7 +1,8 @@
 "use client";
 
 import { Icon } from "@/components/Icon";
-import { INTRO_HOLD_MS } from "@/components/IntroCurtain";
+/** The app has no web intro curtain to wait for. */
+const INTRO_HOLD_MS = 0;
 import type { AssistantPublic } from "@/lib/assistant-settings";
 import { trackOnce } from "@/lib/track";
 import { AnimatePresence, motion } from "framer-motion";

@@ -2,9 +2,7 @@
 
 import { AiHelper } from "@/components/AiHelper";
 import { AppOnboarding } from "@/components/AppOnboarding";
-import { Footer } from "@/components/Footer";
 import { ImageLoadMarker } from "@/components/ImageLoadMarker";
-import { IntroCurtain } from "@/components/IntroCurtain";
 import { MobileDock } from "@/components/MobileDock";
 import { NativeReady } from "@/components/NativeReady";
 import { Navbar } from "@/components/Navbar";
@@ -12,9 +10,7 @@ import { OfflineBanner } from "@/components/OfflineBanner";
 import { PageTracker } from "@/components/PageTracker";
 import { PageTransition } from "@/components/PageTransition";
 import { PushBridge } from "@/components/PushBridge";
-import { ScrollProgress } from "@/components/ScrollProgress";
 import { SearchOverlay } from "@/components/SearchOverlay";
-import { SmoothScroll } from "@/components/SmoothScroll";
 import { TourPreload } from "@/components/TourPreload";
 import type { AssistantPublic } from "@/lib/assistant-settings";
 import { usePathname } from "next/navigation";
@@ -46,15 +42,11 @@ export function AppShell({ children, assistant }: { children: ReactNode; assista
       <PushBridge />
       <PageTracker />
       <TourPreload />
-      <IntroCurtain />
-      <SmoothScroll />
       <ImageLoadMarker />
-      <ScrollProgress />
       <Navbar />
       <main id="main" tabIndex={-1} className="app-main flex-1 outline-none">
         <PageTransition>{children}</PageTransition>
       </main>
-      <Footer />
       <MobileDock />
       <SearchOverlay />
       <OfflineBanner />
