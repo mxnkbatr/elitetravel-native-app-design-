@@ -3,7 +3,7 @@
 import { Icon } from "@/components/Icon";
 import { SaveButton } from "@/components/SaveButton";
 import { Sheet } from "@/components/Sheet";
-import { formatPrice, tourDestinationFilters, type TourSummary } from "@/data/tours";
+import { formatPrice, fromPrice, tourDestinationFilters, type TourSummary } from "@/data/tours";
 import { useTours } from "@/lib/content";
 import { useReflow, useToday } from "@/lib/ui";
 import { daysUntil } from "@/lib/dates";
@@ -96,37 +96,50 @@ export function MobileTours({ initialFilter = "all" }: { initialFilter?: string 
         </p>
       </div>
 
-      <motion.ul layout={reflow} className="space-y-2.5">
+      <motion.ul layout={reflow} className="space-y-4">
         <AnimatePresence mode="popLayout" initial={false}>
           {result.map((t) => {
             // "N хоногийн дараа" only once the visitor's own today is known (see useToday)
             const days = today ? daysUntil(t.dates) : null;
+            const soon = days != null && days >= 0 && days <= 30;
             return (
-              <motion.li key={t.id} layout={reflow} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }}>
-                <Link href={`/tours/${t.id}`} className="relative flex gap-3 rounded-2xl border border-[var(--line)] bg-bg-elevated p-2.5 active:scale-[0.98] active:bg-bg">
-                  <div className="relative aspect-[4/5] w-28 shrink-0 overflow-hidden rounded-xl bg-accent-mist">
-                    <Image src={t.image} alt="" fill className="object-cover" sizes="112px" />
-                    {t.discount ? (
-                      <span className="absolute left-1.5 top-1.5 rounded-md bg-accent px-1.5 py-0.5 text-[0.6rem] font-bold text-white">{t.discount}</span>
-                    ) : null}
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col py-0.5 pr-8">
-                    <p className="type-label text-accent">{t.destination}</p>
-                    <p className="mt-0.5 line-clamp-2 font-semibold leading-snug">{t.title}</p>
-                    <p className="mt-1 text-xs text-muted">{t.duration}</p>
-                    {t.dates ? <p className="truncate text-xs text-muted">{t.dates}</p> : null}
-                    <div className="mt-auto flex items-baseline gap-2 pt-1.5">
-                      <span className="font-num text-base text-accent">{formatPrice(t.price)}</span>
-                      {t.oldPrice ? <span className="text-[0.7rem] text-muted line-through">{formatPrice(t.oldPrice)}</span> : null}
-                    </div>
-                    {days != null && days >= 0 && days <= 30 ? (
-                      <span className="mt-1 w-fit rounded-full bg-[#e8b86d]/20 px-2 py-0.5 text-[0.65rem] font-semibold text-[#8a5a12] dark:text-[#f3d199]">
+              <motion.li key={t.id} layout={reflow} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="relative">
+                {/* Photo card with the details on the image, like a travel app's package card */}
+                <Link href={`/tours/${t.id}`} className="relative block aspect-[16/12] overflow-hidden rounded-[1.75rem] bg-accent-mist shadow-[0_18px_40px_rgba(6,42,42,0.16)] transition-transform active:scale-[0.98]">
+                  <Image src={t.image} alt={t.title} fill className="object-cover" sizes="calc(100vw - 32px)" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,42,42,0.3)_0%,rgba(6,42,42,0)_28%,rgba(6,42,42,0)_45%,rgba(6,42,42,0.88)_100%)]" />
+                  <div className="absolute left-3 top-3 flex flex-wrap gap-1.5 pr-14">
+                    {t.discount ? <span className="rounded-full bg-accent px-2.5 py-1 text-[0.7rem] font-bold text-white">{t.discount}</span> : null}
+                    {soon ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[0.7rem] font-semibold text-ink">
+                        <span className="size-1.5 animate-pulse rounded-full bg-[#e8b86d]" />
                         {days === 0 ? "Өнөөдөр хөдөлнө" : `${days} хоногийн дараа`}
                       </span>
+                    ) : t.duration ? (
+                      <span className="rounded-full border border-white/35 bg-white/15 px-2.5 py-1 text-[0.7rem] font-semibold text-white backdrop-blur-md">{t.duration}</span>
                     ) : null}
                   </div>
-                  <SaveButton tourId={t.id} variant="plain" className="absolute right-2 top-2 size-10 bg-bg" />
+                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4 text-white">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-1 text-[0.75rem] text-white/85">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                          <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z" stroke="currentColor" strokeWidth="1.8" />
+                          <circle cx="12" cy="10" r="2.3" stroke="currentColor" strokeWidth="1.8" />
+                        </svg>
+                        <span className="truncate">{t.destination}{t.dates && !soon ? ` · ${t.dates.split("·")[0].trim()}` : ""}</span>
+                      </p>
+                      <p className="mt-1 line-clamp-2 font-display text-[1.45rem] font-semibold leading-[1.1]">{t.title}</p>
+                      <div className="mt-1.5 flex items-baseline gap-2">
+                        <span className="font-num text-lg text-[#f3d199]">{formatPrice(fromPrice(t))}</span>
+                        {t.oldPrice ? <span className="text-xs text-white/60 line-through">{formatPrice(t.oldPrice)}</span> : null}
+                      </div>
+                    </div>
+                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white text-ink" aria-hidden>
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </span>
+                  </div>
                 </Link>
+                <SaveButton tourId={t.id} className="absolute right-3 top-3 size-10" />
               </motion.li>
             );
           })}
