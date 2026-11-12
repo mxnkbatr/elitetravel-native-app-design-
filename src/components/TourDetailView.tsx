@@ -23,6 +23,9 @@ const ItineraryStory = dynamic(() => import("@/components/ItineraryStory").then(
 
 export function TourDetailView({ tour }: { tour: Tour }) {
   const wide = useMediaQuery("(min-width: 1024px)");
+  // The sidebar planner (calendar + room calculator) is hidden on phones, which book in the sheet.
+  // Not mounting it there keeps opening a tour quick on a phone CPU.
+  const sidebar = useMediaQuery("(min-width: 640px)");
   const related = relatedTours(useTours(), tour.id, 3);
   const [sheetOpen, setSheetOpen] = useState(false);
   const bookable = isBookable(tour);
@@ -158,9 +161,11 @@ export function TourDetailView({ tour }: { tour: Tour }) {
           {/* Desktop: live calendar + booking form in the sticky sidebar. Phone uses the sheet. */}
           <aside className="min-w-0 space-y-4 lg:sticky lg:top-[5.75rem] lg:z-10 lg:self-start">
             {bookable ? (
-              <div className="hidden min-w-0 sm:block">
-                <BookingPlanner tour={tour} />
-              </div>
+              sidebar ? (
+                <div className="hidden min-w-0 sm:block">
+                  <BookingPlanner tour={tour} />
+                </div>
+              ) : null
             ) : (
               <div className="hidden rounded-[1.5rem] border border-[var(--line)] bg-bg-elevated p-5 shadow-[var(--shadow)] sm:block">
                 <p className="font-display text-2xl font-semibold">

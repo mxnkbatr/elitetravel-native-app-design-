@@ -2,18 +2,17 @@
 
 import { markNavigated } from "@/lib/ui";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, ViewTransition, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 const depth = (path: string) => path.split("/").filter(Boolean).length;
 type Nav = "forward" | "back" | "swap";
 const navFor = (from: string, to: string): Nav => (depth(to) > depth(from) ? "forward" : depth(to) < depth(from) ? "back" : "swap");
 
 /**
- * Route changes run as a view transition: the old page leaves while the new one arrives (classes
- * page-exit / page-enter in globals.css). Phones get an iOS-style push — deeper pages slide in from
- * the right, shallower ones from the left, tabs at the same depth crossfade — read from
- * html[data-nav], which is set before Next starts the navigation. Browsers without view
- * transitions, and history back/forward, use the CSS enter animation on the wrapper (.page-in-*).
+ * Each route change mounts a fresh wrapper whose CSS enter animation gives an iOS-style push:
+ * deeper pages settle in from the right, shallower ones from the left, tabs at the same depth
+ * fade (html[data-nav], set on the link click). A React view transition used to do this, but it
+ * held the old screen until the next page photos loaded: up to a second of frozen screen.
  */
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -61,8 +60,6 @@ export function PageTransition({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ViewTransition key={pathname} enter="page-enter" exit="page-exit" default="none">
-      <div className={`page-in page-in-${dir}`}>{children}</div>
-    </ViewTransition>
+    <div key={pathname} className={`page-in page-in-${dir}`}>{children}</div>
   );
 }

@@ -800,22 +800,21 @@ img[data-nimg]:not([data-loaded]) {
   }
 }
 
-/* Without view transitions (older iOS in the app, history back/forward) the old page is already
-   gone, so the new one only settles in with a short move — never from transparent. */
-html[data-pop] .page-in-forward {
+/* App page changes: the new page shows at once and settles in with a short native-style push
+   (deeper pages from the right, back from the left, tabs a quick fade). No view transition: it
+   waited for the next page photos before swapping, which froze the screen on a tap. */
+.page-in-forward {
   animation: page-settle-right 0.32s cubic-bezier(0.32, 0.72, 0, 1);
 }
-html[data-pop] .page-in-back {
+.page-in-back {
   animation: page-settle-left 0.32s cubic-bezier(0.32, 0.72, 0, 1);
 }
-@supports not (view-transition-name: none) {
-  @media (max-width: 639px) {
-    .page-in-forward {
-      animation: page-settle-right 0.32s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    .page-in-back {
-      animation: page-settle-left 0.32s cubic-bezier(0.32, 0.72, 0, 1);
-    }
+html[data-nav="swap"] .page-in {
+  animation: page-fade 0.2s ease-out;
+}
+@keyframes page-fade {
+  from {
+    opacity: 0.35;
   }
 }
 @keyframes page-settle-right {
