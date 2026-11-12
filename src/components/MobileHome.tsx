@@ -65,16 +65,24 @@ export function MobileHome() {
   const nextDays = next ? daysUntil(next.date) : null;
 
   return (
-    <div className="px-4 pb-8 pt-[calc(5.4rem+env(safe-area-inset-top))]">
-      <div {...rise()}>
-        <p className="text-sm text-muted">{hello} 👋</p>
-        <h1 className="mt-1 font-display text-[2.6rem] font-semibold leading-[0.95] tracking-[-0.04em]">
-          Хаашаа <span className="italic text-accent">явах</span> вэ?
-        </h1>
-      </div>
+    <div className="elite-home px-4 pb-10 pt-[calc(5.4rem+env(safe-area-inset-top))] sm:px-7 lg:px-10">
+      <div className="elite-home-inner mx-auto max-w-6xl">
+        <div className="elite-brand-row" aria-label="Elite Travel">
+          <Image src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo%20%281%29-4GZqWXGhtzuMFJxs9QMY851y9DPb3E.png" alt="Elite Travel" width={180} height={180} unoptimized className="elite-brand-logo" />
+          <div><span className="elite-brand-name">ELITE</span><span className="elite-brand-caption">TRAVEL · MONGOLIA</span></div>
+          <span className="elite-brand-status"><span /> АЯЛАЛ ЭХЭЛНЭ</span>
+        </div>
+        <div {...rise(0, "elite-intro")}>
+          <p className="elite-kicker">ТАНЫ ДАРААГИЙН ТҮҮХ ХААНААС ЭХЛЭХ ВЭ?</p>
+          <p className="text-sm text-white/65">{hello}</p>
+          <h1 className="mt-1 font-display text-[2.8rem] font-semibold leading-[0.98] tracking-[-0.04em] sm:text-6xl">
+            Хаашаа <span className="italic text-[#c7b18b]">аялах</span> вэ?
+          </h1>
+          <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/65 sm:text-base">Мартагдашгүй мөчүүдийг мэдрэх аяллаа эндээс эхлүүлээрэй.</p>
+        </div>
 
       {/* Search */}
-      <div {...rise(0.06, "relative mt-5")}>
+      <div {...rise(0.06, "elite-search relative mt-6")}>
         <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
           <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
           <path d="m16 16 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -139,15 +147,13 @@ export function MobileHome() {
             ) : null}
 
             {/* Categories */}
-            <div className="hide-scrollbar -mx-4 mt-5 flex gap-2 overflow-x-auto px-4">
+            <div className="elite-categories hide-scrollbar -mx-4 mt-5 flex gap-2 overflow-x-auto px-4">
               {categories.map((c) => (
                 <button
                   key={c.key}
                   type="button"
                   onClick={() => setCat(c.key)}
-                  className={`relative flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition active:scale-95 ${
-                    cat === c.key ? "text-white" : "border border-[var(--line)] bg-bg-elevated text-foam"
-                  }`}
+                  className={`elite-category relative flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold transition active:scale-95 ${cat === c.key ? "is-active text-white" : "border border-[var(--line)] bg-bg-elevated text-foam"}`}
                 >
                   {cat === c.key ? <motion.span layoutId="m-cat" className="absolute inset-0 rounded-full bg-ink" transition={{ type: "spring", stiffness: 420, damping: 34 }} /> : null}
                   <span className="relative"><Icon name={c.icon} size={16} /></span>
@@ -215,7 +221,7 @@ export function MobileHome() {
                 <AnimatePresence mode="popLayout" initial={enter}>
                   {filtered.map((t) => (
                     <motion.li key={t.id} layout={reflow} initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }}>
-                      <Link href={`/tours/${t.id}`} className="flex gap-3 rounded-2xl border border-[var(--line)] bg-bg-elevated p-2.5 active:scale-[0.98] active:bg-bg">
+                      <Link href={`/tours/${t.id}`} className="elite-tour-card flex gap-3 rounded-2xl border border-[var(--line)] bg-bg-elevated p-2.5 active:scale-[0.98] active:bg-bg">
                         <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-xl">
                           <Image src={t.image} alt="" fill className="object-cover" sizes="96px" />
                           {t.discount ? (
@@ -250,6 +256,7 @@ export function MobileHome() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }
