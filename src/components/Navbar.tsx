@@ -128,7 +128,7 @@ export function Navbar() {
         transition={{ type: "spring", stiffness: 380, damping: 36 }}
         style={{ viewTransitionName: "site-header" }}
         className={`fixed inset-x-0 top-0 z-[65] px-3 pt-[calc(0.6rem+env(safe-area-inset-top,0px))] sm:px-5 ${
-          pathname === "/map" ? "max-sm:hidden" : ""
+          pathname === "/map" || /^\/tours\/[^/]+$/.test(pathname) ? "max-sm:hidden" : ""
         }`}
       >
         {/* Full-bleed veil so scrolled page content can't peek around the floating pill */}

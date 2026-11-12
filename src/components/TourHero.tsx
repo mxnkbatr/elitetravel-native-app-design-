@@ -143,7 +143,7 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
         >
           <motion.div
             style={{ rotateX: rx, rotateY: ry }}
-            className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-[1.75rem] bg-[#cfe0db] shadow-[0_40px_90px_rgba(6,42,42,0.35)] sm:max-w-xl lg:aspect-[4/3.1]"
+            className="relative mx-auto aspect-[4/3] w-full overflow-hidden rounded-[1.75rem] bg-[#cfe0db] shadow-[0_40px_90px_rgba(6,42,42,0.35)] max-sm:-mx-4 max-sm:aspect-[4/4.6] max-sm:w-[calc(100%+2rem)] max-sm:max-w-none max-sm:rounded-none max-sm:rounded-b-[2.25rem] max-sm:shadow-[0_24px_50px_rgba(6,42,42,0.22)] sm:max-w-xl lg:aspect-[4/3.1]"
           >
             <Image src={posterGlow(tour.image)} alt="" fill unoptimized className="scale-110 object-cover" />
             <PhotoSwiper
@@ -151,12 +151,12 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
               alt={tour.title}
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-white/0 via-white/0 to-white/15" />
-            <div className="absolute right-3 top-3 flex gap-2">
+            <div className="absolute right-3 top-3 flex gap-2 max-sm:right-4 max-sm:top-[calc(0.75rem+env(safe-area-inset-top))]">
               <ShareButton tour={tour} className="grid size-10 place-items-center rounded-full bg-white/90 text-ink shadow-sm backdrop-blur-md" />
               <SaveButton tourId={tour.id} className="size-10" />
             </div>
             {tour.discount ? (
-              <span className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-white shadow">{tour.discount}</span>
+              <span className="absolute left-3 top-3 rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-white shadow max-sm:bottom-9 max-sm:left-4 max-sm:top-auto">{tour.discount}</span>
             ) : null}
           </motion.div>
         </div>

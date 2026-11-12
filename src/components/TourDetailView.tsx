@@ -14,6 +14,7 @@ import { useClientValue, useMediaQuery } from "@/lib/ui";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 // The scroll-driven day story is a large-screen layout; phones get the light list below and never
@@ -27,13 +28,25 @@ export function TourDetailView({ tour }: { tour: Tour }) {
   const bookable = isBookable(tour);
   const underway = useClientValue(() => tour.status === "ended" && isUnderway(tour.dates), false);
   const openBook = () => setSheetOpen(true);
+  const router = useRouter();
+  // Like a native back button: return to where the traveller came from, else the tour list
+  const back = () => (window.history.length > 1 ? router.back() : router.push("/tours"));
 
   return (
     <div className="relative w-full max-w-[100vw] pb-16 sm:pb-20">
-      <div className="mx-auto w-full max-w-6xl px-4 pt-[calc(5.5rem+env(safe-area-inset-top))] sm:px-6">
+      {/* Phone: the photo runs under the status bar, so the back button floats on it */}
+      <button
+        type="button"
+        onClick={back}
+        aria-label="Буцах"
+        className="absolute left-4 top-[calc(0.75rem+env(safe-area-inset-top))] z-20 grid size-10 place-items-center rounded-full border border-white/60 bg-white/85 text-ink shadow-[0_6px_18px_rgba(6,42,42,0.18)] backdrop-blur-md active:scale-90 sm:hidden"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden><path d="m15 5-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      <div className="mx-auto w-full max-w-6xl px-4 pt-0 sm:px-6 sm:pt-[calc(5.5rem+env(safe-area-inset-top))]">
         <Link
           href="/tours"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-accent"
+          className="mb-4 hidden items-center gap-1.5 text-sm text-muted transition hover:text-accent sm:inline-flex"
         >
           <span aria-hidden>←</span>
           Аяллууд руу буцах

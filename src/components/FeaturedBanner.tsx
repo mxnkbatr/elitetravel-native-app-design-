@@ -1,7 +1,6 @@
 "use client";
 
 import { formatPrice, isBookable } from "@/data/tours";
-import { withTransforms } from "@/lib/cloudinary";
 import { useTours } from "@/lib/content";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import Image from "next/image";
@@ -41,62 +40,61 @@ export function FeaturedBanner() {
   if (!slide) return null;
 
   return (
-    <div className="relative mt-4 overflow-hidden rounded-[1.75rem] bg-[#062a2a] p-2.5 text-white shadow-[0_20px_50px_rgba(6,42,42,0.25)]">
-      {/* Blurred backdrop from the current slide gives the card its glassy tint */}
-      <AnimatePresence initial={false}>
-        <motion.div key={`bg-${slide.id}`} className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
-          {/* Pre-blurred 48px thumbnail from Cloudinary — a live CSS blur repaints on every scroll frame */}
-          <Image src={withTransforms(slide.image, "w_48,q_40,e_blur:600")} alt="" fill unoptimized className="scale-125 object-cover opacity-40" />
-        </motion.div>
-      </AnimatePresence>
-
+    <div className="relative mt-5 aspect-[4/5] max-h-[30rem] w-full overflow-hidden rounded-[2rem] bg-[#062a2a] text-white shadow-[0_24px_60px_rgba(6,42,42,0.28)]">
       <motion.div
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.2}
         onDragStart={() => setPaused(true)}
         onDragEnd={onDragEnd}
-        className="relative touch-pan-y"
+        className="absolute inset-0 touch-pan-y"
       >
-        <Link href={`/tours/${slide.id}`} draggable={false} className="block">
-          <div className="relative aspect-[16/11] overflow-hidden rounded-[1.25rem]">
-            <AnimatePresence initial={false} custom={dir}>
-              <motion.div
-                key={slide.id}
-                custom={dir}
-                className="absolute inset-0"
-                initial={{ x: `${dir * 100}%` }}
-                animate={{ x: "0%" }}
-                exit={{ x: `${dir * -30}%`, opacity: 0.4 }}
-                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <Image src={slide.image} alt={slide.title} fill className="object-cover" sizes="calc(100vw - 52px)" preload={index === 0} fetchPriority={index === 0 ? "high" : undefined} draggable={false} />
-              </motion.div>
-            </AnimatePresence>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-            <div className="absolute left-3 top-3 flex gap-1.5">
-              <span className="rounded-full bg-white px-3 py-1 type-label text-ink">{slide.destination}</span>
-              {slide.discount ? (
-                <span className="rounded-full bg-accent px-3 py-1 text-[0.68rem] font-bold text-white">{slide.discount}</span>
-              ) : null}
-            </div>
-            <p className="absolute bottom-3 left-3 text-xs font-medium text-white/90">{slide.duration}</p>
+        <Link href={`/tours/${slide.id}`} draggable={false} className="block size-full active:scale-[0.99] transition-transform">
+          <AnimatePresence initial={false} custom={dir}>
+            <motion.div
+              key={slide.id}
+              custom={dir}
+              className="absolute inset-0"
+              initial={{ x: `${dir * 100}%` }}
+              animate={{ x: "0%" }}
+              exit={{ x: `${dir * -30}%`, opacity: 0.4 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Image src={slide.image} alt={slide.title} fill className="object-cover" sizes="calc(100vw - 32px)" preload={index === 0} fetchPriority={index === 0 ? "high" : undefined} draggable={false} />
+            </motion.div>
+          </AnimatePresence>
+          {/* Top shade for the progress bars, deep bottom shade for the text */}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,42,42,0.45)_0%,rgba(6,42,42,0)_22%,rgba(6,42,42,0)_45%,rgba(6,42,42,0.9)_100%)]" />
+
+          <div className="absolute left-4 top-9 flex gap-1.5">
+            {slide.discount ? <span className="rounded-full bg-accent px-3 py-1 text-[0.72rem] font-bold text-white">{slide.discount}</span> : null}
+            {slide.duration ? (
+              <span className="rounded-full border border-white/35 bg-white/15 px-3 py-1 text-[0.72rem] font-semibold text-white backdrop-blur-md">{slide.duration}</span>
+            ) : null}
           </div>
 
-          <div className="px-2 pb-1 pt-4">
-            <p className="type-eyebrow text-[#7ef0e0]">Онцлох аялал</p>
+          <div className="absolute inset-x-0 bottom-0 p-5">
             <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                key={slide.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.3 }}
-              >
-                <p className="mt-1.5 truncate font-display text-[1.6rem] font-semibold leading-tight">{slide.title}</p>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="font-num text-2xl text-[#f3d199]">{formatPrice(slide.price)}</span>
-                  {slide.oldPrice ? <span className="text-sm text-white/65 line-through">{formatPrice(slide.oldPrice)}</span> : null}
+              <motion.div key={slide.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.35 }}>
+                <p className="flex items-center gap-1 text-[0.8rem] text-white/85">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z" stroke="currentColor" strokeWidth="1.8" />
+                    <circle cx="12" cy="10" r="2.3" stroke="currentColor" strokeWidth="1.8" />
+                  </svg>
+                  {slide.destination}
+                </p>
+                <p className="mt-1 line-clamp-2 font-display text-[1.9rem] font-semibold leading-[1.05] tracking-[-0.02em]">{slide.title}</p>
+                <div className="mt-3 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[0.7rem] text-white/65">Нэг хүнд</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-num text-[1.55rem] leading-none text-[#f3d199]">{formatPrice(slide.price)}</span>
+                      {slide.oldPrice ? <span className="text-sm text-white/60 line-through">{formatPrice(slide.oldPrice)}</span> : null}
+                    </div>
+                  </div>
+                  <span className="grid size-12 shrink-0 place-items-center rounded-full bg-white text-ink shadow-lg" aria-hidden>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </span>
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -104,7 +102,7 @@ export function FeaturedBanner() {
         </Link>
       </motion.div>
 
-      <div className="relative flex gap-1.5 px-2 pb-2 pt-3">
+      <div className="absolute inset-x-4 top-4 flex gap-1.5">
         {slides.map((s, i) => (
           <button
             key={s.id}
@@ -114,13 +112,13 @@ export function FeaturedBanner() {
               setDir(i > index ? 1 : -1);
               setIndex(i);
             }}
-            className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/25"
+            className="relative h-[3px] flex-1 overflow-hidden rounded-full bg-white/35 before:absolute before:-inset-y-3 before:inset-x-0"
           >
-            {i < index ? <span className="absolute inset-0 bg-white/80" /> : null}
+            {i < index ? <span className="absolute inset-0 bg-white" /> : null}
             {i === index ? (
               <span
                 key={`${index}-${paused}`}
-                className="hero-progress absolute inset-0 origin-left bg-[#e8b86d]"
+                className="hero-progress absolute inset-0 origin-left bg-white"
                 style={{ animationDuration: `${INTERVAL_MS}ms`, animationPlayState: paused ? "paused" : "running" }}
               />
             ) : null}

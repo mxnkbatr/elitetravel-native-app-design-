@@ -5,7 +5,9 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * shows up in the app on next launch, no store update needed.
  * Point APP_URL at the deployed site (production or a preview) before `npx cap sync`.
  */
-const APP_URL = process.env.APP_URL ?? "https://elitetravel-mn-wg6y.vercel.app";
+// The app loads its own deployment of this project (the app design), not the public website.
+// Replace with the Vercel domain of this project once it is deployed.
+const APP_URL = process.env.APP_URL ?? "https://elitetravel-app.vercel.app";
 
 const config: CapacitorConfig = {
   appId: "mn.elitetravel.app",
