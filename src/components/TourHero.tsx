@@ -179,17 +179,20 @@ export function TourHero({ tour, onBook }: { tour: Tour; onBook: () => void }) {
           </h1>
           <p {...reveal(0.35, "mt-3 max-w-lg text-[0.95rem] leading-relaxed text-muted", "enter-fade")}>{tour.story}</p>
 
-          <ul className="mt-5 flex flex-wrap gap-2">
+          {/* Phone: native-style fact cards in two columns; larger screens keep the pill row */}
+          <ul className="mt-5 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-2">
             {chips.map((c, i) => (
               <li
                 key={c.text}
                 {...reveal(
                   0.4 + i * 0.06,
-                  "inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-bg-elevated/80 px-3 py-1.5 text-[0.8rem] backdrop-blur",
+                  "flex min-w-0 items-center gap-2.5 rounded-2xl border border-[var(--line)] bg-bg-elevated p-2.5 text-[0.8rem] font-semibold leading-tight shadow-[0_6px_18px_rgba(6,42,42,0.05)] sm:inline-flex sm:gap-1.5 sm:rounded-full sm:bg-bg-elevated/80 sm:px-3 sm:py-1.5 sm:font-normal sm:shadow-none sm:backdrop-blur",
                 )}
               >
-                <Icon name={c.icon} size={15} className="text-accent" />
-                {c.text}
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/10 text-accent sm:size-auto sm:bg-transparent">
+                  <Icon name={c.icon} size={16} />
+                </span>
+                <span className="line-clamp-2 min-w-0">{c.text}</span>
               </li>
             ))}
           </ul>
